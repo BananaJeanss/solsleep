@@ -30,10 +30,14 @@ revision. All intervening versions remain in exports; it never rewrites history.
 
 Deletion removes all revisions and the current pointer in one transaction. A
 minimal identity tombstone prevents an old archive or stale draft from resurrecting
-that identity on this installation. There is no background purge. Already exported
-copies are independent. Tombstones are currently local and are not exported;
-restoring an old archive on another installation can restore a subsequently
-deleted night. Cross-device deletion propagation remains an explicit M2 task.
+that identity on this installation. There is no background purge. New v2 exports
+carry these identity markers to another installation. Previously exported copies
+are independent: a v1 archive or an older v2 archive cannot know later deletions.
+Restore the newer archive first to establish its deletion markers before using
+older copies. Restore never deletes a night already present on the destination;
+an incoming marker for a live local entry is skipped and reported. This additive
+policy cannot implement automatic cross-device synchronization or erase old
+external copies.
 Raw motion files are not attached to manual records by this slice. Connecting a
 recorder must add coordinated raw/derived/audio deletion before it ships.
 
@@ -58,31 +62,40 @@ instrumentation. Future changes require tested migrations from every released
 schema, including failure rollback and all values/provenance. A fixture open is
 not evidence that an unimplemented migration works.
 
-## Native journal portability v1
+## Native journal portability v1/v2
 
 Separate from the existing alarm-only archive. UTF-8 JSON, format
-`solsleep-journal`, version 1, creation instant, `records` array and SHA-256 of the
-compact array encoding. Records contain version, identity, revision, creation and
+`solsleep-journal`, creation instant, records and corruption checksum. The reader
+accepts v1 (SHA-256 of the compact `records` array; no deletion markers). Writers
+emit v2 with `records` and a sorted, unique `deletedIds` array. Its SHA-256 covers
+the compact object `{"records":[...],"deletedIds":[...]}` in that field order,
+using UTF-8. Marker identities are canonical lowercase UUIDs, disjoint from live
+histories. Duplicate markers, wrong types and unknown fields/versions fail before
+restore. The envelope creation time is informational and is not authenticated. Records contain version, identity, revision, creation and
 modification instants, start/end instants, IANA zone ID, note, nullable integer
 rating and unique tags. The writer sorts identities and revisions, and tags. The
 reader checks exact fields, all types, identity/interval/precision bounds,
 revision chains, checksum, UTF-8 validity, maximum nesting eight, 8 MiB input and
-10,000 revisions. SHA-256 detects accidental corruption; it provides neither
+10,000 revisions and 10,000 deletion markers. Limits fail explicitly; no marker is silently dropped. SHA-256 detects accidental corruption; it provides neither
 confidentiality nor authenticity. This format is explicitly plaintext in the UI.
 
-Export takes one transactional logical snapshot, writes through SAF, closes the
+Export takes one transactional logical snapshot of revisions, current pointers and markers, rejects inconsistent state, writes through SAF, closes the
 provider stream and only then reports completion. It never copies a live SQLite
 file without its WAL. A provider write/close failure is reported as failed; the
 partial document may remain and the source is unchanged. Inspection validates
 before showing a preview. Additive restore inserts complete histories for missing
-identities in one transaction. Existing local identities and local deletions
-win. Any insertion failure rolls back every new night in that batch. Native
-journal export does not include alarms, raw sensor chunks, audio or tombstones.
+identities and missing deletion markers in one transaction. Existing local
+identities and local deletions win. Imported markers never delete local nights;
+the preview explains conflicts, and the result reports actual added/skipped nights,
+added/skipped markers and local nights kept despite incoming markers. Counts are
+computed again in the write transaction, so changes after preview cannot bypass
+the policy. Any insertion failure rolls back every new night and marker in that
+batch. Native journal export does not include alarms, raw sensor chunks or audio.
 A future complete archive, encryption, provider round-trip verification,
 last-attempt/success audit and large-journal streaming/partitioning remain open.
 
-`archives/journal-v1.json` is independently serialized and hashed with Python for
-a reader fixture. Tests do not rely only on a writer reading its own output.
+`archives/journal-v1.json` and `journal-v2.json` are independently serialized and hashed with Python for
+reader fixtures. Tests do not rely only on a writer reading its own output.
 
 ## Raw motion chunk v1 and publication
 

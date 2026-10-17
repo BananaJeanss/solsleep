@@ -56,6 +56,15 @@ import java.time.temporal.ChronoUnit
             TextButton(onClick=model::reload,enabled=!state.busy) {Text(stringResource(R.string.retry))}
         }}
         state.notice?.let {message->item {Text(stringResource(message))}}
+        state.restoreResult?.let {result->item {
+            Column(Modifier.semantics {testTag="journal_restore_result"},verticalArrangement=Arrangement.spacedBy(8.dp)) {
+                Text(pluralStringResource(R.plurals.journal_added,result.nightsAdded,result.nightsAdded))
+                Text(pluralStringResource(R.plurals.journal_skipped,result.nightsSkipped,result.nightsSkipped))
+                Text(pluralStringResource(R.plurals.journal_markers_added,result.markersAdded,result.markersAdded))
+                Text(pluralStringResource(R.plurals.journal_markers_skipped,result.markersSkipped,result.markersSkipped))
+                if(result.localNightsKept>0) Text(pluralStringResource(R.plurals.journal_marker_conflicts,result.localNightsKept,result.localNightsKept))
+            }
+        }}
         if(state.records.isEmpty() && !state.busy && state.error==null) item {Text(stringResource(R.string.journal_empty))}
         items(state.records,key={it.id}) {record->
             Card(onClick={editing=record.id;editor=true},enabled=!state.busy,modifier=Modifier.semantics {testTag="journal_${record.id}"}) {
@@ -78,6 +87,7 @@ import java.time.temporal.ChronoUnit
             HorizontalDivider();Spacer(Modifier.height(16.dp))
             Text(stringResource(R.string.journal_portability),style=MaterialTheme.typography.titleMedium)
             Text(stringResource(R.string.journal_archive_detail),style=MaterialTheme.typography.bodySmall)
+            Text(stringResource(R.string.journal_archive_limits),style=MaterialTheme.typography.bodySmall)
             OutlinedButton(onClick={create.launch("solsleep-journal-${LocalDate.now()}.json")},enabled=!state.busy,
                 modifier=Modifier.fillMaxWidth()) {Text(stringResource(R.string.journal_export))}
             OutlinedButton(onClick={open.launch(arrayOf("application/json","application/octet-stream"))},enabled=!state.busy,
@@ -119,7 +129,9 @@ import java.time.temporal.ChronoUnit
                 val nights=preview.records.map {it.id}.distinct().size
                 Text(pluralStringResource(R.plurals.journal_nights,nights,nights))
                 Text(pluralStringResource(R.plurals.journal_revisions,preview.records.size,preview.records.size))
+                Text(pluralStringResource(R.plurals.journal_deletions,preview.deletedIds.size,preview.deletedIds.size))
                 Text(pluralStringResource(R.plurals.journal_existing,state.existing,state.existing))
+                if(state.markerConflicts>0) Text(pluralStringResource(R.plurals.journal_marker_conflicts,state.markerConflicts,state.markerConflicts))
                 Text(stringResource(R.string.journal_restore_rule))
                 state.error?.let {Text(stringResource(it),color=MaterialTheme.colorScheme.error)}
             }},

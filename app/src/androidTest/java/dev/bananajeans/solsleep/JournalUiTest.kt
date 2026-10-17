@@ -106,6 +106,39 @@ class JournalUiTest {
             compose.waitUntil(15000) {runCatching {kotlin.math.abs(compose.activity.resources.configuration.fontScale-old)<0.01f}.getOrDefault(false)}
         }
     }
+    @Test fun archivePreviewAndRestoreShowPortableDeletionsAndPreserveLocalEntries() {
+        val instant=java.time.Instant.parse("2026-10-17T08:00:00Z")
+        val local=dev.bananajeans.solsleep.core.SleepRecord(createdAt=instant,modifiedAt=instant,
+            start=instant.minusSeconds(28800),end=instant,zone="Europe/Tallinn",note="Local entry kept")
+        val incoming=local.copy(id=java.util.UUID.randomUUID().toString(),note="Imported entry")
+        val deleted=java.util.UUID.randomUUID().toString()
+        JournalStore(compose.activity).use {it.save(local,0)}
+        val file=java.io.File(compose.activity.cacheDir,"journal-ui-${java.util.UUID.randomUUID()}.json")
+        try {
+            file.outputStream().use {dev.bananajeans.solsleep.core.JournalArchive.write(
+                dev.bananajeans.solsleep.core.JournalSnapshot(listOf(incoming),setOf(local.id,deleted)),it)}
+            compose.runOnUiThread {
+                val model=androidx.lifecycle.ViewModelProvider(compose.activity)[dev.bananajeans.solsleep.ui.JournalViewModel::class.java]
+                model.inspect(android.net.Uri.fromFile(file))
+            }
+            waitFor("2 deletion markers")
+            compose.onNodeWithText("1 existing night kept despite an imported deletion marker").assertExists()
+            capture("journal-restore-preview")
+            compose.onNodeWithText("Restore journal").performClick()
+            compose.waitUntil(10000) {records().size==2}
+            compose.waitUntil(10000) {compose.onAllNodesWithTag("journal_restore_result").fetchSemanticsNodes().isNotEmpty()}
+            compose.onNodeWithTag("journal_restore_result").performScrollTo()
+            compose.onNodeWithText("1 night added").assertExists()
+            compose.onNodeWithText("1 deletion marker added").assertExists()
+            compose.onNodeWithText("1 existing night kept despite an imported deletion marker").assertExists()
+            capture("journal-restore-result")
+            JournalStore(compose.activity).use {
+                assertEquals(local,it.history(local.id).single())
+                assertTrue(deleted in it.archiveSnapshot().deletedIds)
+                assertFalse(local.id in it.archiveSnapshot().deletedIds)
+            }
+        } finally {file.delete()}
+    }
     private fun capture(name: String) {
         compose.waitForIdle()
         PlatformTestStorageRegistry.getInstance().openOutputFile(name+".png").use {

@@ -63,7 +63,7 @@ class JournalStoreTest {
         val bytes=java.io.ByteArrayOutputStream().also {JournalArchive.write(store.snapshot(),it)}.toByteArray()
         store.close();credential.deleteDatabase(name);store=JournalStore(context,name)
         val preview=JournalArchive.inspect(bytes.inputStream())
-        assertEquals(1,store.restore(preview));assertEquals(0,store.restore(preview))
+        assertEquals(1,store.restore(preview).nightsAdded);assertEquals(0,store.restore(preview).nightsAdded)
         assertEquals(listOf(r,revised),store.snapshot());assertEquals(listOf(revised),store.current())
     }
     @Test fun restoreBatchRollsBackIfALaterRecordCannotBeInserted() {
@@ -81,12 +81,12 @@ class JournalStoreTest {
     @Test fun deletedNightCannotReturnFromAnOldArchiveOrStaleDraft() {
         store.save(r,0);val preview=JournalPreview(r.createdAt,listOf(r),"test")
         store.delete(r.id,1);store.close();store=JournalStore(context,name)
-        assertEquals(0,store.restore(preview));assertTrue(r.id in store.knownIds());assertTrue(store.current().isEmpty());assertTrue(store.snapshot().isEmpty())
+        assertEquals(0,store.restore(preview).nightsAdded);assertTrue(r.id in store.knownIds());assertTrue(store.current().isEmpty());assertTrue(store.snapshot().isEmpty())
         try {store.save(r,0);fail("Deleted identity must stay deleted")} catch(_: RevisionConflict) { }
     }
     @Test fun localCorrectionWinsOverAnOlderArchiveAndDeleteChecksRevision() {
         store.save(r,0);store.save(r.copy(revision=2,note="Local"),1)
-        assertEquals(0,store.restore(JournalPreview(r.createdAt,listOf(r),"test")))
+        assertEquals(0,store.restore(JournalPreview(r.createdAt,listOf(r),"test")).nightsAdded)
         try {store.delete(r.id,1);fail("Stale delete must fail")} catch(_: RevisionConflict) { }
         assertEquals("Local",store.current().single().note)
     }
@@ -139,4 +139,72 @@ class JournalStoreTest {
             alarms.put(rule,null);assertEquals(rule,alarms.entries().single().rule)
         }} finally {context.createDeviceProtectedStorageContext().deleteDatabase(alarmName)}
     }
+    @Test fun portableDeletionSurvivesCleanInstallAndBlocksAnOlderBackup() {
+        store.save(r,0)
+        val old=java.io.ByteArrayOutputStream().also {JournalArchive.write(store.archiveSnapshot(),it)}.toByteArray()
+        store.delete(r.id,1)
+        val deleted=java.io.ByteArrayOutputStream().also {JournalArchive.write(store.archiveSnapshot(),it)}.toByteArray()
+        store.close();credential.deleteDatabase(name);store=JournalStore(context,name)
+        assertEquals(JournalRestoreResult(0,0,1,0,0),store.restore(JournalArchive.inspect(deleted.inputStream())))
+        store.close();store=JournalStore(context,name)
+        assertEquals(JournalRestoreResult(0,1,0,0,0),store.restore(JournalArchive.inspect(old.inputStream())))
+        assertEquals(JournalSnapshot(emptyList(),setOf(r.id)),store.archiveSnapshot())
+    }
+    @Test fun importedMarkersNeverDeleteLocalCorrectionsAndResultsAreIdempotent() {
+        store.save(r,0);val revised=r.copy(revision=2,note="Keep me");store.save(revised,1)
+        val marker=UUID.randomUUID().toString()
+        val incoming=r.copy(id=UUID.randomUUID().toString())
+        val preview=JournalPreview(r.createdAt,listOf(incoming),"test",setOf(r.id,marker))
+        assertEquals(JournalRestoreResult(1,0,1,1,1),store.restore(preview))
+        assertEquals(JournalRestoreResult(0,1,0,2,1),store.restore(preview))
+        store.close();store=JournalStore(context,name)
+        assertEquals(listOf(r,revised),store.history(r.id))
+        assertEquals(setOf(marker),store.archiveSnapshot().deletedIds)
+        assertEquals(setOf(r.id,incoming.id),store.current().map {it.id}.toSet())
+    }
+    @Test fun laterRecordFailureRollsBackImportedMarkersAsWellAsNights() {
+        store.save(r,0)
+        SQLiteDatabase.openDatabase(credential.getDatabasePath(name).path,null,SQLiteDatabase.OPEN_READWRITE).use {db->
+            db.execSQL("CREATE TRIGGER reject_new BEFORE INSERT ON revisions WHEN NEW.payload LIKE '%reject-me%' BEGIN SELECT RAISE(ABORT,'injected'); END")
+        }
+        val marker=UUID.randomUUID().toString()
+        val first=r.copy(id=UUID.randomUUID().toString(),note="first")
+        val last=r.copy(id=UUID.randomUUID().toString(),note="reject-me")
+        try {store.restore(JournalPreview(r.createdAt,listOf(first,last),"test",setOf(marker)));fail("Expected failure")}
+        catch(_: SQLiteException) { }
+        store.close();store=JournalStore(context,name)
+        assertEquals(JournalSnapshot(listOf(r)),store.archiveSnapshot())
+    }
+    @Test fun markerWriteFailureRollsBackEarlierMarkersAndRetainsExistingDeletion() {
+        store.save(r,0);store.delete(r.id,1)
+        val first="11111111-1111-4111-8111-111111111111"
+        val last="ffffffff-ffff-4fff-8fff-ffffffffffff"
+        SQLiteDatabase.openDatabase(credential.getDatabasePath(name).path,null,SQLiteDatabase.OPEN_READWRITE).use {db->
+            db.execSQL("CREATE TRIGGER reject_marker BEFORE INSERT ON tombstones WHEN NEW.id='$last' BEGIN SELECT RAISE(ABORT,'injected'); END")
+        }
+        try {store.restore(JournalPreview(r.createdAt,emptyList(),"test",setOf(first,last)));fail("Expected failure")}
+        catch(_: SQLiteException) { }
+        store.close();store=JournalStore(context,name)
+        assertEquals(JournalSnapshot(emptyList(),setOf(r.id)),store.archiveSnapshot())
+    }
+    @Test fun concurrentRestoresCommitOneCopyOfHistoriesAndMarkers() {
+        val preview=JournalPreview(r.createdAt,listOf(r),"test",setOf(UUID.randomUUID().toString()))
+        val other=JournalStore(context,name);val executor=Executors.newFixedThreadPool(2);val gate=CountDownLatch(1)
+        try {
+            val futures=listOf(store,other).map {s->executor.submit<JournalRestoreResult> {gate.await();s.restore(preview)}}
+            gate.countDown();val results=futures.map {it.get(10,TimeUnit.SECONDS)}
+            assertEquals(1,results.sumOf {it.nightsAdded});assertEquals(1,results.sumOf {it.markersAdded})
+            assertEquals(1,results.sumOf {it.nightsSkipped});assertEquals(1,results.sumOf {it.markersSkipped})
+            assertEquals(JournalSnapshot(listOf(r),preview.deletedIds),store.archiveSnapshot())
+        } finally {executor.shutdownNow();other.close()}
+    }
+    @Test fun archiveSnapshotRefusesBrokenPointersRatherThanExportingMisleadingState() {
+        store.save(r,0)
+        SQLiteDatabase.openDatabase(credential.getDatabasePath(name).path,null,SQLiteDatabase.OPEN_READWRITE).use {db->
+            db.execSQL("UPDATE sessions SET current_revision=99 WHERE id=?",arrayOf(r.id))
+        }
+        try {store.archiveSnapshot();fail("Broken state must not produce an archive")} catch(_: IllegalStateException) { }
+        assertEquals(listOf(r),store.history(r.id))
+    }
+
 }

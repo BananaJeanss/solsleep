@@ -1390,13 +1390,32 @@ Merged in PR #2; tested source `bf84199ddb61914f81adc968ac8179018cf35a49`.
 - [x] 83 JVM tests, all 36 device tests on each of API 29 and 37, lint and shrunk release qualification.
 - [x] Gradle 9.8.1 security patch with official checksum, regenerated wrapper and Core/KTX 1.19.1.
 - [x] Serialize diagnostic AtomicFile access; regression-test concurrent polling and durable visible stop.
-- [ ] Reconnect the execution workspace; commands now return environment_offline (409).
-- [ ] Copy the final CI journal captures into docs/screenshots and synchronize the local checkout.
+- [x] Reconnect the execution workspace and synchronize the merged main checkout.
+- [x] Copy final CI18 journal captures into docs/screenshots with exact source attribution.
 - [ ] Continue encrypted complete archives, portable deletion, ownership/retention, low-space and streaming work.
 - [ ] Obtain a real sanitized reference export before claiming reference CSV compatibility.
 - [ ] Connect and validate a lawful night recorder; keep raw/derived source quality and gaps explicit.
 - [ ] Physical alarm/overnight/energy/power-loss and Wear validation, release signing and full SBOM/notices.
 
-The workspace disconnection is the concrete current execution roadblock.
-Code and this handoff are committed in GitHub. M0/M1/M2 remain partial;
+The previous workspace disconnection is resolved.
+Code and the earlier handoff are committed in GitHub. M0/M1/M2 remain partial;
 neither a production recorder nor complete reference parity is claimed.
+
+### Portable deletion continuation — 17 October 2026 (verification pending)
+
+Journal v2 carries canonical deleted identities alongside complete correction
+histories, checksummed together. v1 remains readable. A transactional logical
+snapshot validates current pointers and exports live records and markers from
+one database state. Bounded size/revision/marker limits fail without truncation.
+Restore inserts missing histories and missing markers in one transaction; local
+identities win. Imported markers do not erase existing destination entries.
+Preview explains conflicts; final counts are computed at commit time. Restoring a
+newer archive first protects against subsequently importing older deleted entries.
+An old archive cannot know later deletions, and no external copy is recalled.
+
+Qualification: independently serialized Python v2 fixture; corruption/type/UUID/
+count/truncation bounds; real SQLite clean-store restore, marker/night rollback,
+two-helper races; actual Compose preview/restore/count/local-preservation path.
+This completes a bounded portable deletion subset, not sync or raw/audio deletion.
+Keep full archives, encryption/recovery, ownership/retention, provider verification
+and streaming as separate remaining M2 deliverables.

@@ -7,6 +7,7 @@ import java.nio.ByteBuffer
 import java.nio.charset.CodingErrorAction
 import java.security.MessageDigest
 import java.time.Instant
+import java.util.UUID
 
 object SleepRecordCodec {
     fun encode(r: SleepRecord)=element(r).toString()
@@ -29,9 +30,22 @@ object SleepRecordCodec {
     }
 }
 
-data class JournalPreview(val createdAt: Instant,val records: List<SleepRecord>,val fingerprint: String) {
-    init {validateRecords(records)}
+/** Complete logical journal state. A deleted identity cannot also have a live history. */
+data class JournalSnapshot(val records: List<SleepRecord>,val deletedIds: Set<String> = emptySet()) {
+    init {
+        records.groupBy {it.id}.values.forEach {validateHistory(it.sortedBy {record->record.revision})}
+        deletedIds.forEach {require(UUID.fromString(it).toString()==it)}
+        require(records.none {it.id in deletedIds})
+    }
 }
+
+data class JournalPreview(val createdAt: Instant,val records: List<SleepRecord>,val fingerprint: String,
+    val deletedIds: Set<String> = emptySet()) {
+    init {validateRecords(records);require(deletedIds.size<=JournalArchive.MAX_DELETIONS);JournalSnapshot(records,deletedIds)}
+}
+
+data class JournalRestoreResult(val nightsAdded: Int,val nightsSkipped: Int,val markersAdded: Int,
+    val markersSkipped: Int,val localNightsKept: Int)
 
 internal fun validateRecords(records: List<SleepRecord>) {
     require(records.size<=JournalArchive.MAX_REVISIONS)
@@ -42,14 +56,23 @@ internal fun validateRecords(records: List<SleepRecord>) {
 object JournalArchive {
     const val MAX_BYTES=8*1024*1024
     const val MAX_REVISIONS=10_000
-    fun write(records: List<SleepRecord>,out: OutputStream,createdAt: Instant=Instant.now()) {
-        val sorted=records.sortedWith(compareBy<SleepRecord> {it.id}.thenBy {it.revision})
+    const val MAX_DELETIONS=10_000
+    fun write(records: List<SleepRecord>,out: OutputStream,createdAt: Instant=Instant.now()) =
+        write(JournalSnapshot(records),out,createdAt)
+
+    /** Writers emit v2; readers also accept v1 archives, which contain no deletion markers. */
+    fun write(snapshot: JournalSnapshot,out: OutputStream,createdAt: Instant=Instant.now()) {
+        JournalSnapshot(snapshot.records,snapshot.deletedIds)
+        require(snapshot.deletedIds.size<=MAX_DELETIONS)
+        val sorted=snapshot.records.sortedWith(compareBy<SleepRecord> {it.id}.thenBy {it.revision})
         validateRecords(sorted)
         val array=JsonArray(sorted.map(SleepRecordCodec::element))
         array.forEach {SleepRecordCodec.decode(it.jsonObject)}
         val bytes=buildJsonObject {
-            put("format","solsleep-journal");put("version",1);put("createdAt",createdAt.toString())
-            put("sha256",sha256(array.toString().toByteArray()));put("records",array)
+            val payload=payload(array,JsonArray(snapshot.deletedIds.sorted().map(::JsonPrimitive)))
+            put("format","solsleep-journal");put("version",2);put("createdAt",createdAt.toString())
+            put("sha256",sha256(payload.toString().toByteArray(Charsets.UTF_8)))
+            put("records",array);put("deletedIds",payload.getValue("deletedIds"))
         }.toString().toByteArray(Charsets.UTF_8)
         require(bytes.size<=MAX_BYTES)
         out.write(bytes);out.flush()
@@ -72,11 +95,22 @@ object JournalArchive {
         }
         require(depth==0 && !quoted)
         val j=Json.parseToJsonElement(text).jsonObject
-        require(j.keys==setOf("format","version","createdAt","sha256","records"))
-        require(j.text("format")=="solsleep-journal" && j.number("version")==1L)
+        val version=j.number("version")
+        require(j.text("format")=="solsleep-journal" && version in 1L..2L)
+        val keys=setOf("format","version","createdAt","sha256","records")
+        require(j.keys==if(version==1L) keys else keys+"deletedIds")
         val array=j.getValue("records").jsonArray
-        require(array.size<=MAX_REVISIONS && j.text("sha256")==sha256(array.toString().toByteArray(Charsets.UTF_8)))
-        return JournalPreview(Instant.parse(j.text("createdAt")),array.map {SleepRecordCodec.decode(it.jsonObject)},sha256(bytes))
+        val deleted=if(version==1L) JsonArray(emptyList()) else j.getValue("deletedIds").jsonArray
+        require(array.size<=MAX_REVISIONS && deleted.size<=MAX_DELETIONS)
+        val checksumInput=if(version==1L) array else payload(array,deleted)
+        require(j.text("sha256")==sha256(checksumInput.toString().toByteArray(Charsets.UTF_8)))
+        val ids=deleted.map {it.jsonPrimitive.also {p->require(p.isString)}.content}
+        require(ids.distinct().size==ids.size)
+        return JournalPreview(Instant.parse(j.text("createdAt")),array.map {SleepRecordCodec.decode(it.jsonObject)},sha256(bytes),ids.toSet())
+    }
+
+    private fun payload(records: JsonArray,deletedIds: JsonArray)=buildJsonObject {
+        put("records",records);put("deletedIds",deletedIds)
     }
 }
 

@@ -116,14 +116,24 @@ passes with 9.8.1. Broader incremental qualification remains open; the clean-bui
 recovery is documented in docs/TESTING.md. Gradle reports deprecations relevant
 to a future Gradle 10 migration; the qualified wrapper remains 9.8.1.
 
-## Concrete execution roadblock
+## Current M2 continuation (verification in progress)
 
-The local execution environment disconnected after validation. New commands fail
-with `409 Conflict, environment_offline: Environment is not connected`.
-The validated code is merged and these records are committed through GitHub.
-Further local implementation, checkout synchronization and copying final journal
-PNGs into the repository require a reconnected workspace. Final captures are
-already preserved in the CI device-results artifacts.
+The execution workspace is reconnected and synchronized with main. Final CI18
+journal PNGs are now checked into docs/screenshots with their original provenance.
+The next slice adds journal format v2 portable deletion markers, keeps reading v1,
+uses one consistent live/history/marker snapshot, and atomically restores missing
+histories and missing markers. Existing local nights are never deleted by an
+imported marker. Preview conflicts and final actual counts are visible.
+
+New regression tests cover independent v2 bytes, marker checksum/type/UUID/count
+limits, deletion-only archives and truncation, clean-install deletion preservation,
+old-archive resurrection prevention, mixed batch rollback, concurrent restores,
+and UI preview/result with a retained local entry. The first API 37 run passes all 43 tests. API 29 exposed concurrent first-open
+creation across journal helpers and the alarm editor’s scrolling Save target at
+200% text. Opening helpers for one path is now serialized before SQLite schema
+initialization; transactions still race under SQLite. Alarm Save now lives in a
+fixed footer above the keyboard, and a new alarm retains its draft identity.
+These fixes require new complete verification; the verified results above remain the previous merged milestone.
 
 ## Remaining production and parity gates
 
@@ -147,7 +157,7 @@ Measured statistics/stages, sound analysis, watch/Health Connect acquisition,
 challenges, wake checks/escalation, smart wake-up and most integrations remain
 unfinished. [Traceability](docs/TRACEABILITY.md) identifies implemented subsets.
 
-Next after reconnection: continue M2 portability/ownership, then the real capture
+Next: qualify portable deletion markers, then continue M2 portability/ownership, then the real capture
 workflow alongside physical alarm/probe qualification. Stable production signing,
 full dependency notices/SBOM and release qualification remain open. No production
 signing key is committed. Instrumentation uses disposable debug installs and can
