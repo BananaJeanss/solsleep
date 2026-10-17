@@ -1368,3 +1368,10 @@ M3 must connect a lawful user-started recorder to the durable store, add bounded
 checkpoints and pause/resume/interruption states, then validate real overnight
 capture and energy. The debug sensor probe is not that recorder. The five-second
 raw tail target remains unmeasured and must not be advertised as achieved.
+
+Encrypted archive follow-up is now broken into a concrete threat model, vetted
+primitive/library qualification, bounded authenticated envelope, portable secret
+ownership, staged atomic restore, deletion-marker conflicts and an independent
+interop/fault-test matrix in `docs/ENCRYPTED_ARCHIVE_DESIGN.md`. This is researched
+design, not an implemented encryption feature. The memory/latency profile needs a
+minimum-supported physical reference phone before performance claims are made.

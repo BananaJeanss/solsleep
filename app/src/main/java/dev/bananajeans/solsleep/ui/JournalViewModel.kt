@@ -25,14 +25,14 @@ class JournalViewModel(app: Application): AndroidViewModel(app) {
         JournalStore(getApplication()).use(block)
     }
     init {reload()}
-    private fun launch(block: suspend ()->Unit) {
+    private fun launch(errorMessage: Int=R.string.journal_error,block: suspend ()->Unit) {
         viewModelScope.launch {
             mutex.withLock {
                 mutable.update {it.copy(busy=true,error=null,notice=null)}
                 try {block()}
                 catch(_: RevisionConflict) {mutable.update {it.copy(error=R.string.journal_conflict)}}
                 catch(c: CancellationException) {throw c}
-                catch(_: Exception) {mutable.update {it.copy(error=R.string.journal_error)}}
+                catch(_: Exception) {mutable.update {it.copy(error=errorMessage)}}
                 finally {mutable.update {it.copy(busy=false)}}
             }
         }
@@ -59,7 +59,7 @@ class JournalViewModel(app: Application): AndroidViewModel(app) {
         val records=store {it.save(revised,base.revision);it.current()}
         mutable.update {it.copy(records=records,history=null)}
     }
-    fun export(uri: Uri)=launch {
+    fun export(uri: Uri)=launch(R.string.journal_export_error) {
         val records=store {it.snapshot()}
         withContext(Dispatchers.IO) {
             val resolver=getApplication<Application>().contentResolver
@@ -67,7 +67,7 @@ class JournalViewModel(app: Application): AndroidViewModel(app) {
         }
         mutable.update {it.copy(notice=R.string.journal_exported)}
     }
-    fun inspect(uri: Uri)=launch {
+    fun inspect(uri: Uri)=launch(R.string.journal_archive_error) {
         val preview=withContext(Dispatchers.IO) {
             requireNotNull(getApplication<Application>().contentResolver.openInputStream(uri)).use(JournalArchive::inspect)
         }

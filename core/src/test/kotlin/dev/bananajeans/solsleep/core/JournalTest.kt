@@ -49,6 +49,12 @@ class JournalTest {
         reject {JournalArchive.inspect(byteArrayOf(0xc3.toByte(),0x28).inputStream())}
         reject {JournalArchive.inspect(object: InputStream() {override fun read(): Int=throw IOException("disk")})}
     }
+    @Test fun invalidUnicodeCannotBeSilentlyReplacedDuringExport() {
+        reject {r.copy(note="\ud800")};reject {r.copy(tags=setOf("\udfff"))}
+        reject {SleepRecordCodec.decode(SleepRecordCodec.encode(r).replace("Dream","\\ud800"))}
+        val exact=r.copy(note="e\u0301 é 🌙 \uD83D\uDE34")
+        assertEquals(exact,JournalArchive.inspect(bytes(listOf(exact)).inputStream()).records.single())
+    }
     @Test fun outputFailureIsNeverReportedAsACompleteArchive() {
         reject {JournalArchive.write(listOf(r),object: OutputStream() {override fun write(b: Int) {throw IOException("full")}})}
     }

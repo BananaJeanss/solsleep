@@ -25,9 +25,9 @@ data class SleepRecord(
         }
         require(modifiedAt>=createdAt && end>start && Duration.between(start,end)<=Duration.ofDays(7))
         ZoneId.of(zone)
-        require(note.length<=16_000 && '\u0000' !in note)
+        require(hasValidUnicode(note) && note.length<=16_000 && '\u0000' !in note)
         require(rating==null || rating in 1..5)
-        require(tags.size<=32 && tags.all {it.isNotBlank() && it==it.trim() && it.length<=40 && '\u0000' !in it})
+        require(tags.size<=32 && tags.all {hasValidUnicode(it) && it.isNotBlank() && it==it.trim() && it.length<=40 && '\u0000' !in it})
     }
     val reportedDuration: Duration get()=Duration.between(start,end)
 }
@@ -51,4 +51,16 @@ fun reportedInstant(local: LocalDateTime,zone: ZoneId,selectedOffset: ZoneOffset
     val offset=if(offsets.size==1) offsets.single() else requireNotNull(selectedOffset) {"Choose the time's UTC offset"}
     require(offset in offsets)
     return local.toInstant(offset)
+}
+
+/** Reject unpaired UTF-16 surrogates before UTF-8 encoding could replace them silently. */
+fun hasValidUnicode(value: String): Boolean {
+    var index=0
+    while(index<value.length) {
+        val c=value[index++]
+        if(c.isHighSurrogate()) {
+            if(index>=value.length || !value[index++].isLowSurrogate()) return false
+        } else if(c.isLowSurrogate()) return false
+    }
+    return true
 }

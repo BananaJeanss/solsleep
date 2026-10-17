@@ -123,12 +123,12 @@
     <string name="journal_unrated">Unrated</string>
     <string name="journal_note">Notes</string>
     <string name="journal_tags">Tags</string>
-    <string name="journal_tags_hint">Separate tags with commas. Up to 32 tags, 40 characters each.</string>
+    <string name="journal_tags_hint">One tag at a time, up to 32 tags of 40 characters. Save also adds the tag you are typing.</string>
     <string name="journal_invalid">Choose an end after the start, within seven days. Notes allow 16,000 characters.</string>
     <string name="journal_dst_gap">This local time does not exist because the clocks move forward. Choose another time.</string>
     <string name="journal_dst_overlap">The clocks repeat this time. Choose which UTC offset you mean.</string>
     <string name="journal_conflict">This night changed since you opened it. Close the editor, reload, then try again. Your draft has not been saved.</string>
-    <string name="journal_error">The journal operation failed. Existing records have been retained. A partial export may need to be deleted. Try again after checking available storage.</string>
+    <string name="journal_error">The journal operation failed. Existing records have been retained. Try again after checking available storage.</string>
     <string name="journal_portability">Keep a copy of your journal</string>
     <string name="journal_archive_detail">Plaintext JSON includes notes, tags, ratings and every saved correction. Store it somewhere private. Alarms and sensor data are separate. Older copies can still contain nights you later delete.</string>
     <string name="journal_export">Export journal</string>
@@ -145,4 +145,8 @@
     <string name="journal_history">Saved corrections</string>
     <string name="journal_history_hint">Using an earlier version saves a new correction. Later versions stay in the history and in exports.</string>
     <string name="journal_use_revision">Use revision %1$d</string>
+    <string name="journal_export_error">The export could not be completed. Your journal is unchanged. Delete the partial document, check the destination and try again.</string>
+    <string name="journal_archive_error">This file could not be read as a supported SolSleep journal archive. Check the file and try again. Your journal is unchanged.</string>
+    <string name="journal_tag_add">Add a tag</string>
+    <string name="journal_tag_remove">Remove tag %1$s</string>
 </resources>

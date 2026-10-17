@@ -16,7 +16,7 @@ anchors, SHA-256, file flush/atomic rename/directory flush and recovery that kee
 invalid files and reports gaps. No production recorder is connected to it.
 See [storage contract and limitations](docs/JOURNAL_STORAGE.md).
 
-Local JVM suite: **81 passed** (61 existing + 9 journal + 11 motion-chunk tests).
+Local JVM suite: **83 passed** (61 existing + 10 journal + 12 motion-chunk tests).
 Android build/lint/release and the expanded API 29/37 suites are being verified;
 the device counts below refer to the previous merged alarm milestone until the
 new run is recorded. New instrumentation covers journal revisions/races/rollback,

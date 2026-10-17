@@ -13,6 +13,11 @@ repeated fall-back time requires an explicit UTC offset. No silent time shift is
 applied to a user's recollection. The hard alarm's distinct recurrence policy is
 unchanged.
 
+Tags are individual removable chips, so punctuation inside a tag is preserved
+when another field is corrected. A new draft keeps one identity across retries
+and recreation to prevent duplicate insertion after an uncertain save. Save and
+Cancel remain in a fixed footer above the keyboard, including at large text.
+
 Each successful correction appends an immutable complete revision and updates
 the current pointer in one SQLite transaction. Identity and original creation
 time cannot change. Revisions are consecutive from one; modification times cannot
