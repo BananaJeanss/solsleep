@@ -122,7 +122,7 @@ class JournalUiTest {
                 model.inspect(android.net.Uri.fromFile(file))
             }
             waitFor("2 deletion markers")
-            compose.onNodeWithText("1 existing night kept despite an imported deletion marker").assertExists()
+            compose.onNodeWithText("1 existing night will be kept despite an imported deletion marker").assertExists()
             capture("journal-restore-preview")
             compose.onNodeWithText("Restore journal").performClick()
             compose.waitUntil(10000) {records().size==2}

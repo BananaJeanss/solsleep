@@ -1446,3 +1446,29 @@ Exercise visible unverified then verified outcomes and retained source data.
 This is current readback verification, not proof of future provider durability,
 remote cloud upload, an actual uninstall, or a durable attempt/success audit.
 Persistent audit, complete archives/encryption, ownership and streaming remain M2.
+
+### Bounded construction and large-store preflight (verification pending)
+
+The bounded v2 export must reject oversize stores before materializing complete
+histories or a huge JSON array. Check revision and deletion counts and SQLite's
+UTF-8 payload byte total in the snapshot transaction. The writer then serializes
+one bounded record at a time into a capped buffer, includes envelope overhead
+before touching the destination, and preserves existing exact v2 fixture bytes.
+No dropped records or markers, partial export, or weakened durability is allowed.
+
+Import preview reads a consistent identity-only snapshot, so a journal exceeding
+export capacity can still inspect an incoming archive. A dedicated limit message
+explains the failure and retained local data. Tests need valid CJK-heavy notes
+whose character count fits but UTF-8 bytes exceed capacity, reopen/data equality,
+deleted-identity overflows, and zero destination writes on serialization failure.
+This is bounded construction, not completed streaming/partitioned large-history
+backup. Current-list pagination and complete raw/audio archives remain separate.
+
+Destination verification is qualified in PR #4 at
+`271bfdb4f19f7e18f4fef6cc8851081a717a77fe`, merged as
+`7b93f1329527cd0b21c2b97bccf5b1e121f8e54e`.
+[CI24](https://github.com/BananaJeanss/solsleep/actions/runs/39041179253):
+97 JVM tests and all 49 device tests on each of API 29/37, lint and shrunk release.
+The actual isolated provider fixture uses Java/Android APIs because the test APK
+excludes the target Kotlin runtime. No production manifest exposes the fixture.
+Bounded construction/preflight changes are now being qualified independently.

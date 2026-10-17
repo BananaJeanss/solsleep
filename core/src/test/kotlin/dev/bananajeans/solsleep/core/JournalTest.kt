@@ -119,4 +119,16 @@ class JournalTest {
         reject {bytes(snapshot)}
     }
 
+    @Test fun oversizedValidHistoryStopsConstructionBeforeOpeningTheDestination() {
+        val note="夜".repeat(16000)
+        val records=(1..200).map {index->r.copy(id=java.util.UUID(0,index.toLong()).toString(),note=note)}
+        var writes=0
+        try {
+            JournalArchive.write(JournalSnapshot(records),object: OutputStream() {override fun write(b: Int) {writes++}})
+            fail("Must stop at the bounded format capacity")
+        } catch(_: JournalExportLimitException) { }
+        assertEquals(0,writes)
+        assertEquals(200,records.size);assertTrue(records.all {it.note==note})
+    }
+
 }

@@ -207,4 +207,45 @@ class JournalStoreTest {
         assertEquals(listOf(r),store.history(r.id))
     }
 
+    @Test fun utf8ByteBudgetRejectsLargeExportWhileIdentityPreviewAndOriginalRecordsRemainAvailable() {
+        store.current() // Initialize through the production helper before an independent writer.
+        val note="夜".repeat(16000)
+        val records=(1..200).map {index->r.copy(id=UUID(0,index.toLong()).toString(),note=note)}
+        SQLiteDatabase.openDatabase(credential.getDatabasePath(name).path,null,SQLiteDatabase.OPEN_READWRITE).use {db->
+            db.beginTransaction()
+            try {
+                records.forEach {record->
+                    db.execSQL("INSERT INTO sessions VALUES (?,1)",arrayOf(record.id))
+                    db.execSQL("INSERT INTO revisions VALUES (?,1,?)",arrayOf(record.id,SleepRecordCodec.encode(record)))
+                }
+                db.setTransactionSuccessful()
+            } finally {db.endTransaction()}
+            db.rawQuery("PRAGMA encoding",null).use {c->assertTrue(c.moveToFirst());assertEquals("UTF-8",c.getString(0))}
+            db.rawQuery("SELECT SUM(length(payload)),SUM(length(CAST(payload AS BLOB))) FROM revisions",null).use {c->
+                assertTrue(c.moveToFirst());assertTrue(c.getLong(0)<JournalArchive.MAX_BYTES);assertTrue(c.getLong(1)>JournalArchive.MAX_BYTES)
+            }
+        }
+        try {store.archiveSnapshot();fail("Must reject the UTF-8 byte budget before loading histories")}
+        catch(_: JournalExportLimitException) { }
+        assertEquals(records.map {it.id}.toSet(),store.identities().live)
+        assertTrue(store.identities().deleted.isEmpty())
+        assertEquals(records.toSet(),store.current().toSet())
+        store.close();store=JournalStore(context,name)
+        assertEquals(records.toSet(),store.current().toSet())
+    }
+    @Test fun markerBudgetNeverSilentlyDropsPreviouslyDeletedIdentities() {
+        store.current()
+        SQLiteDatabase.openDatabase(credential.getDatabasePath(name).path,null,SQLiteDatabase.OPEN_READWRITE).use {db->
+            db.beginTransaction()
+            try {
+                for(index in 1..JournalArchive.MAX_DELETIONS+1) db.execSQL("INSERT INTO tombstones VALUES (?)",arrayOf(UUID(0,index.toLong()).toString()))
+                db.setTransactionSuccessful()
+            } finally {db.endTransaction()}
+        }
+        try {store.archiveSnapshot();fail("Must reject instead of omitting markers")}
+        catch(_: JournalExportLimitException) { }
+        assertEquals(JournalArchive.MAX_DELETIONS+1,store.identities().deleted.size)
+        assertTrue(store.current().isEmpty())
+    }
+
 }

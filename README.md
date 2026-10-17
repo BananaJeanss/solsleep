@@ -29,7 +29,9 @@ version as a new revision. Concurrent stale edits
 are rejected. Times retain their original zone, and repeated daylight-saving
 times require choosing the intended offset. Reported duration is not measured
 sleep. You can export every revision, inspect a journal file and restore missing
-nights. Journal data is credential protected and independent of alarm delivery.
+nights. Journal exports are read back from the selected destination before being
+reported as verified. Failed and unverified copies have distinct messages.
+Journal data is credential protected and independent of alarm delivery.
 Deletion removes all local revisions. New journal exports carry deletion identities,
 so restoring the newer copy first prevents an older backup from bringing those
 entries back. Existing destination entries are kept and conflicts are reported.
@@ -44,8 +46,8 @@ See [journal/storage limits](docs/JOURNAL_STORAGE.md).
 </p>
 
 [All captured screens, including large text](docs/SCREENSHOTS.md). The tested
-milestone passes 89 JVM tests and all 43 device tests on both API 29 and API 37.
-[Checks and development APK artifact](https://github.com/BananaJeanss/solsleep/actions/runs/39033124196).
+milestone passes 97 JVM tests and all 49 device tests on both API 29 and API 37.
+[Checks and development APK artifact](https://github.com/BananaJeanss/solsleep/actions/runs/39041179253).
 
 ## Build
 

@@ -131,3 +131,14 @@ and JDK APIs: the generated test APK does not contain the target's Kotlin runtim
 runtime dependency on the app being tested. The actual cross-package provider
 suite remains the acceptance check; no fake resolver replaces Binder/file I/O.
 Reference: https://developer.android.com/studio/test/test-in-android-studio
+
+## Oversized journal export
+
+A valid CJK-heavy database fits the character count while exceeding the UTF-8
+byte budget. The test checks the app-created database encoding, rejects the export,
+then compares every original record and reopens it. Identity-only preview remains
+available. A second case retains all 10,001 deletion identities rather than
+silently dropping one to fit the format. The writer test uses a valid oversize
+snapshot and verifies zero writes to the destination. Independent v1/v2 fixtures
+must retain their exact bytes after bounded construction changes. These guards
+are not a claim that large-history streaming or current-list pagination is done.

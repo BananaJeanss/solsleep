@@ -33,6 +33,7 @@ class JournalViewModel(app: Application): AndroidViewModel(app) {
                 try {block()}
                 catch(_: RevisionConflict) {mutable.update {it.copy(error=R.string.journal_conflict)}}
                 catch(_: JournalVerificationException) {mutable.update {it.copy(error=R.string.journal_export_verify_error)}}
+                catch(_: JournalExportLimitException) {mutable.update {it.copy(error=R.string.journal_export_limit)}}
                 catch(c: CancellationException) {throw c}
                 catch(_: Exception) {mutable.update {it.copy(error=errorMessage)}}
                 finally {mutable.update {it.copy(busy=false)}}
@@ -75,9 +76,9 @@ class JournalViewModel(app: Application): AndroidViewModel(app) {
         val preview=withContext(Dispatchers.IO) {
             requireNotNull(getApplication<Application>().contentResolver.openInputStream(uri)).use(JournalArchive::inspect)
         }
-        val local=store {it.archiveSnapshot()}
-        val live=local.records.map {it.id}.toSet()
-        val existing=live+local.deletedIds
+        val local=store {it.identities()}
+        val live=local.live
+        val existing=live+local.deleted
         mutable.update {it.copy(preview=preview,existing=preview.records.map {r->r.id}.distinct().count {id->id in existing},
             markerConflicts=preview.deletedIds.count {id->id in live})}
     }

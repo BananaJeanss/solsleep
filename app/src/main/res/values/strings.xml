@@ -128,6 +128,7 @@
     <string name="journal_dst_gap">This local time does not exist because the clocks move forward. Choose another time.</string>
     <string name="journal_dst_overlap">The clocks repeat this time. Choose which UTC offset you mean.</string>
     <string name="journal_conflict">This night changed since you opened it. Close the editor, reload, then try again. Your draft has not been saved.</string>
+    <string name="journal_reload">Reload journal</string>
     <string name="journal_error">The journal operation failed. Existing records have been retained. Try again after checking available storage.</string>
     <string name="journal_portability">Keep a copy of your journal</string>
     <string name="journal_archive_detail">Plaintext JSON includes notes, tags, ratings, every saved correction and deleted entry identities. Store it somewhere private. Alarms and sensor data are separate. Older copies can still contain nights you later delete.</string>
@@ -146,6 +147,7 @@
     <string name="journal_history">Saved corrections</string>
     <string name="journal_history_hint">Using an earlier version saves a new correction. Later versions stay in the history and in exports.</string>
     <string name="journal_use_revision">Use revision %1$d</string>
+    <string name="journal_export_limit">Your journal exceeds this export format’s limit. No journal copy was written and no entries were omitted. All records remain on this device. A format for larger journals is still in development.</string>
     <string name="journal_export_error">The export could not be completed. Your journal is unchanged. Delete the partial document, check the destination and try again.</string>
     <string name="journal_export_verify_error">A document was written, but its contents could not be verified. Do not rely on this copy yet. Check the destination and export again. Your journal is unchanged.</string>
     <string name="journal_archive_error">This file could not be read as a supported SolSleep journal archive. Check the file and try again. Your journal is unchanged.</string>
@@ -158,5 +160,6 @@
     <plurals name="journal_skipped"><item quantity="one">%d night skipped because its identity is already on this device</item><item quantity="other">%d nights skipped because their identities are already on this device</item></plurals>
     <plurals name="journal_markers_added"><item quantity="one">%d deletion marker added</item><item quantity="other">%d deletion markers added</item></plurals>
     <plurals name="journal_markers_skipped"><item quantity="one">%d deletion marker skipped because its identity is already on this device</item><item quantity="other">%d deletion markers skipped because their identities are already on this device</item></plurals>
+    <plurals name="journal_marker_preview_conflicts"><item quantity="one">%d existing night will be kept despite an imported deletion marker</item><item quantity="other">%d existing nights will be kept despite imported deletion markers</item></plurals>
     <plurals name="journal_marker_conflicts"><item quantity="one">%d existing night kept despite an imported deletion marker</item><item quantity="other">%d existing nights kept despite imported deletion markers</item></plurals>
 </resources>

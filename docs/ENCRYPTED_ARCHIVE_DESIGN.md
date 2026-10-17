@@ -89,8 +89,9 @@ A restore should preview their effect explicitly; an older archive must not
 silently delete newer local work, and restoring missing entries must not silently
 resurrect a locally deleted identity. Specify snapshot age/origin, conflict and
 full-replacement rules before implementing cross-installation deletion behavior.
-Current journal v1 exports omit deletion markers; the app already explains that
-older external copies can contain nights later deleted locally.
+Current writers emit journal v2 with portable deletion markers; readers retain
+v1 compatibility. Imported markers preserve already-present destination entries.
+The app explains that older external copies cannot know subsequent deletions.
 
 Raw-file staging is not a cross-file SQLite transaction. Reuse the chunk authority
 contract: verified file publication first, rebuildable indexes, durable batch/
@@ -130,3 +131,37 @@ Read for this checkpoint:
   https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html
 - Android Keystore capabilities and key ownership:
   https://source.android.com/docs/security/features/keystore/features
+
+## Maintained implementation candidates — 17 October 2026
+
+This is qualification research, not a dependency selection or implemented feature.
+Tink Java's official latest release is 1.24.0 (16 October). Its Android artifact
+is `com.google.crypto.tink:tink-android`; the library license is Apache-2.0. The
+release adds explicit `StreamingAeadConfig2026` configuration, avoiding unrelated
+registered algorithms changing primitive selection. Qualify current APIs against
+the actual artifact and shrunk Android release; do not copy obsolete global-
+registration/keyset examples without checking their secret-storage implications.
+
+Tink's streaming AEAD documentation recommends the AES-GCM-HKDF family, with
+1 MiB segments as a general starting point and 4 KiB as a lower-buffer option.
+Associated data is authenticated but visible. Partial authenticated plaintext may
+be returned before the entire file finishes: restore must still stage and require
+the complete terminal manifest before any authoritative publication. Each export
+must re-encrypt the complete stream; never update a ciphertext segment in place.
+These upstream properties do not qualify our future container by themselves.
+
+Bouncy Castle Java 1.84's May 2026 release and MIT-style license were reviewed as
+a possible pure-JVM KDF implementation source. This is not an assertion that 1.84
+is the latest version or that its complete provider is suitable for Android.
+Qualify the exact lightweight Argon2 implementation, artifact size/bytecode,
+provider independence, memory clearing, RFC vectors, R8 and API 29/current behavior
+before selection. A memory-hard profile still needs minimum-phone peak-memory,
+latency and thermal measurements; a desktop or virtual sensor emulator cannot
+supply that device qualification. No unmeasured profile is silently weakened.
+
+Primary sources:
+- https://github.com/tink-crypto/tink-java/releases/tag/v1.24.0
+- https://github.com/tink-crypto/tink-java/blob/main/LICENSE
+- https://developers.google.com/tink/streaming-aead
+- https://www.bouncycastle.org/resources/new-releases-bouncy-castle-java-1-84-and-bouncy-castle-java-lts-2-73-11/
+- https://www.bouncycastle.org/licence.html
