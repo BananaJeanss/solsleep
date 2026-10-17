@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="108" height="108" viewBox="0 0 108 108" role="img" aria-labelledby="title desc">
+<title id="title">SolSleep — a sleepy little Android</title>
+<desc id="desc">A green Android robot, eyes closed, tucked into a blue blanket on a soft pillow. Two small sleep marks float overhead.</desc>
+<metadata>Android robot adapted from Google's artwork under CC BY 3.0. Changes: sleeping pose, pillow, blanket and palette. https://creativecommons.org/licenses/by/3.0/</metadata>
+<path fill="#F1E8D4" d="M31 58H77C83 58 86 62 85 67C84 74 77 77 70 77H36C28 77 23 74 23 68C23 62 26 58 31 58Z"/>
+<path fill="#D7CDB7" d="M29 69C43 73 66 75 80 68C78 74 73 76 67 76H36C31 76 27 74 26 71Z"/>
+<path fill="none" stroke="#95C990" stroke-width="3" stroke-linecap="round" d="M40 37L36 30M61 37L65 30"/>
+<path fill="#A6D59C" d="M31 52C31 40 39 34 50 34C62 34 69 42 69 53V59C69 65 61 68 50 68C39 68 31 65 31 59Z"/>
+<path fill="none" stroke="#355A43" stroke-width="2.3" stroke-linecap="round" d="M38 50Q42 54 46 50M54 50Q58 54 62 50"/>
+<path fill="#E7AC9F" fill-opacity=".7" d="M36 56C36 54 42 54 42 56C42 58 36 58 36 56M58 56C58 54 64 54 64 56C64 58 58 58 58 56"/>
+<path fill="#80ACD0" d="M57 59C63 54 75 55 79 62L83 71C75 77 61 79 49 75C48 68 51 63 57 59Z"/>
+<path fill="#AACBE3" d="M55 60C61 56 70 56 75 60C68 58 62 60 59 64L53 74L49 73C49 67 51 63 55 60Z"/>
+<path fill="#A6D59C" d="M51 61C46 57 41 59 42 63C43 67 51 67 55 64C57 62 54 60 51 61Z"/>
+<path fill="none" stroke="#C2D4E3" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" d="M73 38H80L73 45H80M68 27H73L68 32H73"/>
+</svg>

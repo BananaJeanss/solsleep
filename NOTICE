@@ -1,0 +1,17 @@
+SolSleep code: Copyright 2026 SolSleep contributors; GPL-3.0-or-later.
+
+Android robot adapted from Google's artwork under Creative Commons Attribution 3.0.
+Changes: sleeping pose, pillow, blanket, palette and monochrome silhouette.
+https://creativecommons.org/licenses/by/3.0/
+https://developer.android.com/distribute/marketing-tools/brand-guidelines
+Android is a trademark of Google LLC. No Google endorsement is implied.
+
+The Gradle wrapper is from Gradle and licensed under Apache License 2.0.
+https://github.com/gradle/gradle/blob/master/LICENSE
+
+All artwork is authored as SVG/path data. No image-generation model is used.
+The dawn alarm sound is synthesized from sine waves by tools/generate_tone.py.
+
+The Apache License 2.0 text for Apache-licensed build/runtime components is
+provided in third_party/Apache-2.0.txt. See docs/DEPENDENCIES.md for the initial
+upstream inventory and remaining release notice audit.

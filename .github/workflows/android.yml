@@ -1,0 +1,113 @@
+name: Android checks
+on:
+  push:
+    branches: [main]
+    paths-ignore: ["**/*.md", "docs/**", "LICENSE", "NOTICE"]
+  pull_request:
+    paths-ignore: ["**/*.md", "docs/**", "LICENSE", "NOTICE"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: android-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: gradle
+      - uses: android-actions/setup-android@be39fa834029ff78f1a44aa3bb0819b8fc2bd8fd # v4.0.4
+      - name: Install compile SDK
+        run: sdkmanager "platforms;android-37.0" "build-tools;36.0.0"
+      - name: Verify generated assets
+        run: |
+          python3 tools/generate_brand.py
+          python3 tools/generate_tone.py
+          git diff --exit-code -- app/src/main/res
+      - name: Test, lint, and build both variants
+        run: |
+          ./gradlew :core:test :app:lintDebug :app:assembleDebug --no-daemon
+          ./gradlew :app:assembleRelease --no-daemon
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: build-and-core-results
+          path: |
+            core/build/reports/tests/
+            core/build/test-results/
+            app/build/reports/
+            app/build/outputs/apk/debug/
+          if-no-files-found: error
+
+  device:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - api: 29
+            platform: android-29
+          - api: 37
+            platform: android-37.0
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: gradle
+      - uses: android-actions/setup-android@be39fa834029ff78f1a44aa3bb0819b8fc2bd8fd # v4.0.4
+      - name: Install device emulator
+        run: |
+          sdkmanager "platforms;android-37.0" "build-tools;36.0.0" "emulator" "system-images;${{ matrix.platform }};google_apis;x86_64"
+          echo no | avdmanager create avd --name solsleep --package "system-images;${{ matrix.platform }};google_apis;x86_64" --device pixel_6
+          sudo chmod a+rw /dev/kvm
+      - name: Run real device tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          "$ANDROID_HOME/emulator/emulator" -avd solsleep -no-window -no-audio -no-boot-anim -no-snapshot -gpu swiftshader -memory 2048 > emulator.log 2>&1 &
+          emulator_pid=$!
+          collect_and_stop() {
+            timeout 10 adb logcat -d -v threadtime > device-logcat.txt 2>&1 || true
+            timeout 5 adb emu kill >/dev/null 2>&1 || true
+            kill "$emulator_pid" 2>/dev/null || true
+          }
+          trap collect_and_stop EXIT
+          deadline=$((SECONDS + 300))
+          until [ "$(timeout 5 adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r' || true)" = "1" ]; do
+            if [ "$SECONDS" -gt "$deadline" ]; then tail -80 emulator.log; exit 1; fi
+            sleep 2
+          done
+          adb shell input keyevent 82
+          adb shell settings put system time_12_24 24
+          adb shell cmd uimode night yes
+          adb shell settings put global window_animation_scale 0
+          adb shell settings put global transition_animation_scale 0
+          adb shell settings put global animator_duration_scale 0
+          ./gradlew :app:connectedDebugAndroidTest --no-daemon
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: api-${{ matrix.api }}-device-results
+          path: |
+            app/build/reports/androidTests/
+            app/build/outputs/androidTest-results/
+            app/build/outputs/connected_android_test_additional_output/
+            emulator.log
+            device-logcat.txt
+          if-no-files-found: error

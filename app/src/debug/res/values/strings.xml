@@ -1,0 +1,9 @@
+<resources>
+    <string name="probe_title">Motion service probe</string>
+    <string name="probe_body">Developer diagnostics only. Counts real sensor callbacks while the screen is off. It does not record a night or estimate sleep. Stops automatically after five minutes.</string>
+    <string name="probe_start">Start motion probe</string>
+    <string name="probe_stop">Stop motion probe</string>
+    <string name="probe_running">Motion diagnostics running</string>
+    <string name="probe_channel">Developer motion diagnostics</string>
+    <string name="probe_failure">Couldn’t start the probe.</string>
+</resources>
