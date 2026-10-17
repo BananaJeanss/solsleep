@@ -110,6 +110,22 @@ class MotionChunkStore(private val directory: Path,private val sessionId: UUID,
         }
         return MotionSummary(chunks,samples,bytes,issues+anchorIssues,counts.toMap(),anchors.toMap())
     }
+    /** Immutable finished-session export, under the publication/deletion lock.
+     * Sink failures propagate; they must never be mistaken for corrupt source files.
+     */
+    @Synchronized fun exportBytes(visit: (ByteArray)->Unit) = locked {
+        val paths=Files.list(directory).use {it.limit(MotionArchive.MAX_CHUNKS+2L).iterator().asSequence().toList()}
+        require(paths.size<=MotionArchive.MAX_CHUNKS+1) {"Too many recording files; retained"}
+        require(paths.all {it.fileName.toString()==".writer.lock" ||
+            (filename.matches(it.fileName.toString()) && !it.fileName.toString().endsWith(".pending"))}) {
+            "Unresolved or unknown recording files retained"
+        }
+        val chunks=paths.filter {it.fileName.toString()!=".writer.lock"}.map {path->
+            val name=path.fileName.toString().removeSuffix(".motion")
+            Triple(UUID.fromString(name.substring(0,36)),name.substring(37).toLong(),path)
+        }.sortedWith(compareBy<Triple<UUID,Long,Path>> {it.first}.thenBy {it.second})
+        chunks.forEach {(_,_,path)->val bytes=read(path);verified(path,bytes,false);visit(bytes)}
+    }
     /** Only after a durable DELETING intent. Keep the lock inode; never unlink a held lock. */
     @Synchronized fun eraseOwned() = locked {
         val paths=Files.list(directory).use {it.iterator().asSequence().toList()}

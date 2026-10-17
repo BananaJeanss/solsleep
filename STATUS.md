@@ -5,6 +5,16 @@
 This is a **development build**. M0, M1, M2 and M3 remain partial. Full reference
 parity, physiological accuracy and production readiness are not claimed.
 
+## Current continuation under qualification
+
+Single finished-recording SOLR archives now have streaming core format, chosen
+provider export/readback, durable preview/staging, conflict-safe file-first restore,
+local deletion markers and a capture schema 1→2 migration. Native controls and
+fault/migration/provider/200% tests are implemented on the motion-archives branch.
+They are **under qualification**; the exact completed baseline below remains PR #7
+until the new native matrix/release checks finish. See docs/MOTION_ARCHIVE.md and
+the latest PLAN.md checklist for limits, recovery ordering and remaining work.
+
 ## Can it be used overnight?
 
 Alarms and the manual journal are implemented. **Phone motion** can now save real

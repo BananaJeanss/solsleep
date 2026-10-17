@@ -69,6 +69,7 @@ class MotionCaptureTest {
     private fun clearRecords() {
         // Disposable test installation only. Tests never target a personal installation.
         CaptureStore(context).use {store->store.sessions(100).forEach {MotionFiles.forSession(context,it.id).eraseOwned()}}
+        MotionDocuments(context).discard()
         context.deleteDatabase("motion-capture.db")
     }
     private fun click(text: String) {
@@ -83,6 +84,41 @@ class MotionCaptureTest {
         click("Set up a motion recording")
         compose.onNodeWithText("Start recording").assertIsDisplayed().performClick()
         await {runCatching {session().state==CaptureState.RECORDING}.getOrDefault(false)}
+    }
+    @Test fun nativeArchivePreviewRestoreAndLargeTextExposeRealSavedRecordingWithoutStartingCapture() {
+        shell("settings put system font_scale 2.0")
+        val id=UUID.randomUUID();val request=UUID.randomUUID();val owner=UUID.randomUUID();val boot=UUID.randomUUID();val sourceId=UUID.randomUUID()
+        val wall=Instant.parse("2026-10-17T23:00:00Z")
+        val recording=CaptureRecording(CaptureSession(id,request,owner,CaptureState.COMPLETED,wall,wall.plusSeconds(1),2),
+            listOf(CaptureStream(sourceId,id,boot,wall,100,CaptureSource("UI fixture","Native",1,0.01f,40f,false),1,0,0)),
+            listOf(CaptureEvent(42,id,CaptureReason.STOP,wall.plusSeconds(1),101,boot,null)))
+        val chunk=MotionChunk(id,sourceId,boot,0,wall,100,listOf(MotionSample(101,-0.0f,1f,9.81f)))
+        val bytes=java.io.ByteArrayOutputStream().also {out->MotionArchive.write(recording,out) {it(MotionChunkCodec.encode(chunk))}}.toByteArray()
+        val uri=android.net.Uri.parse("content://dev.bananajeans.solsleep.debug.test.journal/normal/${UUID.randomUUID()}")
+        try {
+            context.contentResolver.openOutputStream(uri,"wt")!!.use {it.write(bytes)}
+            compose.activityRule.scenario.onActivity {ViewModelProvider(it)[CaptureViewModel::class.java].stage(uri)}
+            compose.waitUntil(15000) {
+                var ready=false
+                compose.activityRule.scenario.onActivity {ready=ViewModelProvider(it)[CaptureViewModel::class.java].state.value.pending!=null}
+                ready
+            }
+            compose.activityRule.scenario.recreate()
+            click("Restore this recording")
+            await {CaptureStore(context).use {it.get(id)==recording.session}}
+            compose.waitUntil(15000) {runCatching {
+                compose.onNodeWithTag("capture_home").performScrollToNode(hasTestTag("motion_archive_message"))
+                compose.onNodeWithTag("motion_archive_message").assertTextContains("Recording restored.",substring=true);true
+            }.getOrDefault(false)}
+            assertFalse(MotionDocuments(context).hasPending());assertNull(CaptureRuntime.liveOwner)
+            CaptureStore(context).use {assertEquals(recording,it.recording(id));assertNull(it.active())}
+            assertEquals(listOf(chunk),MotionFiles.forSession(context,id).recover().chunks)
+            compose.onNodeWithTag("capture_home").performScrollToNode(hasTestTag("motion_export_$id"))
+            compose.onNodeWithTag("motion_export_$id").assertIsDisplayed().assertIsEnabled()
+            InstrumentationRegistry.getInstrumentation().uiAutomation.takeScreenshot().let {bitmap->
+                PlatformTestStorageRegistry.getInstance().openOutputFile("motion-archive-large-text.png").use {bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG,100,it)}
+            }
+        } finally {context.contentResolver.delete(uri,null,null)}
     }
     @Test fun realScreenOffSamplesPauseResumeFinishAndReadbackLeaveHardAlarmUnchanged() {
         val engine=AlarmGraph.engine(context)
