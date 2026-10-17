@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 package dev.bananajeans.solsleep
 
+import android.database.sqlite.SQLiteDatabase
 import android.net.Uri
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -54,6 +55,24 @@ class JournalDocumentProviderTest {
     @Test fun providerReadDenialIsExplicitlyUnverifiedAndSourceSurvives()=unverified("deny_read")
     @Test fun providerTruncationIsExplicitlyUnverifiedAndSourceSurvives()=unverified("truncated")
     @Test fun providerValidReplacementIsExplicitlyUnverifiedAndSourceSurvives()=unverified("replaced")
+    @Test fun verifiedJournalRecoveryStillWorksWhenTheSeparateHistorySchemaCannotOpen() {
+        val historyName="unavailable-export-history-${UUID.randomUUID()}.db"
+        val path=context.getDatabasePath(historyName);path.parentFile!!.mkdirs()
+        SQLiteDatabase.openOrCreateDatabase(path,null).use {it.version=99}
+        val before=store.archiveSnapshot();val uri=uri("normal")
+        try {
+            val result=dev.bananajeans.solsleep.data.JournalExportHistory(context,historyName).use {audit->
+                AuditedJournalExport.run({store.archiveSnapshot()},
+                    {requireNotNull(resolver.openOutputStream(uri,"wt"))},
+                    {requireNotNull(resolver.openInputStream(uri))},audit,null,{instant})
+            }
+            assertTrue(result is AuditedJournalResult.Verified);assertFalse(result.auditRecorded)
+            assertEquals(before.records,(result as AuditedJournalResult.Verified).preview.records)
+            assertEquals(before.deletedIds,result.preview.deletedIds)
+            assertEquals(before,store.archiveSnapshot())
+            SQLiteDatabase.openDatabase(path.path,null,SQLiteDatabase.OPEN_READONLY).use {assertEquals(99,it.version)}
+        } finally {context.deleteDatabase(historyName)}
+    }
     private fun unverified(scenario: String) {
         val before=store.archiveSnapshot();val uri=uri(scenario)
         try {export(uri);fail("Must report unverified document")}

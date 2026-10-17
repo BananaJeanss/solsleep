@@ -3,7 +3,8 @@
 17 October 2026 — alarm milestone merged in [PR #1](https://github.com/BananaJeanss/solsleep/pull/1);
 manual journal and persistence foundation merged in [PR #2](https://github.com/BananaJeanss/solsleep/pull/2);
 portable deletions and first-open/large-text fixes merged in [PR #3](https://github.com/BananaJeanss/solsleep/pull/3);
-destination readback merged in [PR #4](https://github.com/BananaJeanss/solsleep/pull/4).
+destination readback merged in [PR #4](https://github.com/BananaJeanss/solsleep/pull/4);
+bounded construction/Unicode byte limits merged in [PR #5](https://github.com/BananaJeanss/solsleep/pull/5).
 
 This is a development build. M0, M1 and M2 remain **partial**. Full reference
 parity and production readiness are not claimed.
@@ -61,9 +62,9 @@ publication/recovery contracts and limits.
 
 ## Verified evidence
 
-Tested source: `271bfdb4f19f7e18f4fef6cc8851081a717a77fe`.
-Merge: `7b93f1329527cd0b21c2b97bccf5b1e121f8e54e`.
-[Passing CI run, reports, captured screens, logs and debug APK](https://github.com/BananaJeanss/solsleep/actions/runs/39041179253).
+Tested source: `17565eaa6da82af06f8cbab2885b830c4d16e75b`.
+Merge: `4eb0a870d46382278fbed476da9d1439c1ea209d`.
+[Passing CI run, reports, captured screens, logs and debug APK](https://github.com/BananaJeanss/solsleep/actions/runs/39041857476).
 Documentation updates after this run do not change app source.
 
 | Check | Actual result |
@@ -71,20 +72,20 @@ Documentation updates after this run do not change app source.
 | JVM recurrence | 19 passed |
 | JVM alarm engine | 27 passed |
 | JVM alarm archive/codec | 15 passed |
-| JVM journal/archive/Unicode/DST/deletion markers | 16 passed |
+| JVM journal/archive/Unicode/DST/deletion markers/construction | 17 passed |
 | JVM motion codec/publication/recovery | 12 passed |
 | JVM destination transfer/failure ordering | 8 passed |
-| API 29 Google APIs x86_64 emulator | All 49 passed |
-| API 37 Google APIs x86_64 emulator | All 49 passed |
+| API 29 Google APIs x86_64 emulator | All 51 passed |
+| API 37 Google APIs x86_64 emulator | All 51 passed |
 | Lint, debug and test APKs | Pass locally and in CI |
 | Shrunk unsigned release APK / vital checks | Pass locally and in CI |
 | Artwork/chime | CI reproducibility check passes |
 | Final release manifest | Diagnostic components/special-use permission absent; no network/microphone/health access |
 | Incremental resource probe | Temporary resource addition built under 9.8.1; original restored and clean debug rebuilt |
 
-That is **97 JVM tests plus 98 device test executions**. Each 49-test device suite
+That is **98 JVM tests plus 102 device test executions**. Each 51-test device suite
 contains ten alarm-store tests, two delivery/component tests, four alarm UI tests,
-two diagnostic tests, eighteen journal-store tests, two motion-file tests, six
+two diagnostic tests, twenty journal-store tests, two motion-file tests, six
 journal UI tests and five separate-package provider tests.
 
 Evidence includes actual AlarmManager → private receiver → playback service →
@@ -152,19 +153,37 @@ become a success notice. Source records are never mutated by export.
 New tests cover failure ordering and close/cancellation behavior, an actual
 ContentResolver talking to a separate test-APK provider, provider denial/truncation/
 valid replacement, semantic clean-store restore, and visible unverified/verified
-UI outcomes. The complete 97-core/49-per-API suites and shrunk release pass at the source above.
+UI outcomes. The complete suites and shrunk release pass at the source above.
 The Java-only provider fixture does not depend on the target Kotlin runtime and
 is absent from debug/release app manifests. Durable attempt/success audit and
 provider-specific cloud upload guarantees remain separate work.
 
-## Bounded archive continuation (not yet qualified)
+## Bounded archive milestone (verified)
 
 A separate continuation caps archive construction before large JSON allocation,
 preflights record/marker counts and actual UTF-8 payload bytes in SQLite, and uses
 identity-only import preview without loading every historical note. The limit
 error explains that all original records remain. Tests add valid CJK-heavy stores,
 reopen equality, marker overflow, and no destination writes on oversized output.
-This work is not yet qualified; large-history streaming/pagination remains open.
+The 98-core/51-per-API complete suites, lint and shrunk release pass in CI26.
+Independent v2 fixture bytes remain identical. Large-history streaming/pagination
+remains open.
+
+## Export-history continuation (not yet qualified)
+
+A separate credential-protected metadata database records attempt, written,
+verified, failed-write and unverified states, optional document display names,
+readback fingerprints and wall-clock times. Ordered identities preserve the last
+verified result when a later attempt fails or the clock changes. Nonterminal
+attempts are never promoted to verified after reopening. This is not an atomic
+file/database transaction or a promise of cloud upload/retention.
+
+The Journal screen shows last attempt and last verified copy; unavailable history
+is distinct from known absence. History failures are reported but do not block a
+verified journal recovery. Alarm initialization and authoritative journal state
+remain independent. New domain, actual SQLite/reopen/race/rollback/schema/corruption,
+provider-recovery and UI tests are being qualified. No new audit results are
+claimed yet; the verified counts above refer to the prior merged source.
 
 ## Remaining production and parity gates
 

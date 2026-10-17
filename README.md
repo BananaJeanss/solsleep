@@ -46,8 +46,8 @@ See [journal/storage limits](docs/JOURNAL_STORAGE.md).
 </p>
 
 [All captured screens, including large text](docs/SCREENSHOTS.md). The tested
-milestone passes 97 JVM tests and all 49 device tests on both API 29 and API 37.
-[Checks and development APK artifact](https://github.com/BananaJeanss/solsleep/actions/runs/39041179253).
+milestone passes 98 JVM tests and all 51 device tests on both API 29 and API 37.
+[Checks and development APK artifact](https://github.com/BananaJeanss/solsleep/actions/runs/39041857476).
 
 ## Build
 
