@@ -15,6 +15,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
@@ -109,7 +110,10 @@ import java.time.temporal.ChronoUnit
     state.preview?.let {preview->
         AlertDialog(onDismissRequest=model::closePreview,title={Text(stringResource(R.string.journal_import))},
             text={Column(Modifier.verticalScroll(rememberScrollState()),verticalArrangement=Arrangement.spacedBy(12.dp)) {
-                Text(stringResource(R.string.journal_preview,preview.records.map {it.id}.distinct().size,preview.records.size,state.existing))
+                val nights=preview.records.map {it.id}.distinct().size
+                Text(pluralStringResource(R.plurals.journal_nights,nights,nights))
+                Text(pluralStringResource(R.plurals.journal_revisions,preview.records.size,preview.records.size))
+                Text(pluralStringResource(R.plurals.journal_existing,state.existing,state.existing))
                 Text(stringResource(R.string.journal_restore_rule))
                 state.error?.let {Text(stringResource(it),color=MaterialTheme.colorScheme.error)}
             }},

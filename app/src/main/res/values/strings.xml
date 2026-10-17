@@ -136,7 +136,9 @@
     <string name="journal_restore">Restore missing nights</string>
     <string name="journal_exported">Journal export completed.</string>
     <string name="journal_restored">Restore completed. Existing nights were kept.</string>
-    <string name="journal_preview">%1$d nights · %2$d revisions · %3$d identities already in this journal</string>
+    <plurals name="journal_nights"><item quantity="one">%d night</item><item quantity="other">%d nights</item></plurals>
+    <plurals name="journal_revisions"><item quantity="one">%d saved revision</item><item quantity="other">%d saved revisions</item></plurals>
+    <plurals name="journal_existing"><item quantity="one">%d identity already on this device</item><item quantity="other">%d identities already on this device</item></plurals>
     <string name="journal_restore_rule">Only missing nights are added. Existing entries and locally deleted identities are kept as they are. All corrections for added nights are restored together.</string>
     <string name="journal_delete_title">Delete this night?</string>
     <string name="journal_delete_body">The entry and all its saved corrections will be removed from this device. This device will remember its identity to prevent an old archive from adding it again. Exported copies are separate.</string>
