@@ -135,7 +135,7 @@
     <string name="journal_export">Export journal</string>
     <string name="journal_import">Review journal archive</string>
     <string name="journal_restore">Restore journal</string>
-    <string name="journal_exported">Journal export completed.</string>
+    <string name="journal_exported">Journal export verified by reading the saved document back.</string>
     <string name="journal_restored">Restore completed. Existing nights were kept.</string>
     <plurals name="journal_nights"><item quantity="one">%d night</item><item quantity="other">%d nights</item></plurals>
     <plurals name="journal_revisions"><item quantity="one">%d saved revision</item><item quantity="other">%d saved revisions</item></plurals>
@@ -147,6 +147,7 @@
     <string name="journal_history_hint">Using an earlier version saves a new correction. Later versions stay in the history and in exports.</string>
     <string name="journal_use_revision">Use revision %1$d</string>
     <string name="journal_export_error">The export could not be completed. Your journal is unchanged. Delete the partial document, check the destination and try again.</string>
+    <string name="journal_export_verify_error">A document was written, but its contents could not be verified. Do not rely on this copy yet. Check the destination and export again. Your journal is unchanged.</string>
     <string name="journal_archive_error">This file could not be read as a supported SolSleep journal archive. Check the file and try again. Your journal is unchanged.</string>
     <string name="journal_tag_add">Add a tag</string>
     <string name="journal_tag_remove">Remove tag %1$s</string>

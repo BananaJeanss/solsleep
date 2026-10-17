@@ -138,6 +138,22 @@ multi-process schema management. Alarm Save now stays in a fixed footer above
 the keyboard and the draft keeps its identity. Complete build and both 43-test
 suites pass after these fixes. No test was disabled or assertion removed.
 
+## Destination verification continuation (not yet qualified)
+
+Journal export now freezes a validated snapshot before opening the destination,
+writes/flushes/closes it, reopens that chosen URI and parses the returned bytes
+under the archive limits. Only an exact full-document fingerprint match reports
+verified success. A failed write differs from a written but unverified copy;
+truncation, changed valid documents, unavailable reads and close failures cannot
+become a success notice. Source records are never mutated by export.
+
+New tests cover failure ordering and close/cancellation behavior, an actual
+ContentResolver talking to a separate test-APK provider, provider denial/truncation/
+valid replacement, semantic clean-store restore, and visible unverified/verified
+UI outcomes. These changes are under verification; results above identify the
+previous merged source. Durable attempt/success audit and provider-specific cloud
+upload guarantees remain separate work.
+
 ## Remaining production and parity gates
 
 No physical phone or Wear device is attached. Acoustic/haptic onset and routes,
