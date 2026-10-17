@@ -35,3 +35,13 @@ source attribution. The final qualified captures have now been copied into the r
 | Saved report and correction history | ![Journal](screenshots/journal-night-api37.png) | ![Journal light](screenshots/journal-night-api29.png) |
 | Editor and keyboard | ![Editor](screenshots/journal-editor-api37.png) | ![Editor light](screenshots/journal-editor-api29.png) |
 | Saved at 200% system text | ![Large text](screenshots/journal-large-text-api37.png) | ![Large text light](screenshots/journal-large-text-api29.png) |
+
+## Portable journal restore
+
+Source `e123c46d2b745a016947952eeb152d28ebde9076`,
+[CI21](https://github.com/BananaJeanss/solsleep/actions/runs/39033124196).
+Both device-results artifacts contain `journal-restore-preview.png` and
+`journal-restore-result.png`. These show a mixed live/deleted import, explicit
+local-entry conflicts, real committed counts and the retained local night.
+The source also moves alarm Save to a fixed footer; its captured alarm editor and
+large-text workflow supersede the old alarm source for current layout evidence.

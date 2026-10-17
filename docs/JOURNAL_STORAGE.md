@@ -46,7 +46,12 @@ recorder must add coordinated raw/derived/audio deletion before it ships.
 `JournalStore` uses the default application context with an explicit device-protected-context rejection, checks user unlock,
 and opens only when journal functionality is requested. AlarmGraph, direct-boot
 receivers and ringing do not reference or initialize it. `alarms.db` remains a
-separate device-protected store. The journal uses WAL, FULL synchronization,
+separate device-protected store. Journal helper opening is serialized by a shared path-scoped process lock,
+including first schema creation. SQLiteOpenHelper instance locks do not coordinate
+separate helper instances; a two-helper cold-open restore test exposed a duplicate
+CREATE TABLE race on API 29. This lock covers opening only; SQLite still arbitrates
+concurrent write transactions. No multi-process schema safety is claimed.
+The journal uses WAL, FULL synchronization,
 foreign keys and non-exclusive write transactions. FULL deliberately prioritizes
 commit durability over the throughput advantage of NORMAL synchronization.
 
@@ -165,3 +170,6 @@ filesystem/device implementations honoring flushes, requiring physical lab work.
   https://www.sqlite.org/atomiccommit.html
 - SQLite WAL sidecar files:
   https://www.sqlite.org/tempfiles.html
+
+- AOSP SQLiteOpenHelper initialization ordering (version read before migration transaction):
+  https://android.googlesource.com/platform/frameworks/base/+/HEAD/core/java/android/database/sqlite/SQLiteOpenHelper.java

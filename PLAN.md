@@ -1401,7 +1401,7 @@ The previous workspace disconnection is resolved.
 Code and the earlier handoff are committed in GitHub. M0/M1/M2 remain partial;
 neither a production recorder nor complete reference parity is claimed.
 
-### Portable deletion continuation — 17 October 2026 (verification pending)
+### Portable deletion continuation — 17 October 2026 (verified)
 
 Journal v2 carries canonical deleted identities alongside complete correction
 histories, checksummed together. v1 remains readable. A transactional logical
@@ -1419,3 +1419,13 @@ two-helper races; actual Compose preview/restore/count/local-preservation path.
 This completes a bounded portable deletion subset, not sync or raw/audio deletion.
 Keep full archives, encryption/recovery, ownership/retention, provider verification
 and streaming as separate remaining M2 deliverables.
+
+Verified in PR #3 at `e123c46d2b745a016947952eeb152d28ebde9076`, merged as
+`d0dd19d5d55fd6b39390b189d8916d97b4602c96`.
+[CI21](https://github.com/BananaJeanss/solsleep/actions/runs/39033124196): 89 JVM
+tests, all 43 device tests on each of API 29/37, lint and shrunk unsigned release.
+The expanded first-open restore race exposed per-helper schema initialization on
+API 29; path-scoped process opening locks fix it without suppressing schema
+errors or serializing complete write transactions. The alarm editor now has a
+fixed Save footer and stable draft identity after a 200%-text interaction failure.
+Both full device suites pass after these fixes. Provider readback is next.

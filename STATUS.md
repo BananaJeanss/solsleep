@@ -1,7 +1,8 @@
 # Implementation status
 
 17 October 2026 — alarm milestone merged in [PR #1](https://github.com/BananaJeanss/solsleep/pull/1);
-manual journal and persistence foundation merged in [PR #2](https://github.com/BananaJeanss/solsleep/pull/2).
+manual journal and persistence foundation merged in [PR #2](https://github.com/BananaJeanss/solsleep/pull/2);
+portable deletions and first-open/large-text fixes merged in [PR #3](https://github.com/BananaJeanss/solsleep/pull/3).
 
 This is a development build. M0, M1 and M2 remain **partial**. Full reference
 parity and production readiness are not claimed.
@@ -34,8 +35,11 @@ parity and production readiness are not claimed.
 - Plaintext native journal export includes every correction; inspection validates
   before preview; missing histories restore atomically. Existing local identities
   and deletion markers win. Deletion removes all local revisions and retains a
-  minimal identity marker. External old copies are independent; markers are not
-  yet portable.
+  minimal identity marker. Journal v2 carries these markers to a clean installation;
+  v1 files remain readable. Imported markers never erase existing destination
+  entries. Preview explains conflicts and committed results report actual counts.
+  Restore a newer archive first to block later old-archive resurrection. External
+  copies cannot know later deletions and remain independent.
 - Debug-only five-minute sensor probe verifies screen-off callbacks without
   changing the hard alarm. Snapshot reads/writes now share a lock, as AtomicFile
   alone provides no concurrent-access locking. Probe code/permission are absent
@@ -56,9 +60,9 @@ publication/recovery contracts and limits.
 
 ## Verified evidence
 
-Tested source: `bf84199ddb61914f81adc968ac8179018cf35a49`.
-Merge: `e0ca2cd72e1d9c978bb6a4631efe568073d0a91f`.
-[Passing CI run, reports, captured screens, logs and debug APK](https://github.com/BananaJeanss/solsleep/actions/runs/39022166466).
+Tested source: `e123c46d2b745a016947952eeb152d28ebde9076`.
+Merge: `d0dd19d5d55fd6b39390b189d8916d97b4602c96`.
+[Passing CI run, reports, captured screens, logs and debug APK](https://github.com/BananaJeanss/solsleep/actions/runs/39033124196).
 Documentation updates after this run do not change app source.
 
 | Check | Actual result |
@@ -66,19 +70,19 @@ Documentation updates after this run do not change app source.
 | JVM recurrence | 19 passed |
 | JVM alarm engine | 27 passed |
 | JVM alarm archive/codec | 15 passed |
-| JVM journal/archive/Unicode/DST | 10 passed |
+| JVM journal/archive/Unicode/DST/deletion markers | 16 passed |
 | JVM motion codec/publication/recovery | 12 passed |
-| API 29 Google APIs x86_64 emulator | All 36 passed |
-| API 37 Google APIs x86_64 emulator | All 36 passed |
+| API 29 Google APIs x86_64 emulator | All 43 passed |
+| API 37 Google APIs x86_64 emulator | All 43 passed |
 | Lint, debug and test APKs | Pass locally and in CI |
 | Shrunk unsigned release APK / vital checks | Pass locally and in CI |
 | Artwork/chime | CI reproducibility check passes |
 | Final release manifest | Diagnostic components/special-use permission absent; no network/microphone/health access |
 | Incremental resource probe | Temporary resource addition built under 9.8.1; original restored and clean debug rebuilt |
 
-That is **83 JVM tests plus 72 device test executions**. Each 36-test device suite
+That is **89 JVM tests plus 86 device test executions**. Each 43-test device suite
 contains ten alarm-store tests, two delivery/component tests, four alarm UI tests,
-two diagnostic tests, twelve journal-store tests, two motion-file tests and four
+two diagnostic tests, eighteen journal-store tests, two motion-file tests and five
 journal UI tests.
 
 Evidence includes actual AlarmManager → private receiver → playback service →
@@ -102,7 +106,7 @@ regenerated wrapper, AndroidX Core/KTX 1.19.1, JDK 17, SDK 37.0 and Build Tools
 36.0.0. The Gradle patch includes upstream build-channel/TLS security fixes.
 See docs/DECISIONS.md and docs/DEPENDENCIES.md.
 
-Local commands completed before the execution environment disconnected:
+Local verification commands (CI also qualifies the exact source above):
 
 ```sh
 ./gradlew :app:clean --no-daemon
@@ -116,24 +120,23 @@ passes with 9.8.1. Broader incremental qualification remains open; the clean-bui
 recovery is documented in docs/TESTING.md. Gradle reports deprecations relevant
 to a future Gradle 10 migration; the qualified wrapper remains 9.8.1.
 
-## Current M2 continuation (verification in progress)
+## Latest M2 milestone
 
-The execution workspace is reconnected and synchronized with main. Final CI18
-journal PNGs are now checked into docs/screenshots with their original provenance.
-The next slice adds journal format v2 portable deletion markers, keeps reading v1,
-uses one consistent live/history/marker snapshot, and atomically restores missing
-histories and missing markers. Existing local nights are never deleted by an
-imported marker. Preview conflicts and final actual counts are visible.
+The workspace is reconnected and synchronized. Final CI18 journal PNGs are now
+checked in with their original provenance. CI21 adds captured portable-restore
+preview/result screens in both device artifacts. Independent v2 bytes, marker
+checksum/type/UUID/count limits, deletion-only truncation, clean-store deletion
+preservation, old-archive blocking, mixed batch rollback and concurrent restores
+are tested.
 
-New regression tests cover independent v2 bytes, marker checksum/type/UUID/count
-limits, deletion-only archives and truncation, clean-install deletion preservation,
-old-archive resurrection prevention, mixed batch rollback, concurrent restores,
-and UI preview/result with a retained local entry. The first API 37 run passes all 43 tests. API 29 exposed concurrent first-open
-creation across journal helpers and the alarm editor’s scrolling Save target at
-200% text. Opening helpers for one path is now serialized before SQLite schema
-initialization; transactions still race under SQLite. Alarm Save now lives in a
-fixed footer above the keyboard, and a new alarm retains its draft identity.
-These fixes require new complete verification; the verified results above remain the previous merged milestone.
+The first expanded API 29 run exposed simultaneous first-open helpers attempting
+to create the same schema, plus an alarm Save click that did not close the
+scrolling editor at 200% text. Journal database opening now shares a per-path
+process lock before helper initialization; write transactions remain coordinated
+by SQLite. This fixes the observed single-process creation race, not arbitrary
+multi-process schema management. Alarm Save now stays in a fixed footer above
+the keyboard and the draft keeps its identity. Complete build and both 43-test
+suites pass after these fixes. No test was disabled or assertion removed.
 
 ## Remaining production and parity gates
 
@@ -143,7 +146,7 @@ and hardware flush behavior require recorded device-lab runs. TalkBack/RTL/wide
 screens and broader physical accessibility/contrast coverage remain open.
 
 M2 still needs complete combined/raw/audio archives, encryption and portable key
-recovery, deletion propagation, raw/derived/audio ownership and retention,
+recovery, automatic deletion synchronization, raw/derived/audio ownership and retention,
 low-space policy, large-history streaming and provider round-trip verification.
 Current exports are bounded plaintext documents. The researched
 [encrypted archive plan](docs/ENCRYPTED_ARCHIVE_DESIGN.md) defines qualification,
@@ -157,7 +160,7 @@ Measured statistics/stages, sound analysis, watch/Health Connect acquisition,
 challenges, wake checks/escalation, smart wake-up and most integrations remain
 unfinished. [Traceability](docs/TRACEABILITY.md) identifies implemented subsets.
 
-Next: qualify portable deletion markers, then continue M2 portability/ownership, then the real capture
+Next: provider readback verification and audit, then M2 archive/ownership work and the real capture
 workflow alongside physical alarm/probe qualification. Stable production signing,
 full dependency notices/SBOM and release qualification remain open. No production
 signing key is committed. Instrumentation uses disposable debug installs and can
