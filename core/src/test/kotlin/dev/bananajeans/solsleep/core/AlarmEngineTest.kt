@@ -15,9 +15,12 @@ class AlarmEngineTest {
     }
     private class Store : AlarmPersistence {
         val data=linkedMapOf<String,AlarmEntry>()
+        var failReplacement=false
         override fun entries()=data.values.toList()
         override fun put(rule: AlarmRule,pending: PendingAlarm?) {data[rule.id]=AlarmEntry(rule,pending)}
-        override fun replacePending(id: String,pending: PendingAlarm) {data[id]=data.getValue(id).copy(pending=pending)}
+        override fun replacePending(id: String,pending: PendingAlarm) {
+            if(failReplacement) throw IllegalStateException("Injected durable-write failure")
+            data[id]=data.getValue(id).copy(pending=pending)}
         override fun setArmed(token: String,armed: Boolean) {
             data.values.find {it.pending?.token==token}?.let {replacePending(it.rule.id,it.pending!!.copy(armed=armed))}
         }
@@ -46,9 +49,11 @@ class AlarmEngineTest {
     private class Platform : WakeScheduler {
         var allowed=true
         var fail=false
+        var onSchedule: (() -> Unit)?=null
         val registrations=mutableMapOf<String,Instant>()
         override fun canSchedule()=allowed
         override fun schedule(rule: AlarmRule,pending: PendingAlarm) {
+            onSchedule?.invoke()
             if(fail) throw IllegalStateException("Injected scheduler failure")
             registrations[pending.token]=pending.at
         }
@@ -206,6 +211,22 @@ class AlarmEngineTest {
         engine.setEnabled("morning",false)
         time.now=Instant.parse("2026-10-17T04:00:00Z")
         assertNull(engine.fire(token))
+    }
+    @Test fun snoozeDoesNotReplaceTheDurableRingingRowBeforeOsRegistration() {
+        val token=ring();val before=current()
+        platform.onSchedule={assertEquals(before,current())}
+        assertTrue(engine.snooze(token))
+        assertEquals(DeliveryState.SNOOZED,current().pending!!.state)
+        assertTrue(current().pending!!.armed)
+    }
+    @Test fun failedSnoozePublicationRetainsOriginalRingingAndCancelsTheOrphanRegistration() {
+        val token=ring();val before=current()
+        store.failReplacement=true
+        assertThrows(IllegalStateException::class.java) {engine.snooze(token)}
+        assertEquals(before,current())
+        assertEquals(setOf(token),platform.registrations.keys)
+        // A new engine instance sees the same durable ringing state after a restart.
+        assertEquals(listOf(before),AlarmEngine(store,platform,time) {zone}.ringing())
     }
     @Test fun enablingADisabledFutureDatedOneShotKeepsTheChosenDate() {
         val future=rule().copy(repeat=Repeat.Once(LocalDate.parse("2027-03-31")),enabled=false)

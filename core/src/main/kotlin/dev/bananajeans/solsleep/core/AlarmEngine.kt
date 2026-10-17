@@ -121,6 +121,7 @@ class AlarmEngine(
             p.state == DeliveryState.RINGING && expired(p, clock.instant())
         } == true }) reconcile()
         return store.entries().filter { it.pending?.state == DeliveryState.RINGING }
+            .sortedBy {it.pending!!.let {p->p.startedAt ?: p.at}}
     }
 
     @Synchronized fun timeout(token: String) {
@@ -146,11 +147,18 @@ class AlarmEngine(
             at = clock.instant().plusSeconds(entry.rule.snoozeMinutes * 60L),
             state = DeliveryState.SNOOZED, snoozes = old.snoozes + 1, armed = false, startedAt = null,
         )
-        store.replacePending(entry.rule.id, next)
-        if (arm(entry.rule, next) != ArmResult.ARMED) {
+        // Keep the durable RINGING row until both replacement side effects succeed.
+        // A process loss before publication resumes the original alarm; a registered
+        // but unpublished token is harmless because fire() cannot claim it.
+        if (register(entry.rule,next)!=ArmResult.ARMED) {
             cancel(next.token)
-            store.replacePending(entry.rule.id, old)
-            return false // Keep ringing if the replacement deadline could not be armed.
+            return false
+        }
+        try {
+            store.replacePending(entry.rule.id,next.copy(armed=true))
+        } catch(e: RuntimeException) {
+            cancel(next.token)
+            throw e
         }
         cancel(old.token)
         return true
@@ -210,23 +218,18 @@ class AlarmEngine(
             PendingAlarm(UUID.randomUUID().toString(), it.at, it.date)
         }
 
-    private fun arm(rule: AlarmRule, p: PendingAlarm): ArmResult {
-        if (!scheduler.canSchedule()) {
-            store.setArmed(p.token, false)
-            return ArmResult.ACCESS_REQUIRED
-        }
-        return try {
-            scheduler.schedule(rule, p)
-            store.setArmed(p.token, true)
-            ArmResult.ARMED
-        } catch (_: SecurityException) {
-            store.setArmed(p.token, false)
-            ArmResult.ACCESS_REQUIRED
-        } catch (_: RuntimeException) {
-            store.setArmed(p.token, false)
-            ArmResult.FAILED
-        }
+    private fun arm(rule: AlarmRule,p: PendingAlarm): ArmResult {
+        val result=register(rule,p)
+        // A storage acknowledgement failure is a storage failure, not a scheduler failure.
+        store.setArmed(p.token,result==ArmResult.ARMED)
+        return result
     }
+
+    private fun register(rule: AlarmRule,p: PendingAlarm): ArmResult = try {
+        if(!scheduler.canSchedule()) ArmResult.ACCESS_REQUIRED
+        else {scheduler.schedule(rule,p);ArmResult.ARMED}
+    } catch(_: SecurityException) {ArmResult.ACCESS_REQUIRED}
+      catch(_: RuntimeException) {ArmResult.FAILED}
 
     private fun expired(p: PendingAlarm, now: Instant): Boolean =
         Duration.between(p.startedAt ?: p.at, now) > if (p.startedAt != null) RING_LIMIT else LATE_GRACE

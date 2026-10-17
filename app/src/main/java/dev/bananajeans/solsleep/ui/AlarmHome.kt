@@ -193,7 +193,7 @@ import kotlinx.coroutines.delay
     val locale=LocalConfiguration.current.locales[0]
     val active=entry.pending?.state==DeliveryState.RINGING
     val switchLabel=stringResource(R.string.alarm_switch,rule.time.toString())
-    Card(onClick=onEdit,shape=RoundedCornerShape(28.dp),
+    Card(onClick=onEdit,enabled=!busy && !active,shape=RoundedCornerShape(28.dp),
         colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.surfaceContainer)) {
         Column(Modifier.padding(20.dp),verticalArrangement=Arrangement.spacedBy(8.dp)) {
             Row(verticalAlignment=Alignment.CenterVertically) {

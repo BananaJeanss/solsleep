@@ -38,22 +38,27 @@ class AlarmUiTest {
     @Test fun createEditSkipToggleAndDeleteAnAlarmUsingTheRealUi() {
         capture("tonight-empty")
         compose.onNodeWithText("Add alarm").performClick()
+        waitForTag("alarm_label")
         compose.onNodeWithTag("alarm_label").performTextInput("Morning")
         compose.onNodeWithTag("alarm_label").performImeAction()
         compose.onNodeWithText("Weekly").performClick()
         capture("alarm-editor")
         compose.onNodeWithTag("save_alarm").performScrollTo().performClick()
         compose.waitUntil(10000) {AlarmGraph.engine(compose.activity).entries().any {it.rule.label=="Morning"}}
+        waitForDescription("Edit alarm")
         compose.onNodeWithContentDescription("Edit alarm").assertExists()
         capture("tonight-alarm")
         compose.onNodeWithContentDescription("Edit alarm").performClick()
+        waitForTag("alarm_label")
         compose.onNodeWithTag("alarm_label").performTextClearance()
         compose.onNodeWithTag("alarm_label").performTextInput("Fresh start")
         compose.onNodeWithTag("alarm_label").performImeAction()
         compose.onNodeWithTag("save_alarm").performScrollTo().performClick()
         compose.waitUntil(10000) {AlarmGraph.engine(compose.activity).entries().single().rule.label=="Fresh start"}
         compose.onNodeWithText("Skip next alarm").performScrollTo().performClick()
+        waitForText("Undo skip")
         compose.onNodeWithText("Undo skip").assertExists().performClick()
+        waitForText("Skip next alarm")
         compose.onNodeWithContentDescription("Enable 07:00 alarm").performClick()
         compose.waitUntil(10000) {!AlarmGraph.engine(compose.activity).entries().single().rule.enabled}
         compose.onNodeWithContentDescription("Enable 07:00 alarm").assertIsOff().performClick()
@@ -64,6 +69,7 @@ class AlarmUiTest {
     }
     @Test fun editorKeepsDraftAndExistingIdentityAcrossActivityRecreation() {
         compose.onNodeWithText("Add alarm").performClick()
+        waitForTag("alarm_label")
         compose.onNodeWithTag("alarm_label").performTextInput("Draft before rotation")
         compose.onNodeWithTag("alarm_label").performImeAction()
         compose.activityRule.scenario.recreate()
@@ -71,7 +77,9 @@ class AlarmUiTest {
         compose.onNodeWithTag("save_alarm").performScrollTo().performClick()
         compose.waitUntil(10000) {AlarmGraph.engine(compose.activity).entries().size==1}
         val original=AlarmGraph.engine(compose.activity).entries().single().rule.id
+        waitForDescription("Edit alarm")
         compose.onNodeWithContentDescription("Edit alarm").performClick()
+        waitForTag("alarm_label")
         compose.onNodeWithTag("alarm_label").performTextClearance()
         compose.onNodeWithTag("alarm_label").performTextInput("Edited after rotation")
         compose.onNodeWithTag("alarm_label").performImeAction()
@@ -91,12 +99,23 @@ class AlarmUiTest {
         compose.activityRule.scenario.recreate()
         compose.waitUntil(10000) {compose.onAllNodesWithContentDescription("Edit alarm").fetchSemanticsNodes().isNotEmpty()}
         compose.onNodeWithContentDescription("Edit alarm").performClick()
+        waitForTag("alarm_label")
         compose.onNodeWithTag("alarm_label").performTextClearance()
         compose.onNodeWithTag("alarm_label").performTextInput("Shift edited")
         compose.onNodeWithTag("alarm_label").performImeAction()
         compose.onNodeWithTag("save_alarm").performScrollTo().performClick()
         compose.waitUntil(10000) {engine.entries().single().rule.label=="Shift edited"}
         assertEquals(original.copy(label="Shift edited",revision=2),engine.entries().single().rule)
+    }
+
+    private fun waitForTag(tag: String) = compose.waitUntil(10000) {
+        compose.onAllNodesWithTag(tag).fetchSemanticsNodes().isNotEmpty()
+    }
+    private fun waitForText(text: String) = compose.waitUntil(10000) {
+        compose.onAllNodesWithText(text).fetchSemanticsNodes().isNotEmpty()
+    }
+    private fun waitForDescription(text: String) = compose.waitUntil(10000) {
+        compose.onAllNodesWithContentDescription(text).fetchSemanticsNodes().isNotEmpty()
     }
 
     private fun capture(name: String) {

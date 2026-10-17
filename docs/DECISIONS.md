@@ -45,7 +45,7 @@ Occurrences have unique tokens, original deadlines, states, snooze counts, and p
 
 OS registration is outside the DB transaction. Reconciliation retries the durable token; acknowledgements are stored separately. Use `SCHEDULE_EXACT_ALARM` / `setAlarmClock`, with visible setup/access checks. No inexact replacement is advertised as armed.
 
-Foreground playback uses alarm audio attributes and a local chime. On boot, schedule through AlarmManager; never start media playback directly from the boot receiver. Recovery retains the original deadline/start. Grace: 10 minutes. Ring limit: 30 minutes. Snooze: five minutes, three attempts. Failed snooze registration keeps the alarm ringing. Simultaneous alarms remain separate occurrences, presented sequentially by one output owner.
+Foreground playback uses alarm audio attributes and a local chime. On boot, schedule through AlarmManager; never start media playback directly from the boot receiver. Recovery retains the original deadline/start. Grace: 10 minutes. Ring limit: 30 minutes. Default snooze: five minutes, three attempts; configurable duration 1–60 minutes and limit 0–10. Failed snooze registration keeps the alarm ringing. Simultaneous alarms remain separate occurrences, presented sequentially by one output owner.
 
 Permissions: exact alarms, alarm UI/notifications, foreground playback, wake lock, vibration, boot recovery. No microphone, health, location, Bluetooth, network, overlay, accessibility, or device-admin access.
 
@@ -56,7 +56,7 @@ References:
 
 ## Initial limits
 
-No tracking, watches, health imports, backups, tasks, streaming, smart wake-up, or vendor service is simulated. M0/M1 are not fully complete: physical acoustic timing, locked boot, OEM survival, and overnight/energy validation remain open.
+No tracking, watches, health imports, full health/audio backups, tasks, streaming, smart wake-up, or vendor service is simulated. Alarm-only archives are described separately below. M0/M1 are not fully complete: physical acoustic timing, locked boot, OEM survival, and overnight/energy validation remain open.
 
 ## ADR-006/007 — Initial alarm portability
 
@@ -77,3 +77,17 @@ before UI actions with `InputManager.getInstance` reflection. AndroidX Test's
 3.7.0 release notes document the replacement with `getSystemService`. Upgrade the
 test dependency rather than disabling API 37 UI checks or patching Android hidden
 APIs. [Release notes](https://developer.android.com/jetpack/androidx/releases/test).
+
+## Snooze publication ordering
+
+A snooze keeps the original RINGING row while registering a fresh future token.
+Only after registration succeeds does one SQLite transaction replace it with the
+armed snooze. Only then can output stop. Failed registration cancels any partial
+registration and leaves the old row; failed publication cancels the unpublished
+new token and keeps the old row. A process loss before publication therefore
+retains the original ringing state for sticky-service/boot recovery. Orphan
+callbacks cannot claim an unpublished token. This differs deliberately from an
+initial save: a new/edit alarm is persisted unarmed first so normal reconciliation
+can repair registration. The engine lock serializes callbacks with publication.
+Tests inspect durable state during registration and inject publication failure;
+physical process-kill/overnight gates still apply.

@@ -39,6 +39,12 @@ class AlarmArchiveTest {
         assertArrayEquals(bytes,archive(rules.reversed()))
         assertEquals(4,preview.alarms.size)
     }
+    @Test fun independentlyWrittenV1FixtureRemainsReadable() {
+        val preview=javaClass.getResourceAsStream("/archives/alarm-v1.json")!!.use {AlarmArchive.inspect(it)}
+        assertEquals(created,preview.createdAt)
+        assertEquals(AlarmRule("portable-fixture",LocalTime.of(6,45),Repeat.Weekly(DayOfWeek.entries.take(5).toSet()),
+            "Original archive",zoneId="Europe/Tallinn",vibrate=false,rampSeconds=45,snoozeMinutes=9,snoozeLimit=7,revision=4),preview.alarms.single())
+    }
     @Test fun emptyArchiveIsValid() {assertTrue(inspect(archive(emptyList())).alarms.isEmpty())}
     @Test fun sharedStorageCodecReadsV1NullableFieldsOmittedByOldWriter() {
         val original=rules[1]

@@ -68,8 +68,7 @@ class RingingActivity : ComponentActivity() {
                 while(isActive) {
                     try {
                         val active=withContext(Dispatchers.IO) {
-                            AlarmGraph.engine(this@RingingActivity).entries()
-                                .firstOrNull {it.pending?.state==DeliveryState.RINGING}
+                            AlarmGraph.engine(this@RingingActivity).ringing().firstOrNull()
                         }
                         if(active==null) {finish();return@repeatOnLifecycle}
                         entry=active
@@ -94,7 +93,7 @@ class RingingActivity : ComponentActivity() {
                 if(done) {
                     RingingService.refresh(this@RingingActivity)
                     val other=withContext(Dispatchers.IO) {AlarmGraph.engine(this@RingingActivity)
-                        .entries().firstOrNull {it.pending?.state==DeliveryState.RINGING}}
+                        .ringing().firstOrNull()}
                     if(other==null) finish() else entry=other
                 } else error=true
             } catch(e: CancellationException) {throw e}

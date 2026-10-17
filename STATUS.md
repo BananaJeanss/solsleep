@@ -43,7 +43,8 @@ must replace the in-progress entries before a production claim.
 
 ## Parity status
 
-A01/A03/A09/A11/A18 and I14/I16 have partial initial implementations. T01–T16,
+A01–A04/A09/A11/A12/A18 and I01/I03/I14/I16 have partial initial implementations.
+See docs/TRACEABILITY.md for exact subsets, tests and missing variants. T01–T16,
 health/statistics, sound analysis, watch support, full health/audio backup, reference import, advanced tasks,
 smart wake-up, smart-home integrations, and AI features remain unimplemented.
 A screenshot, test double, or attractive control is not treated as implementation.
