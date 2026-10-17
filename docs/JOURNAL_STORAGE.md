@@ -221,3 +221,7 @@ capture metadata nor raw motion files; a journal export is not their backup.
 Combined/streamed/encrypted portability and automatic deletion propagation remain
 unimplemented. Empty lock inodes/directories are deliberately retained after raw
 unlink; no secure erasure or file/database atomic commit is claimed.
+
+Finished phone motion has a separate plaintext SOLR archive and staged recoverable
+restore in [MOTION_ARCHIVE.md](MOTION_ARCHIVE.md). Journal JSON/receipts remain
+scoped to journal histories and deletion markers; neither includes raw captures.

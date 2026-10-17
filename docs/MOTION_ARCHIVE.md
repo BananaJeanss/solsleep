@@ -1,6 +1,6 @@
 # Recording archive v1
 
-18 October 2026. Implementation under qualification; see STATUS.md for exact
+18 October 2026. Implemented and software-qualified in PR #8; see STATUS.md for exact
 source and executed results. This is a separate plaintext, single-recording
 format, not a combined app backup, encryption or physiological analysis.
 
@@ -176,3 +176,7 @@ The policy is fault-injected in native tests without filling the CI device disk;
 actual full-disk behavior remains a physical qualification gate.
 https://developer.android.com/reference/android/os/StatFs
 https://developer.android.com/reference/android/os/storage/StorageManager
+
+Provenance limit: capture schema 2 does not store an original IANA time zone, producing build ID or per-stream requested interval. UTC and monotonic instants remain exact; restore does not invent absent provenance. Versioned acquisition provenance remains follow-up work.
+
+Qualified source `36ca8777a4f9b696af4f9cd632f2c99bb5b0e188`, [CI39](https://github.com/BananaJeanss/solsleep/actions/runs/39076468922): 132 JVM, four Python and all 93 native tests on each of API 29/37, zero failures/errors/skips, zero lint issues and shrunk unsigned release. Native UI captures were reviewed; physical gates remain open.

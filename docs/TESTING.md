@@ -200,3 +200,31 @@ fixture's virtual sensor readings are not human sleep/physiological data. Confir
 revocation, process/task-manager stop/reboot and hardware flush behavior in the
 physical lab. Raw capture is not in Journal archives; never run these destructive
 instrumentation fixtures on an install holding personal raw observations.
+
+## Recording archive and restore regression contract
+
+MotionArchiveTest has 12 cases: independent Python fixture read/write byte parity,
+all metadata/original float bytes, strict corruption/truncation/bounds/EOF,
+malformed UTF-8/flags/enum with recomputed hash, source/anchor/index/sequence/
+timestamp validity, thousands of bounded chunks, exact destination comparison,
+cancellation and source retention on sink failure. The standalone Python inspector
+has four tests including every fixture truncation and single-bit mutation.
+
+MotionArchiveStorageTest adds 13 native cases: complete provider→clean-store
+restore/reopen; interruption after synced file; SQL rollback after raw publication;
+local/deleted/request/source conflicts; conflicting raw retention; active capture
+rejection; corrupt/truncated staging/discard; complete preparing-copy recovery;
+provider denied-write/read, truncation and replacement; additive v1 migration and
+independent v2 fixture; low-space before provider/destination and retained retry.
+The low-space counter and post-publication exception are explicit fault injections;
+they do not claim real ENOSPC or hardware power-loss qualification.
+
+A sixth MotionCaptureTest exercises actual ViewModel/provider staging, visible
+preview/explicit Restore at 200% text, complete SQL/raw readback, no active service,
+removed staging and enabled export controls. Its synthetic fixture is labeled as
+test data; motion-archive-large-text.png is captured through PlatformTestStorage.
+The real framework-sensor cases remain unchanged and pass in the same suite.
+
+PR #8 final source and exact CI39 results are in STATUS.md. Tests use disposable
+installs and named private databases/slots, never personal data. No test/assertion
+is disabled. The original 79 native cases plus these 14 give 93 per API.

@@ -70,7 +70,7 @@ physical phone or Wear device is attached to this workspace. Software builds and
 emulator tests can proceed; they cannot establish speaker onset, wrist delivery,
 real overnight motion continuity, or OEM energy behavior. Full release readiness
 remains blocked on those measurements. The manual journal, chunk-publication foundation, portable deletion/readback and
-local export history are now implemented subsets of M2. Experimental phone capture now has local ownership/deletion, bounded storage and streaming file checks. Complete raw/audio archives/encryption, retention and recovery still precede collecting irreplaceable nights or treating this as production. See
+local export history are now implemented subsets of M2. Experimental phone capture now has local ownership/deletion, bounded storage and streaming file checks. Combined raw/audio archives, encryption, retention and physical recovery qualification still precede collecting irreplaceable nights or treating this as production. See
 [the physical qualification protocol](device-lab/README.md) for exact build
 identification and NOT RUN evidence records.
 
@@ -92,3 +92,7 @@ screen-off framework callbacks, pause/resume/readback and hard-alarm preservatio
 No actual phone/watch was connected at this checkpoint. The native runtime path
 is implemented; the 12-hour physical run, reference placement/calibration and
 accuracy/distribution gates are not. See [the capture contract](MOTION_CAPTURE.md).
+
+Single finished-recording plaintext portability is now qualified in PR #8. See
+[MOTION_ARCHIVE.md](MOTION_ARCHIVE.md); no sonar, watch or physiological inference
+is introduced by a raw-data archive.

@@ -50,9 +50,16 @@ Finished recordings can be deleted with a retryable durable deletion workflow.
 
 This is raw movement, **not measured sleep or sleep stages**. Physical overnight
 battery, temperature, placement and alarm reliability are unqualified; keep a
-separately trusted wake-up alarm. Raw recordings are not in Journal exports yet.
-Do not uninstall/switch signers on an installation holding irreplaceable raw data.
-The app explains these limits before starting. See [the capture contract](docs/MOTION_CAPTURE.md).
+separately trusted wake-up alarm. Raw recordings are separate from Journal JSON.
+Finish a recording → **Export recording** to save an unencrypted `.solmotion`
+copy with verified destination readback. **Choose a recording to restore** stages
+and previews it before explicit restore; local records/deletions win and an
+interrupted restore can retry after reopening. Original vectors, sources and
+events are retained; nothing automatically records or arms an alarm. See
+[the archive/recovery contract](docs/MOTION_ARCHIVE.md) and
+[the capture contract](docs/MOTION_CAPTURE.md). Do not uninstall or switch signers
+without verified external copies of irreplaceable records. Sonar, sleep/stage
+inference, watch acquisition and wake-up CAPTCHAs remain unimplemented.
 
 ## App screens
 
@@ -67,8 +74,8 @@ The app explains these limits before starting. See [the capture contract](docs/M
 </p>
 
 [All captured screens, including large text](docs/SCREENSHOTS.md). The tested
-milestone passes 120 JVM tests and all 79 device tests on both API 29 and API 37.
-[Checks and development APK artifact](https://github.com/BananaJeanss/solsleep/actions/runs/39073894634).
+milestone passes 132 JVM tests, four independent Python tests and all 93 device tests on both API 29 and API 37.
+[Checks and development APK artifact](https://github.com/BananaJeanss/solsleep/actions/runs/39076468922).
 
 ## Build
 

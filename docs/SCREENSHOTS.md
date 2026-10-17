@@ -84,3 +84,18 @@ The long screen/dialog scrolls; these captures show its current viewport.
 Counts differ between runs because samples are actually acquired. Requested
 interval and original vectors/clock metadata are retained; these pictures do not
 establish real mattress signals, sleep/stage accuracy or overnight energy.
+
+## Finished-recording restore and export controls
+
+Source `36ca8777a4f9b696af4f9cd632f2c99bb5b0e188`,
+[CI39](https://github.com/BananaJeanss/solsleep/actions/runs/39076468922), PR #8.
+These are exact copied native PNGs after provider staging, explicit restore,
+complete SQL/raw readback and the visible enabled export control at 200% text.
+They use a clearly named synthetic UI fixture, not a human sleep measurement.
+The same suites retain actual virtual SensorManager callback cases separately.
+Both captures were visually reviewed; the long backup explanation scrolls below
+the current viewport. No image generation or screen reconstruction was used.
+
+| Screen | API 37 dark | API 29 light fallback |
+| --- | --- | --- |
+| Restored recording, 200% text | ![Restored recording](screenshots/motion-archive-large-text-api37.png) | ![Restored recording light](screenshots/motion-archive-large-text-api29.png) |

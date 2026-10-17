@@ -7,7 +7,7 @@ satisfy acoustic, OEM, sensor, energy or hardware power-loss gates.
 Use a dedicated reference install. Instrumentation clears/uninstalls debug data;
 CI debug signing identities may change. Before any installation/signing transition
 on a device holding personal records, export, verify and independently reopen the
-copy for portable journal/alarm data. Raw capture has no portable export yet: do not uninstall or change signers on an install holding irreplaceable raw observations. Use a dedicated stable reference install. This protocol does not install, uninstall, clear data, reboot, change settings,
+copy for portable journal/alarm data. Finished raw capture now has separate plaintext `.solmotion` export/readback and staged restore. Verify external copies before uninstalling or changing signers on an install holding irreplaceable observations. Use a dedicated stable reference install. This protocol does not install, uninstall, clear data, reboot, change settings,
 start recording, enable permissions or send reports automatically.
 
 ## Identify the actual build
@@ -94,8 +94,10 @@ Check saved observations after Finish and compare validated file counts with
 per-segment index counts. A process-interrupted publication may leave the index
 behind; missing acknowledged files or mismatched anchors must be reported. Record
 actual interruptions and coverage instead of assuming a continuous night. Raw
-capture is not included in journal JSON and currently has no portable restore;
-do not collect irreplaceable observations or uninstall to test a new signer.
+capture is not included in journal JSON. Finish and export a separate `.solmotion`
+copy, test its explicit restore on a disposable installation and compare exact
+files/source/event metadata before trusting portability or changing signers.
+Physical power-loss, full-disk and commercial-provider behavior remain NOT RUN.
 
 The encrypted-archive design has maintained implementation candidates and test
 requirements, but encryption is not implemented. Finish the selected-library

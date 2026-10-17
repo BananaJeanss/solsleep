@@ -1,19 +1,20 @@
 # Implementation status
 
-18 October 2026 — [phone motion capture and foreground lifecycle fixes, PR #7](https://github.com/BananaJeanss/solsleep/pull/7), merged after exact-source qualification.
+18 October 2026 — [lossless recording backups and recoverable restore, PR #8](https://github.com/BananaJeanss/solsleep/pull/8), merged after exact-source qualification.
 
 This is a **development build**. M0, M1, M2 and M3 remain partial. Full reference
 parity, physiological accuracy and production readiness are not claimed.
 
-## Current continuation under qualification
+## Current tracking and wake-task status
 
-Single finished-recording SOLR archives now have streaming core format, chosen
-provider export/readback, durable preview/staging, conflict-safe file-first restore,
-local deletion markers and a capture schema 1→2 migration. Native controls and
-fault/migration/provider/200% tests are implemented on the motion-archives branch.
-They are **under qualification**; the exact completed baseline below remains PR #7
-until the new native matrix/release checks finish. See docs/MOTION_ARCHIVE.md and
-the latest PLAN.md checklist for limits, recovery ordering and remaining work.
+| Feature | Implemented status |
+| --- | --- |
+| Phone motion | Actual raw accelerometer observations, controls, interruption recovery, saved checks and separate recording backups |
+| Manual journal | Reported rest intervals, corrections, notes/ratings/tags and verified Journal JSON portability |
+| Sleep analysis | Observed-coverage/morning analytics, sleep/awake/onset/stages remain unimplemented |
+| Sonar | Research only; no microphone acquisition or calibrated acoustic/DSP workflow |
+| Wake-up CAPTCHAs | C01–C11 unimplemented; optional durable math is the first planned vertical slice |
+| Wear / Health Connect | Acquisition adapters and physiological validation remain unimplemented |
 
 ## Can it be used overnight?
 
@@ -28,11 +29,13 @@ checkpoint). Audible/haptic wake-up, OEM background behavior, 12-hour battery an
 temperature, real placement/signal usefulness and hardware power-loss durability
 have not been qualified. Emulator callback tests do not close these gates.
 
-Raw recordings are **not included in Journal exports** and have no portable
-recovery format yet. The recording consent explains this before acquisition.
-Do not treat an installation holding irreplaceable raw data as disposable or
-uninstall it to switch debug signers. Instrumentation uses dedicated test installs
-and may clear/uninstall their data.
+Raw recordings are **separate from Journal exports**. Finish a recording and use
+Export recording to save an unencrypted `.solmotion` file. The new workflow
+validates every original chunk/source/event, verifies chosen-provider readback and
+supports explicit staged restore with interrupted-publication retry. Combined/
+encrypted backups and portable capture deletion propagation remain open. Do not
+uninstall or switch signers without verified external recovery copies.
+Instrumentation uses dedicated disposable installs and may clear/uninstall data.
 
 ## Working alarm workflows
 
@@ -85,8 +88,11 @@ session-scoped notification. Play subtype review is still required for that chan
 
 One durable open session, idempotent start identity and expected revisions protect
 state. Separate source segments retain boot/stream identities, sensor descriptors,
-wall/monotonic anchors, requested interval and original finite float vectors in
-m/s² including gravity. Duplicate/late/invalid readings stay missing; timestamp
+wall/monotonic anchors and original finite float vectors in
+m/s² including gravity. The current request is about 10 Hz, but schema 2 does not
+store a per-source requested interval, producing build or original IANA zone. UTC
+and monotonic times remain exact; absent provenance is not invented on restore.
+Duplicate/late/invalid readings stay missing; timestamp
 gaps and accuracy changes are explicit. A new stream is required after resume.
 PREPARING becomes RECORDING only after a real raw batch publishes. A dead owner
 becomes INTERRUPTED; reopening never invents capture or automatically resumes it.
@@ -108,58 +114,97 @@ objectives remain unqualified. Current raw bound is 64 MiB per session, with a
 A completed/failed session can enter durable DELETING before raw removal. Only
 owned regular files in its UUID namespace are removed under the existing lock;
 unknown files/symlinks retain a retryable error. Directory sync precedes SQL
-metadata removal. The empty lock inode/directory remains; unlink is not secure
-erasure. Manual journals and alarms are untouched. Recording history uses bounded
-pages; source/event and file-path metadata pagination remain open.
+metadata removal. A local identity/request marker now commits with metadata
+deletion, blocking an older copy from resurrecting that identity on this install.
+The empty lock inode/directory remains; unlink is not secure erasure. Manual
+journals and alarms are untouched. Recording history uses bounded pages; source/event and file-path metadata pagination remain open.
 
-See [MOTION_CAPTURE.md](docs/MOTION_CAPTURE.md) and the [SQL fixture](schemas/capture/1.sql).
+See [MOTION_CAPTURE.md](docs/MOTION_CAPTURE.md), [schema 2](schemas/capture/2.sql)
+and its non-destructive schema 1 migration fixture.
 The older debug-only five-minute probe still stores diagnostic counters, not a
 night. Its components are absent from release; the actual recorder and its
 SPECIAL_USE permission are intentionally present in release now.
 
+## Finished-recording portability
+
+The separate plaintext SOLR v1 format preserves the original finished state,
+identities/revision/timestamps, all source descriptors/counters/anchors, all events
+with original order/sequence/detail and exact SOLM raw bytes. A strict bounded
+sequential container has no archive paths or compression; whole-envelope and
+per-chunk SHA-256 plus exact EOF reject corruption. It is not authentication or
+encryption. Limits: 2 MiB metadata, 512 sources, 10,000 events, 32,768 chunks and
+64 MiB raw. Oversized originals remain retained; nothing is silently omitted.
+
+Export freezes/validates a private spool before opening the provider output,
+closes it, reopens the chosen URI, validates and compares exact fingerprints.
+Written-unverified differs from failed write. Current raw-export outcomes do not
+yet have persistent receipts; journal receipts still describe Journal JSON only.
+
+A fully validated/synced private staging copy precedes preview and explicit
+Restore. No active capture may run. Existing session/request/source identities and
+local deletion markers win. Already-present raw files must be an exact subset;
+conflicting/unknown bytes remain retained. Exact chunk publication precedes one
+transaction inserting all metadata. An injected interruption or SQL rollback
+retains invisible partial raw files and the full recovery archive for an identical
+retry after reopening. There is no file/SQLite atomicity claim or automatic
+acquisition/alarm start. Discard removes the recovery copy; partially published
+orphan files are conservatively retained. Automatic orphan reclamation is open.
+
+Capture schema 1→2 adds original imported event sequences beside local SQLite
+row IDs, avoiding collisions, and minimal local deletion identities. Migration
+retains original rows. Deletions before migration cannot be reconstructed, and a
+clean installation restoring an older recording file cannot know later deletions.
+Native preview/restore/export/low-space/conflict/error controls and 200% text are
+implemented. See [MOTION_ARCHIVE.md](docs/MOTION_ARCHIVE.md), the independent
+Python fixture and `tools/inspect_motion_archive.py` for an Android-independent
+reader. The user chooses document access through SAF without broad storage access.
+
 ## Verified evidence
 
-Tested source: `8c2460e33acab009308992ca33955a9b4c838406`.
-Merge: `9190d971f6963fe47ffc71071401266783dd24bb`.
-[CI36 reports, device captures, logs and debug APK](https://github.com/BananaJeanss/solsleep/actions/runs/39073894634).
+Tested source: `36ca8777a4f9b696af4f9cd632f2c99bb5b0e188`.
+Merge: `8597a92b75a0ae54243926b3b881f02cb54deaf4`.
+[CI39 actual reports, captures, logs and debug APK](https://github.com/BananaJeanss/solsleep/actions/runs/39076468922).
 Documentation/capture copies after this run change no app source.
 
 | Check | Actual result |
 | --- | --- |
-| JVM recurrence | 19 passed |
-| JVM alarm engine | 27 passed |
-| JVM alarm archive | 15 passed |
-| JVM journal/archive | 17 passed |
-| JVM raw motion codec/publication/recovery | 12 passed |
-| JVM destination transfer | 8 passed |
-| JVM export audit | 9 passed |
-| JVM capture buffering/policies/control/anchor/time bounds | 13 passed |
-| API 29 Google APIs x86_64 emulator | All 79 passed |
-| API 37 Google APIs x86_64 emulator | All 79 passed |
+| JVM recurrence / alarm engine / alarm archive | 19 / 27 / 15 passed |
+| JVM journal/archive / destination / export audit | 17 / 8 / 9 passed |
+| JVM raw motion / capture buffering and policy | 12 / 13 passed |
+| JVM recording archive and independent-fixture interoperability | 12 passed |
+| Python independent inspector / fixture reproducibility | 4 tests passed; fixture exact |
+| API 29 Google APIs x86_64 emulator | All 93 passed |
+| API 37 Google APIs x86_64 emulator | All 93 passed |
 | Lint / debug and test APKs | Pass; zero lint issues |
 | Shrunk unsigned release / vital checks | Pass locally and in CI |
-| Original artwork/chime reproducibility | Pass in CI; no image-generated assets |
-| Release manifest | Private recorder + specialUse; no diagnostic/test-provider components or network/microphone/health/Bluetooth permissions |
-| Native saved/200% captures | Reviewed and copied for both APIs with source attribution |
+| Original SVG/chime reproducibility | Pass in CI; no image-generated assets |
+| Release manifest | Private recorder specialUse; no diagnostic/test-provider or network/microphone/health/Bluetooth permissions |
+| Native 200% recording restore/export controls | Actual captures reviewed for both APIs |
 
-**120 JVM tests and 158 device test executions**, zero failures/errors/skips in
-the downloaded final JUnit reports. Each 79-test native suite has 10 alarm-store,
-3 delivery/foreground, 4 alarm UI, 2 diagnostic, 20 journal-store, 2 raw-file,
-7 journal UI, 6 provider, 8 export-history, 12 capture-store and 5 recording UI/
-framework-sensor cases. Host audio is disabled and sensors are virtual.
+**132 JVM tests, four Python tests and 186 device test executions**, zero
+failures/errors/skips in final XML. Each native suite retains the prior 79 cases
+and adds 13 real archive/storage/migration/provider/fault-policy cases plus a
+native 200% preview/restore case. These use real ContentResolver, SQLite and raw
+files. Low-space and process-loss exceptions are injected software checks, not
+physical full-disk/power-loss qualification. Host audio is disabled and sensors
+are virtual. The archive UI fixture is explicitly synthetic original test data.
 
-Evidence includes actual AlarmManager delivery/snooze, repeated framework starts
-racing shutdown, screen-off SensorManager callbacks, pause/resume/new segments,
-unchanged hard alarm deadlines, actual file/vector/source readback, stale action
-rejection, unexpected service-stop retention, explicit old-owner interruption,
-native deletion and 200% consent/control/completed-state workflows. Storage tests
-cover real SQLite/schema/reopen/races/rollback/corruption and mismatched source/
-file progress. No test or assertion was disabled to obtain the pass.
+Source checks include complete metadata and exact float/chunk bytes; source-index
+lag versus missing acknowledged samples; malformed metadata with a recomputed
+checksum; corruption/truncation/limits; provider denial/replacement/readback;
+complete preparing-copy recovery; interruption after synced raw publication;
+SQL rollback after all files publish; exact retry; no local overwrite or deletion
+resurrection; source/request collisions; live-capture rejection; v1/v2 independent
+schema fixtures and migration/reopen; unchanged existing alarm/capture/journal
+suites. No assertion was disabled or test ignored.
 
-Earlier failures exposed a malformed extended-year date bound, a screenshot
-storage import, and UI checks racing rendered state; all were fixed. The API 29
-foreground crash above was fixed rather than dismissed as a flaky test. Earlier
-journal milestones are documented in PLAN.md and PRs #1–#6.
+Local checks caught mixed-type SQLite fixture argument inference; explicit types
+fixed compilation. Five free-space lint warnings led to a documented StatFs
+available-byte safety-floor policy and a distinct retained low-space outcome,
+with no broad suppression. CI38 at the superseded source built successfully;
+its device jobs were cancelled by the refined-source push, so partial XML from
+that run is not claimed as full qualification. PR #7/CI36 established the earlier
+120/79 capture/foreground baseline; PLAN.md retains that source and evidence.
 
 Local commands (JDK 17 / SDK 37.0 / Build Tools 36.0.0):
 
@@ -181,12 +226,16 @@ resource probe is not proof every upstream incremental case is fixed.
   onset, locked boot/update, OEM/Doze/process loss, 12-hour power/temperature,
   real sensor placement/quality, storage faults and assistive interaction.
   [The lab protocol](docs/device-lab/README.md) and blank NOT RUN sheet are ready.
-- **M2 software:** complete combined/raw/audio archives, encryption and portable
-  key recovery, deletion propagation, retention, provider/destination identity,
-  large-history streaming and broader pagination. Encryption is researched, not
+- **M2 software:** combined all-record/audio archives, encryption and portable
+  key recovery, portable capture deletion propagation, raw-export receipts,
+  recovery/orphan retention, provider/destination identity, large-history streaming
+  and broader pagination. Single finished-recording plaintext portability is now
+  qualified; this is not a complete combined backup. Encryption is researched, not
   implemented. Minimum-phone KDF cost also needs physical hardware.
 - **M3/M4:** observed coverage and transparent morning analytics, validated
-  sleep/awake inference and further sensor quality policies. There is no measured
+  sleep/awake inference, versioned acquisition provenance and further sensor quality
+  policies. Optional durable math is the first planned CAPTCHA slice; all task
+  families remain unimplemented. There is no measured
   hypnogram, sleep score, smart wake-up, sound analysis or clinical claim.
 - **M5 and parity:** implement watch/Health Connect acquisition and remaining
   reference families. A real consented sanitized reference CSV is still missing

@@ -51,11 +51,11 @@ clock anchor. Paused time is not recorded or filled.
 
 ## Durable state and observation authority
 
-The separate credential-protected `motion-capture.db` schema 1 uses FULL/WAL,
+The separate credential-protected `motion-capture.db` schema 2 uses FULL/WAL,
 foreign keys, an expected revision, unique start request, and a partial unique
 index allowing only one open session. State and events commit together. Corrupt
 and unknown-schema files are retained, not reset. The checked-in SQL fixture is
-`schemas/capture/1.sql`. Process identity is distinct from the per-service owner;
+`schemas/capture/2.sql`, with the original schema 1 migration fixture retained. Process identity is distinct from the per-service owner;
 boot identity is random and persisted against Android BOOT_COUNT. If boot count
 is unavailable, identity is conservatively limited to the process, not an
 invented cross-process boot relationship. No stable device ID is stored.
@@ -110,10 +110,13 @@ The empty lock inode/directory is retained so a held lock is never unlinked and
 replaced by a parallel writer. Unlink is not secure erasure of flash storage.
 Manual journals and alarm definitions are unaffected.
 
-Raw capture has **no portable export or restore yet** and is not in Journal JSON.
-The consent text states this before data acquisition. Uninstall removes these
-private files. Retention settings, combined encrypted archives, independent raw
-recovery tooling and automatic deletion propagation remain M2 work. Recording
+Finished raw recordings now have separate plaintext SOLR export/readback and
+staged explicit restore, qualified in PR #8. They are not in Journal JSON; consent
+and the recording-backup controls state this. See [MOTION_ARCHIVE.md](MOTION_ARCHIVE.md)
+for bounds, exact original source/event/chunk preservation, schema 1→2 local
+markers and recoverable file-first publication. Uninstall still removes private
+data without an external copy. Combined encrypted archives, portable capture
+markers, raw-export receipts and orphan/retention management remain M2 work. Recording
 history uses bounded pages, newest first, independently of changing wall clocks;
 the open session stays accessible while browsing older history.
 
@@ -167,3 +170,9 @@ References:
 Android's task-manager Stop can kill the process without a service callback.
 Orphan reconciliation therefore remains necessary; a normal onDestroy test alone
 does not qualify process kill or reboot. Those physical cases remain NOT RUN.
+
+Schema 2 / separate recording portability follow-up is qualified in PR #8 (132
+JVM / four Python / 93 native cases per API). Requested cadence is currently
+a code policy, not a saved per-stream field; producing build and original IANA
+zone are also absent. UTC/monotonic anchors stay exact and restore invents no
+missing provenance. See MOTION_ARCHIVE.md and STATUS.md for current evidence.

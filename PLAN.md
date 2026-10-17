@@ -1612,7 +1612,7 @@ execution design and complete binary specification are in docs/MOTION_ARCHIVE.md
 - [x] Add non-destructive capture schema 1→2 migration for local deletion markers and imported original event sequences; retain source event ordering even when destination SQLite row IDs collide.
 - [x] Wire native export, preview/explicit restore, meaningful conflict/failure/recovery controls and unencrypted-data disclosure; no automatic recording/alarm arming.
 - [x] Author independent Python struct fixture and standalone stdlib inspector, plus core/native fault/provider/migration and 200% UI regression cases.
-- [ ] Qualify exact final source on API 29 and 37, inspect actual XML reports and native capture, zero lint and shrunk release; record CI/source below before claiming this milestone qualified.
+- [x] Qualify exact final source on API 29 and 37, inspect actual XML reports and native capture, zero lint and shrunk release; evidence below.
 - [ ] Persist raw-export attempt/verified receipts and provider identity/availability; journal receipts still cover only Journal JSON.
 - [ ] Combine all records/portable capture deletion markers, encrypted streaming/key recovery, orphan/staging retention management and broader pagination.
 - [ ] Physical phone power-loss/full-disk/overnight energy/thermal/OEM/acoustic qualification remains hardware dependent.
@@ -1677,3 +1677,24 @@ and heat. Refuse unsupported routes, retain unknown/gap intervals and give the
 hard alarm output priority. Simulation can verify DSP math but cannot certify a
 phone's acoustic path or respiration accuracy. This hardware gate does not block
 independent CAPTCHA or honest observed-coverage software work.
+
+### Verified recording portability checkpoint — 18 October 2026
+
+PR #8 source `36ca8777a4f9b696af4f9cd632f2c99bb5b0e188`, merged as `8597a92b75a0ae54243926b3b881f02cb54deaf4`. [CI39](https://github.com/BananaJeanss/solsleep/actions/runs/39076468922) passes 132 JVM, four independent Python and all 93 native tests on each of API 29/37, zero failures/errors/skips, zero lint issues, reproducible original assets and shrunk unsigned release. Final actual XML and native 200% restore/export captures were reviewed. Local clean debug/test APKs, lint, release and final permissions/components pass. Schema 1→2 and source/request/deletion/raw conflict, provider, staged-copy/process-loss and post-file SQL-failure retries are exercised without resetting data.
+
+The first local test compile exposed mixed fixture argument types; explicit types fixed it. Available-space lint warnings led to a documented free-space floor and useful retained low-space outcome. Superseded CI38 device jobs were cancelled by the refined push and are not counted as a full pass. No assertion/test was disabled. Single finished-recording plaintext portability is complete at this scope; combined/encrypted archives, portable capture markers, raw-export receipts, orphan/retention management and physical full-disk/power-loss/overnight results remain open. Sonar, sleep inference, watch acquisition and CAPTCHAs remain unimplemented, with explicit execution gates above.
+
+Primary documentation rechecked for the status/execution follow-up:
+- Reference CAPTCHA settings, per-alarm policy, preview and fallback catalogue:
+  https://sleep.urbandroid.org/docs/alarms/captcha.html
+- Reference sensor/sonar route and placement requirements:
+  https://sleep.urbandroid.org/docs/sleep/sensors.html
+- Android accessibility: https://developer.android.com/guide/topics/ui/accessibility/apps
+- Microphone FGS permission/while-in-use/start restrictions:
+  https://developer.android.com/develop/background-work/services/fgs/service-types#microphone
+
+These describe requirements, not SolSleep implementation or independent validation
+of vendor performance/audibility/safety claims. Calibration must measure the real
+hardware path. Schema 2 also lacks original IANA zone/producing build/per-stream
+requested cadence; preserve actual UTC/monotonic timestamps and implement versioned
+acquisition provenance before treating those missing fields as observed metadata.
