@@ -12,6 +12,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
@@ -140,7 +141,9 @@ import java.time.temporal.ChronoUnit
     var endOffset by rememberSaveable(existing?.id) {mutableStateOf(base?.end?.atZone(zone)?.offset?.id)}
     var note by rememberSaveable(existing?.id) {mutableStateOf(base?.note ?: "")}
     var rating by rememberSaveable(existing?.id) {mutableIntStateOf(base?.rating ?: 0)}
-    var tags by rememberSaveable(existing?.id) {mutableStateOf(ArrayList(base?.tags?.sorted() ?: emptyList()))}
+    var tags by rememberSaveable(existing?.id,stateSaver=listSaver<List<String>,String>(save={it},restore={it.toList()})) {
+        mutableStateOf<List<String>>(base?.tags?.sorted() ?: emptyList())
+    }
     var tagDraft by rememberSaveable(existing?.id) {mutableStateOf("")}
     val keyboard=androidx.compose.ui.platform.LocalSoftwareKeyboardController.current
     val focus=androidx.compose.ui.platform.LocalFocusManager.current
@@ -152,7 +155,7 @@ import java.time.temporal.ChronoUnit
     fun addTag() {
         val value=tagDraft.trim()
         if(value.isNotEmpty() && value.length<=40 && hasValidUnicode(value) && '\u0000' !in value && (tags.size<32 || value in tags)) {
-            tags=ArrayList((tags+value).distinct());tagDraft=""
+            tags=(tags+value).distinct();tagDraft=""
         }
     }
     val valid=startInstant!=null && endInstant!=null && endInstant>startInstant &&
@@ -190,7 +193,7 @@ import java.time.temporal.ChronoUnit
             FlowRow(horizontalArrangement=Arrangement.spacedBy(8.dp)) {
                 tags.forEach {tag->
                     val removeTag=stringResource(R.string.journal_tag_remove,tag)
-                    InputChip(selected=false,onClick={tags=ArrayList(tags.filterNot {it==tag})},enabled=!busy,
+                    InputChip(selected=false,onClick={tags=tags.filterNot {it==tag}},enabled=!busy,
                     label={Text(tag)},trailingIcon={AppIcon(R.drawable.ic_close,null)},
                     modifier=Modifier.semantics {contentDescription=removeTag})}
             }
