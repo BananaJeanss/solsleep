@@ -200,7 +200,7 @@
     <string name="capture_notifications_needed">Allow notifications and this recording channel so the ongoing Stop control stays visible.</string>
     <string name="capture_allow_notifications">Allow notifications</string>
     <string name="capture_notification_settings">Recording notification settings</string>
-    <string name="capture_unavailable">Recording storage is unavailable. Existing files are retained; recording is disabled.</string>
+    <string name="capture_unavailable">Cannot load recording storage. Existing files are retained. If recording is active, use its notification to finish.</string>
     <string name="capture_error">The recording command could not finish. Check the saved state below. Existing observations are retained.</string>
     <string name="capture_consent">This experimental feature saves your phone’s accelerometer readings locally. Movement is not a measurement of sleep, and battery use and overnight reliability are not yet qualified.
 

@@ -35,20 +35,32 @@ class RingingService : Service() {
     private var destroyed=false
     private var generation=0
     private var elapsedDeadline=Long.MAX_VALUE
+    private var latestStartId=0
     private val poll=Runnable {refreshActive()}
 
     override fun onCreate() {
-        super.onCreate();running=true;createChannel(this)
+        super.onCreate();createChannel(this)
+        promote()
+        // Observers must not treat a merely constructed service as foreground-ready.
+        running=true
     }
     override fun onStartCommand(intent: Intent?,flags: Int,startId: Int): Int {
-        startForeground(NOTIFICATION,notification(null),ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK)
+        latestStartId=startId
+        promote()
         refreshActive()
         return START_STICKY
+    }
+    private fun promote()=startForeground(NOTIFICATION,notification(null),ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK)
+    private fun stopCurrent(startId: Int) {
+        // A newer start may already be in ActivityManager but not delivered to this main thread.
+        // Unconditional stopSelf can then crash the process for an unacknowledged foreground start.
+        if(stopSelfResult(startId)) stopForeground(STOP_FOREGROUND_REMOVE)
     }
 
     private fun refreshActive() {
         handler.removeCallbacks(poll)
         val request=++generation
+        val startId=latestStartId
         val timedOut=token?.takeIf {SystemClock.elapsedRealtime()>=elapsedDeadline}
         AlarmGraph.io.execute {
             val outcome=runCatching {
@@ -62,12 +74,12 @@ class RingingService : Service() {
                     // A transient storage read failure must not silence already validated output.
                     if(audio!=null && SystemClock.elapsedRealtime()<elapsedDeadline)
                         handler.postDelayed(poll,5000)
-                    else {stopForeground(STOP_FOREGROUND_REMOVE);stopSelf()}
+                    else stopCurrent(startId)
                     return@post
                 }
                 val active=outcome.getOrNull()
                 if(active==null) {
-                    stopForeground(STOP_FOREGROUND_REMOVE);stopSelf();return@post
+                    stopCurrent(startId);return@post
                 }
                 val p=active.pending!!
                 if(token!=p.token) {

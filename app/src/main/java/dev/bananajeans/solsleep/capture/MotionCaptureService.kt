@@ -68,11 +68,11 @@ class MotionCaptureService: Service(),SensorEventListener {
     }
     override fun onStartCommand(intent: Intent?,flags: Int,startId: Int): Int {
         val action=intent?.action
-        if(action !in setOf(START,RESUME,PAUSE,STOP)) {stopSelfResult(startId);return START_NOT_STICKY}
         try {
             // Keep the platform deadline independent of any database/file work on the worker.
             startForeground(NOTIFICATION,notification(null),if(Build.VERSION.SDK_INT>=34) ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE else 0)
         } catch(_: Exception) {CaptureRuntime.failed();stopSelfResult(startId);return START_NOT_STICKY}
+        if(action !in setOf(START,RESUME,PAUSE,STOP)) {stopCurrent(startId);return START_NOT_STICKY}
         handler.post {
             latestCommand=startId
             try {
@@ -91,7 +91,7 @@ class MotionCaptureService: Service(),SensorEventListener {
                         }
                     }
                 }
-                if(current==null) {stopForeground(STOP_FOREGROUND_REMOVE);stopSelfResult(startId)} else updateNotification()
+                if(current==null) stopCurrent(startId) else updateNotification()
             } catch(error: Exception) {CaptureRuntime.failed();interrupt(error)}
         }
         return START_NOT_STICKY
@@ -197,8 +197,9 @@ class MotionCaptureService: Service(),SensorEventListener {
             val reason=(error as? CaptureStopped)?.reason ?: CaptureReason.STORAGE
             finish(if(current?.state==CaptureState.PREPARING && reason==CaptureReason.NO_SENSOR) CaptureState.FAILED else CaptureState.INTERRUPTED,reason)
         } catch(_: Exception) { /* Preserve inaccessible database and raw files; UI exposes unavailable state. */ }
-        stopForeground(STOP_FOREGROUND_REMOVE);stopSelfResult(latestCommand)
+        stopCurrent(latestCommand)
     }
+    private fun stopCurrent(startId: Int) {if(stopSelfResult(startId)) stopForeground(STOP_FOREGROUND_REMOVE)}
     private fun notification(session: CaptureSession?): Notification {
         val open=PendingIntent.getActivity(this,0,Intent(this,MotionCaptureActivity::class.java),PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
         val builder=NotificationCompat.Builder(this,CHANNEL).setSmallIcon(R.drawable.ic_moon)

@@ -137,8 +137,11 @@ class MotionCaptureTest {
         start();val id=session().id
         click("Finish recording");await {session().state==CaptureState.COMPLETED && CaptureRuntime.liveOwner==null}
         assertTrue(summary(id).samples>0)
-        compose.onNodeWithTag("capture_home").performScrollToNode(hasTestTag("capture_state_$id"))
-        compose.onNodeWithTag("capture_state_$id").assertIsDisplayed()
+        compose.waitUntil(15000) {runCatching {
+            compose.onNodeWithTag("capture_home").performScrollToNode(hasTestTag("capture_state_$id"))
+            compose.onNodeWithTag("capture_state_$id").assertIsDisplayed().assertTextEquals("Finished · Saved observations retained");true
+        }.getOrDefault(false)}
+        compose.onNodeWithTag("capture_state_$id").assertTextEquals("Finished · Saved observations retained")
         InstrumentationRegistry.getInstrumentation().uiAutomation.takeScreenshot().let {bitmap->
             PlatformTestStorageRegistry.getInstance().openOutputFile("phone-motion-large-text.png").use {bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG,100,it)}
         }
