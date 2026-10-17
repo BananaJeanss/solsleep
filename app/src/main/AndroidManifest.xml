@@ -4,6 +4,7 @@
     <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.VIBRATE" />
@@ -16,11 +17,17 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity android:name=".capture.MotionCaptureActivity" android:exported="false" />
         <activity android:name=".alarm.RingingActivity" android:exported="false"
             android:directBootAware="true" android:showWhenLocked="true" android:turnScreenOn="true"
             android:launchMode="singleTask" android:excludeFromRecents="true" />
         <service android:name=".alarm.RingingService" android:exported="false"
             android:directBootAware="true" android:foregroundServiceType="mediaPlayback" />
+        <service android:name=".capture.MotionCaptureService" android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="User-started overnight phone accelerometer recording with visible stop control; no microphone, location, exercise, or body sensors. Stops on interruption; never starts from boot." />
+        </service>
         <receiver android:name=".alarm.AlarmReceiver" android:exported="false" android:directBootAware="true" />
         <receiver android:name=".alarm.RecoveryReceiver" android:exported="true" android:directBootAware="true">
             <intent-filter>

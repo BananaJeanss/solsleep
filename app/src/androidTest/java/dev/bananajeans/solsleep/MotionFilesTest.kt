@@ -27,7 +27,7 @@ class MotionFilesTest {
     }
     @Test fun realFilesystemRecoveryAtEveryPublicationBoundary() {
         ChunkCheckpoint.entries.forEachIndexed {index,point->
-            val next=chunk.copy(sequence=index.toLong())
+            val next=chunk.copy(sequence=index.toLong(),samples=chunk.samples.map {it.copy(elapsedNanos=it.elapsedNanos+index*1000L)})
             try {MotionFiles.forSession(context,id) {if(it==point) throw IOException("injected")}.publish(next);fail("Expected interruption")}
             catch(_: IOException) { }
             val result=MotionFiles.forSession(context,id).recover()

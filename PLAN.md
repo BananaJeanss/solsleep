@@ -1534,3 +1534,25 @@ software or virtual-device results as physical evidence. The repeatable next lab
 steps and collector are in `docs/device-lab/README.md`; information collection
 alone passes no gate. Independent software work remains authorized in this plan.
 M0/M1/M2 remain partial; the full production/readiness and parity scope is open.
+
+### Phone motion recording continuation — 18 October 2026 (qualification pending)
+
+Prioritize a useful recording vertical slice now that bounded journal portability
+is qualified. This changes execution order, not the unclosed complete-archive,
+encryption/recovery, reference-import or physical readiness gates. The Phone
+motion screen must disclose that raw observations are not yet portable before
+starting. No fabricated sleep summary or inactive tracking controls are allowed.
+
+- [x] Implement finite monotonic bounded batching, actual anchors, publish-before-index acknowledgement and identical retry.
+- [x] Implement independent credential-protected capture state/source/event schema, durable idempotency, one open session, revision checks and orphan interruption.
+- [x] Connect a private user-started specialUse accelerometer service with actual raw chunk publication, notification Finish, pause/resume/finish and bounded wake lock.
+- [x] Add stale/clock/space/time interruption policies, visible stopped/gap states, streaming raw validation, conservative retryable deletion and bounded history pages.
+- [x] Add native consent/control/detail UI and externalized strings without image-generated assets or physiological claims.
+- [ ] Qualify core/native SQLite/actual sensor/UI tests, lint/debug/test APKs and shrunk release on the exact final source.
+- [ ] Review actual API 29/37 captures; preserve the hard alarm across recording controls and stale actions.
+- [ ] Record physical 12-hour energy/temperature/callback/checkpoint/OEM and alarm measurements; no attached reference phone currently.
+- [ ] Complete raw/combined encrypted portability and retention; then build transparent observed-coverage/morning analytics and watch/health adapters.
+
+See docs/MOTION_CAPTURE.md for execution, data ownership, stop conditions,
+permission rationale, test protocol and primary Android documentation. No
+production or sleep-accuracy qualification is inferred from implementation.

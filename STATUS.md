@@ -237,3 +237,20 @@ reference phone and actual measurements are required to continue that lab gate.
 No emulator result is presented as acoustic, physiological, overnight-energy or
 hardware power-loss evidence. M0/M1/M2 remain partial, and substantial feature
 implementation beyond this manual journal/alarm foundation remains.
+
+## Phone motion recording continuation — qualification pending
+
+New source on `feature/phone-motion-capture` adds an experimental real phone
+accelerometer recorder, independent durable session/source/event state,
+pause/resume/finish, explicit gaps and orphan interruption, bounded writes,
+streaming saved-file inspection and conservative retryable deletion. Native
+consent states that this is raw movement, not sleep/stages, and raw files are not
+included in Journal export yet. See [MOTION_CAPTURE.md](docs/MOTION_CAPTURE.md).
+The prior exact-source test counts above do not cover this new source. Expanded
+qualification is running; physical overnight use remains unqualified.
+
+This source intentionally adds SPECIAL_USE to the production manifest for the
+private recorder. The earlier manifest exclusion describes the prior tested
+source; debug probe components must still be absent from release. No microphone,
+network, health, Bluetooth or location permission is introduced. M0–M3 are partial;
+complete raw/encrypted portability, analytics and Wear acquisition remain open.

@@ -64,6 +64,26 @@ class AlarmDeliveryTest {
         @Suppress("DEPRECATION")
         assertFalse(pm.getActivityInfo(ComponentName(context,RingingActivity::class.java),0).exported)
     }
+    @Test fun foregroundRefreshesDuringShutdownCannotCancelANewerUndeliveredStart() {
+        val before=AlarmGraph.engine(context).entries()
+        assertTrue(AlarmGraph.engine(context).ringing().isEmpty())
+        androidx.test.core.app.ActivityScenario.launch(MainActivity::class.java).use {repeat(3) {
+            val gate=java.util.concurrent.CountDownLatch(1)
+            val entered=java.util.concurrent.CountDownLatch(1)
+            AlarmGraph.io.execute {entered.countDown();gate.await(10,java.util.concurrent.TimeUnit.SECONDS)}
+            try {
+                assertTrue(entered.await(10,java.util.concurrent.TimeUnit.SECONDS))
+                RingingService.refresh(context)
+                await {RingingService.running}
+                // Actual framework start requests race the queued no-ringing read/stop callback.
+                repeat(12) {RingingService.refresh(context);SystemClock.sleep(2)}
+            } finally {gate.countDown()}
+            await {!RingingService.running}
+            instrumentation.waitForIdleSync()
+        }}
+        assertEquals(before,AlarmGraph.engine(context).entries())
+        assertFalse(context.getSystemService(android.app.NotificationManager::class.java).activeNotifications.any {it.id==101})
+    }
     private fun await(condition: ()->Boolean) {
         val deadline=SystemClock.elapsedRealtime()+30000
         while(!condition() && SystemClock.elapsedRealtime()<deadline) SystemClock.sleep(100)
