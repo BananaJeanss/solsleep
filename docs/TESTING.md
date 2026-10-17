@@ -58,10 +58,11 @@ identity/drafts, stale-writer rejection and 200% system text. These are distinct
 from a real overnight recorder, actual power loss and physical sleep accuracy.
 See JOURNAL_STORAGE.md and STATUS.md for precise claims and actual run results.
 
-The pinned AGP currently exhibits an observed incremental generated-R dex
-collision after some resource edits. It reproduces locally as duplicate
+An incremental generated-R dex collision was observed with AGP 9.4.1 and
+Gradle 9.7.1 after some resource edits. It reproduces locally as duplicate
 `androidx.activity.compose.R` archives; a fresh app build passes. For a reproducible
-local verification after this failure, run `./gradlew :app:clean --no-daemon`
+local verification if this failure recurs, run `./gradlew :app:clean --no-daemon`
 first, then the documented verification commands in a separate invocation. CI
 uses fresh workspaces. Do not remove dependencies or suppress duplicate classes
-to hide this failure. Re-qualify an upstream fix before removing this note.
+to hide this failure. The Gradle 9.8.1 security update is not evidence that this separate incremental
+issue is fixed. Re-qualify the reproducer before removing this note.
