@@ -1,116 +1,154 @@
 # Implementation status
 
-17 October 2026 — alarm milestone merged in [PR #1](https://github.com/BananaJeanss/solsleep/pull/1).
+17 October 2026 — alarm milestone merged in [PR #1](https://github.com/BananaJeanss/solsleep/pull/1);
+manual journal and persistence foundation merged in [PR #2](https://github.com/BananaJeanss/solsleep/pull/2).
 
-## Current M2 work (verification in progress)
-
-The next slice implements a manual Journal tab: reported intervals with named
-zones/DST handling, nullable ratings, notes/tags, saved corrections, draft
-recreation, deletion, plaintext native export and validated additive restore.
-A separate credential-protected schema keeps alarms independent. Immutable
-revisions, expected-revision writes and transaction rollback prevent lost edits;
-local deletion identities prevent old-archive resurrection on this installation.
-
-The raw-data foundation adds bounded motion chunks, original wall/monotonic
-anchors, SHA-256, file flush/atomic rename/directory flush and recovery that keeps
-invalid files and reports gaps. No production recorder is connected to it.
-See [storage contract and limitations](docs/JOURNAL_STORAGE.md).
-
-Local JVM suite: **83 passed** (61 existing + 10 journal + 12 motion-chunk tests).
-Android build/lint/release and the expanded API 29/37 suites are being verified;
-the device counts below refer to the previous merged alarm milestone until the
-new run is recorded. New instrumentation covers journal revisions/races/rollback,
-clean-store restore/deletion/schema isolation, actual Android filesystem sync and
-manual-journal UI/recreation. No new device results are claimed yet.
-
-This is a development build. M0, M1 and M2 are **partial**. The full feature scope
-and production release gates remain in PLAN.md. Main now contains the app.
+This is a development build. M0, M1 and M2 remain **partial**. Full reference
+parity and production readiness are not claimed.
 
 ## Working workflows
 
-- Native Kotlin / Compose Material 3 Expressive, API 37 target and API 29 minimum.
-- Original editable sleeping Android SVG, Android vector and monochrome icon;
-  no image-generated assets. Reproducible procedural local chime.
+- Kotlin / Compose Material 3 Expressive; API 37 target, API 29 minimum;
+  edge-to-edge layout, dynamic/fallback themes and monochrome vector icons.
+- Original editable sleeping Android artwork and procedural chime. No
+  image-generated assets.
 - Dated, weekday, anchored-interval and alternating ISO-week alarms; fixed or
-  following time zones; labels, enable/disable, edit/delete and skip/undo.
-- Configurable sound ramp, vibration and snooze duration/count; local playback,
-  notification/full-screen controls, snooze/dismiss and bounded ringing.
-- Device-protected alarm-only SQLite state with unique occurrence tokens,
-  atomic claims, stale-action rejection and registration/reboot reconciliation.
-- Snooze retains the original ringing row until replacement OS registration and
-  durable publication succeed. Failed registration/publication keeps it active.
-- Bounded, versioned **plaintext alarm-only** export through a chosen document
-  provider; validation/preview before atomic additive restore. Existing identities
-  are preserved; imported alarms start disabled without pending deliveries.
-- Shared logical codec, schema history fixture and independent archive fixture.
-- Debug-only motion foreground-service probe, limited to five minutes. It stores
-  callback/timestamp statistics, not sensor vectors or sleep records. Probe code,
-  subtype and permission are excluded from release builds.
+  following zones; labels, enable/disable, edit/delete and skip/undo.
+- Configurable ramp, vibration and bounded snooze/dismiss; actual alarm playback,
+  private notification/full-screen controls and device-protected SQLite state.
+- Atomic delivery claims, stale-token rejection and reboot/registration recovery.
+  Failed snooze registration/publication retains the ringing occurrence.
+- Plaintext alarm export, validation/preview and atomic additive disabled restore.
+- **Manual Journal:** reported bed/get-up intervals, optional 1–5 restfulness,
+  notes and removable Unicode tags. Duration is reported rest, not measured sleep.
+  Original zones are retained; DST gaps are rejected and overlaps require an
+  explicit offset. Display respects the device's 12/24-hour setting.
+- Corrections append immutable revisions. Saved corrections can restore an earlier
+  version as a new revision. Stale edits/deletes cannot overwrite newer work.
+  Draft identity, notes and tags survive activity recreation; punctuation inside
+  a tag stays intact. Save/Cancel remain visible above the keyboard at 200% text.
+- Independent credential-protected journal schema with FULL/WAL transactions,
+  expected-revision checks, consistent logical snapshots and explicit errors for
+  inconsistent current pointers. Unknown schemas/corrupt files are retained.
+  Alarm initialization never opens the journal database.
+- Plaintext native journal export includes every correction; inspection validates
+  before preview; missing histories restore atomically. Existing local identities
+  and deletion markers win. Deletion removes all local revisions and retains a
+  minimal identity marker. External old copies are independent; markers are not
+  yet portable.
+- Debug-only five-minute sensor probe verifies screen-off callbacks without
+  changing the hard alarm. Snapshot reads/writes now share a lock, as AtomicFile
+  alone provides no concurrent-access locking. Probe code/permission are absent
+  from release.
+
+## Raw persistence foundation
+
+Bounded versioned motion chunks preserve wall/monotonic anchors, boot/stream
+identity and exact finite float readings. Publication uses file flush, atomic
+same-directory rename and directory flush. Process/OS locks coordinate writers
+and recovery. Recovery verifies hashes and identity, retains invalid bytes,
+rejects conflicting retries and reports sequence gaps.
+
+**No production night recorder is connected to these files.** No measured sleep
+stages, overnight accuracy or five-second recovery objective is claimed.
+See [JOURNAL_STORAGE.md](docs/JOURNAL_STORAGE.md) for formats, independent fixtures,
+publication/recovery contracts and limits.
 
 ## Verified evidence
 
-Tested source: `d8d4484c75873382dd93e2ba24a8b4ef172c07b2`.
-[Passing CI run and downloadable artifacts](https://github.com/BananaJeanss/solsleep/actions/runs/38991928418).
-Documentation/screenshots added afterward do not change the tested app source.
+Tested source: `bf84199ddb61914f81adc968ac8179018cf35a49`.
+Merge: `e0ca2cd72e1d9c978bb6a4631efe568073d0a91f`.
+[Passing CI run, reports, captured screens, logs and debug APK](https://github.com/BananaJeanss/solsleep/actions/runs/39022166466).
+Documentation updates after this run do not change app source.
 
 | Check | Actual result |
 | --- | --- |
-| JVM recurrence | 19 tests passed |
-| JVM alarm engine | 27 tests passed |
-| JVM archive/codec | 15 tests passed |
-| API 29 Google APIs x86_64 emulator | All 17 instrumentation tests passed; zero failures/errors/skips |
-| API 37 Google APIs x86_64 emulator | All 17 instrumentation tests passed; zero failures/errors/skips |
-| Android lint | No issues found locally; CI passes |
-| Debug and instrumentation APKs | Compile/package successfully |
-| Shrunk unsigned release APK | Build and release checks pass |
-| Generated artwork/chime | Reproducibility check passes |
-| Release merged manifest | Diagnostic service/activity/permission absent |
-| Captured UI | Real screens reviewed in API 29 light fallback and API 37 dark/dynamic theme, including the 200% text workflow |
+| JVM recurrence | 19 passed |
+| JVM alarm engine | 27 passed |
+| JVM alarm archive/codec | 15 passed |
+| JVM journal/archive/Unicode/DST | 10 passed |
+| JVM motion codec/publication/recovery | 12 passed |
+| API 29 Google APIs x86_64 emulator | All 36 passed |
+| API 37 Google APIs x86_64 emulator | All 36 passed |
+| Lint, debug and test APKs | Pass locally and in CI |
+| Shrunk unsigned release APK / vital checks | Pass locally and in CI |
+| Artwork/chime | CI reproducibility check passes |
+| Final release manifest | Diagnostic components/special-use permission absent; no network/microphone/health access |
+| Incremental resource probe | Temporary resource addition built under 9.8.1; original restored and clean debug rebuilt |
 
-That is **61 JVM tests plus 34 device test executions**. The 17-test device suite
-contains ten SQLite tests, two alarm delivery/component tests, four UI tests and
-one motion-probe test. Evidence includes actual AlarmManager → private receiver →
-foreground service → durable snooze, SQLite reopen/concurrent claim/rollback,
-clean-store restore, schema compatibility, create/edit/skip/toggle/delete,
-rotation/draft/identity preservation, advanced settings, and 200% system text.
-The motion probe verifies advancing sensor counters during confirmed screen-off,
-explicit stop, and an unchanged independent hard-alarm token/OS deadline.
+That is **83 JVM tests plus 72 device test executions**. Each 36-test device suite
+contains ten alarm-store tests, two delivery/component tests, four alarm UI tests,
+two diagnostic tests, twelve journal-store tests, two motion-file tests and four
+journal UI tests.
 
-These results establish the tested software paths. The emulator uses virtual
-sensors and disabled host audio; it establishes neither audible output nor sleep
-measurement accuracy. Screenshots are in docs/screenshots; see docs/TESTING.md.
+Evidence includes actual AlarmManager → private receiver → playback service →
+durable snooze; SQLite reopen/two-helper races/transaction rollback; checked-in
+schema compatibility; clean-store semantic restore; retained damaged database
+bytes; explicit inconsistent-pointer failure; deleted-identity preservation;
+every archive truncation; single-byte motion corruption; publication interruption
+boundaries; concurrent diagnostic polling; and real create/correct/revision
+restore/delete/recreation/stale-draft/200%-text workflows. Native JSON and binary
+fixtures are independently serialized with Python.
 
-## Concrete roadblock and release gates
+Failed runs exposed a keyboard/large-text Save issue, asynchronous UI-test
+selection, and unsafe concurrent AtomicFile access in diagnostics. The final
+complete suites pass after the layout, focus, synchronization and locking fixes.
+No test was disabled or assertion removed to obtain a pass. Emulator sensors are
+virtual and host audio is disabled: this proves tested software paths, not audible
+output, physical sleep accuracy or hardware power-loss durability.
 
-No physical Android phone or Wear device is attached to this workspace. Closing
-the M0/M1 hardware gates requires measurements that software emulators cannot
-supply: speaker onset/volume and routes, actual locked reboot and update recovery,
-process loss/Doze/OEM behavior, and physical energy/haptic observations. A real
-reference phone and a recorded device-lab run are the next dependency. The app
-must not be advertised as a dependable production alarm until those gates pass.
+Toolchain qualification uses **Gradle 9.8.1**, official distribution SHA-256,
+regenerated wrapper, AndroidX Core/KTX 1.19.1, JDK 17, SDK 37.0 and Build Tools
+36.0.0. The Gradle patch includes upstream build-channel/TLS security fixes.
+See docs/DECISIONS.md and docs/DEPENDENCIES.md.
 
-The short debug probe is a foreground-execution feasibility result, not an
-implemented night recorder. Before collecting irreplaceable nights, M2 still
-requires the health/session schema, revision/chunk publication/recovery, retention,
-full archive/encryption/key-recovery design and fault injection. M3 then requires
-real overnight capture and validation. Store acceptance of a future tracking
-service subtype needs its own review; runtime success is not distribution approval.
+Local commands completed before the execution environment disconnected:
 
-Further physical work includes TalkBack/RTL/wide-screen coverage, denied access,
-full disk/corruption, headphones/Bluetooth/calls, unattended runs, and Wear data
-acquisition. Existing records are never destructively reset to recover a failure.
+```sh
+./gradlew :app:clean --no-daemon
+./gradlew :core:test :app:assembleDebug :app:assembleDebugAndroidTest :app:lintDebug --no-daemon
+./gradlew :app:assembleRelease --no-daemon
+```
 
-## Parity and next work
+CI additionally runs connectedDebugAndroidTest on both APIs. An incremental
+generated-R collision was observed with Gradle 9.7.1; one resource-update probe
+passes with 9.8.1. Broader incremental qualification remains open; the clean-build
+recovery is documented in docs/TESTING.md. Gradle reports deprecations relevant
+to a future Gradle 10 migration; the qualified wrapper remains 9.8.1.
 
-A01–A04/A09/A11/A12/A18 and I01/I03/I14/I16 have partial implementations.
-[Traceability](docs/TRACEABILITY.md) records exact subsets and missing variants.
-Tracking, sleep statistics/sensor history, sound analysis, full health/audio backup,
-reference CSV migration, watch support, escalation/wake checks, challenges,
-smart wake-up, integrations and AI features remain unfinished or unimplemented.
-No screenshot or test double is counted as reference-feature parity.
+## Concrete execution roadblock
 
-Next: validate and merge the journal/chunk slice; complete remaining M2 safety work
-and physical alarm/probe gates; then build a real capture workflow with source
-quality and gaps.
-Production signing, exhaustive dependency notices/SBOM and release qualification
-also remain open. No production signing key is stored in the repository.
+The local execution environment disconnected after validation. New commands fail
+with `409 Conflict, environment_offline: Environment is not connected`.
+The validated code is merged and these records are committed through GitHub.
+Further local implementation, checkout synchronization and copying final journal
+PNGs into the repository require a reconnected workspace. Final captures are
+already preserved in the CI device-results artifacts.
+
+## Remaining production and parity gates
+
+No physical phone or Wear device is attached. Acoustic/haptic onset and routes,
+locked reboot/update, Doze/OEM/process loss, overnight energy, real sensor quality
+and hardware flush behavior require recorded device-lab runs. TalkBack/RTL/wide
+screens and broader physical accessibility/contrast coverage remain open.
+
+M2 still needs complete combined/raw/audio archives, encryption and portable key
+recovery, deletion propagation, raw/derived/audio ownership and retention,
+low-space policy, large-history streaming and provider round-trip verification.
+Current exports are bounded plaintext documents. The researched
+[encrypted archive plan](docs/ENCRYPTED_ARCHIVE_DESIGN.md) defines qualification,
+secret lifecycle, authenticated staging and interop/fault tests; encryption is not
+implemented. A real sanitized reference export fixture is needed before claiming
+Sleep as Android CSV compatibility.
+
+M3 must connect a lawful user-started recorder, checkpoints, pause/resume,
+interruption/gap diagnostics and ownership before overnight validation.
+Measured statistics/stages, sound analysis, watch/Health Connect acquisition,
+challenges, wake checks/escalation, smart wake-up and most integrations remain
+unfinished. [Traceability](docs/TRACEABILITY.md) identifies implemented subsets.
+
+Next after reconnection: continue M2 portability/ownership, then the real capture
+workflow alongside physical alarm/probe qualification. Stable production signing,
+full dependency notices/SBOM and release qualification remain open. No production
+signing key is committed. Instrumentation uses disposable debug installs and can
+clear/uninstall their data; it must not target personal debug records.

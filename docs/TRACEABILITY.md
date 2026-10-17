@@ -18,9 +18,9 @@ family or its physical-device gates pass. See STATUS.md for actual run results.
 | H12 | Manual additions/corrections, notes, optional 1–5 rating, complete immutable revision log and user-facing restore of an earlier version, local deletion marker | JournalTest and JournalStoreTest revision/race/rollback/clean-store restore; JournalUiTest | Tracked interval/awake edits and source observations |
 | H11 | Manual Unicode tags, preserved in revisions and archives | Codec/SQLite round trips | Quantities, rename/merge/undo, search and correlations |
 | I01 | Separate alarm and manual-journal plaintext export, validated preview and atomic additive restore; original journal revisions retained | Archive malformed/bounds/independent fixtures; SQLite clean-store restore/rollback tests | Complete combined sensor/audio archive, portable deletions, encryption/recovery and actual reinstall/provider tests |
-| I03 | User-selected document provider for a manual alarm file | Real Android document contracts; core I/O failures | Provider quota/revocation/offline tests, retained destination and cloud-specific adapters |
+| I03 | User-selected document provider for manual alarm/journal files | Real Android document contracts; core I/O failures | Provider quota/revocation/offline tests, retained destination and cloud-specific adapters |
 | I14 | Tonight, Alarms and manual Journal screens using actual saved records | AlarmUiTest and JournalUiTest real workflows and recreation | Sensor history, dashboard configuration and complete recorded night workflow |
-| I16 | Expressive theme, edge-to-edge layouts, vector/monochrome artwork, localized resources | Lint/build; actual UI tests/screenshots | TalkBack, RTL, wide screens, 200% text, physical motion/contrast audit |
+| I16 | Expressive theme, edge-to-edge layouts, vector/monochrome artwork, localized resources | Lint/build; actual UI tests/screenshots | TalkBack, RTL, wide screens, broader font coverage, physical motion/contrast audit |
 
 All test fixtures are synthetic SolSleep data. The checked-in native archive
 fixture is independently written JSON with a SHA-256 digest; it is not a Sleep as

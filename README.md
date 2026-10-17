@@ -24,7 +24,8 @@ Time-zone and DST behavior is defined and tested in the core; physical-device de
 ## Manual journal
 
 Use **Journal → Add a night** to record remembered bed/get-up times, restfulness,
-notes and tags. Corrections keep all earlier revisions; concurrent stale edits
+notes and tags. Corrections keep all earlier revisions; Saved corrections can restore an earlier
+version as a new revision. Concurrent stale edits
 are rejected. Times retain their original zone, and repeated daylight-saving
 times require choosing the intended offset. Reported duration is not measured
 sleep. You can export every revision, inspect a journal file and restore missing
@@ -40,8 +41,8 @@ See [journal/storage limits](docs/JOURNAL_STORAGE.md).
 </p>
 
 [All captured screens, including large text](docs/SCREENSHOTS.md). The tested
-milestone passes 61 JVM tests and all 17 device tests on both API 29 and API 37.
-[Checks and development APK artifact](https://github.com/BananaJeanss/solsleep/actions/runs/38991928418).
+milestone passes 83 JVM tests and all 36 device tests on both API 29 and API 37.
+[Checks and development APK artifact](https://github.com/BananaJeanss/solsleep/actions/runs/39022166466).
 
 ## Build
 
@@ -54,6 +55,12 @@ Requires JDK 17, Android platform `android-37.0` / API 37, and Build Tools 36.0.
 ```
 
 Debug APK: `app/build/outputs/apk/debug/app-debug.apk`. Debug ID: `dev.bananajeans.solsleep.debug`. Release builds are shrunk and unsigned. No production signing key is committed. Instrumentation requires a running emulator/device; see [docs/TESTING.md](docs/TESTING.md).
+
+Instrumentation installs are disposable and may clear/uninstall debug data.
+Use a dedicated emulator/test install. CI debug signing identities can change;
+export and verify records before switching development builds or signing keys.
+A different signer cannot update an existing install in place. Keep a stable
+signing identity for any installation holding personal records.
 
 ## Alarm setup
 

@@ -66,3 +66,24 @@ first, then the documented verification commands in a separate invocation. CI
 uses fresh workspaces. Do not remove dependencies or suppress duplicate classes
 to hide this failure. The Gradle 9.8.1 security update is not evidence that this separate incremental
 issue is fixed. Re-qualify the reproducer before removing this note.
+
+## Diagnostic concurrency and safe test installs
+
+Diagnostic snapshot reads, writes and deletion share one same-process lock.
+Android AtomicFile itself does not serialize access; on legacy platforms a
+concurrent read can interfere with backup recovery. The regression test races
+actual polling with repeated native durable writes. Alarm UI tests wait for
+rendered enabled controls and editor dismissal; database commit alone is not
+evidence that a subsequent touch target is interactive.
+Reference: https://developer.android.com/reference/android/util/AtomicFile
+
+Instrumentation clears/uninstalls disposable debug state. Use a dedicated emulator
+or test install, never an installation containing personal nights/alarms. CI debug
+signing keys can change between builds; keep one stable signing identity for
+personal development records and verify a portable export before any key/install
+transition. Production signing and real reinstall/provider recovery remain gates.
+
+A temporary resource-addition probe passed with Gradle 9.8.1. Original resources
+were restored and a clean unmodified debug APK rebuilt. This establishes that
+case, not that every previously observed incremental generated-R collision is
+fixed. Final independent reports are linked from STATUS.md.

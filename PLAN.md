@@ -1375,3 +1375,28 @@ ownership, staged atomic restore, deletion-marker conflicts and an independent
 interop/fault-test matrix in `docs/ENCRYPTED_ARCHIVE_DESIGN.md`. This is researched
 design, not an implemented encryption feature. The memory/latency profile needs a
 minimum-supported physical reference phone before performance claims are made.
+
+### Verified M2 progress and execution handoff — 17 October 2026
+
+Merged in PR #2; tested source `bf84199ddb61914f81adc968ac8179018cf35a49`.
+[Passing build and both emulator suites](https://github.com/BananaJeanss/solsleep/actions/runs/39022166466).
+
+- [x] Credential-protected manual journal, immutable corrections and expected-revision writes.
+- [x] Human date/time pickers with explicit DST ambiguity, optional rating, notes and individual tags.
+- [x] Saved-correction restore as a new revision; draft identity/tag preservation; local deletion markers.
+- [x] Bounded plaintext native journal preview/export and atomic additive restore.
+- [x] Checksummed raw motion publication/recovery with file/directory flushing and retained gaps/corruption.
+- [x] Independent JSON/binary/schema fixtures, races/rollback/corruption tests and real Android UI workflows.
+- [x] 83 JVM tests, all 36 device tests on each of API 29 and 37, lint and shrunk release qualification.
+- [x] Gradle 9.8.1 security patch with official checksum, regenerated wrapper and Core/KTX 1.19.1.
+- [x] Serialize diagnostic AtomicFile access; regression-test concurrent polling and durable visible stop.
+- [ ] Reconnect the execution workspace; commands now return environment_offline (409).
+- [ ] Copy the final CI journal captures into docs/screenshots and synchronize the local checkout.
+- [ ] Continue encrypted complete archives, portable deletion, ownership/retention, low-space and streaming work.
+- [ ] Obtain a real sanitized reference export before claiming reference CSV compatibility.
+- [ ] Connect and validate a lawful night recorder; keep raw/derived source quality and gaps explicit.
+- [ ] Physical alarm/overnight/energy/power-loss and Wear validation, release signing and full SBOM/notices.
+
+The workspace disconnection is the concrete current execution roadblock.
+Code and this handoff are committed in GitHub. M0/M1/M2 remain partial;
+neither a production recorder nor complete reference parity is claimed.
