@@ -1,0 +1,8 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application>
+        <!-- Synthetic fixture only. Never packaged in an application APK. -->
+        <provider android:name="dev.bananajeans.solsleep.JournalDocumentProvider"
+            android:authorities="dev.bananajeans.solsleep.debug.test.journal"
+            android:exported="true" />
+    </application>
+</manifest>

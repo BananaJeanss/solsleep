@@ -139,6 +139,33 @@ class JournalUiTest {
             }
         } finally {file.delete()}
     }
+    @Test fun exportShowsUnverifiedReadbackThenARealVerifiedSuccessWithoutChangingTheJournal() {
+        compose.onNodeWithText("Add a night").performClick()
+        compose.onNodeWithTag("journal_note").performScrollTo().performTextInput("Keep this source night")
+        compose.onNodeWithTag("journal_save").assertIsDisplayed().performClick()
+        compose.waitUntil(10000) {records().size==1}
+        compose.waitUntil(10000) {compose.onAllNodesWithTag("journal_save").fetchSemanticsNodes().isEmpty()}
+        val before=JournalStore(compose.activity).use {it.archiveSnapshot()}
+        val uris=listOf("deny_read","normal").map {
+            android.net.Uri.parse("content://dev.bananajeans.solsleep.debug.test.journal/$it/${java.util.UUID.randomUUID()}")
+        }
+        try {
+            fun export(uri: android.net.Uri) {compose.runOnUiThread {
+                androidx.lifecycle.ViewModelProvider(compose.activity)[dev.bananajeans.solsleep.ui.JournalViewModel::class.java].export(uri)
+            }}
+            export(uris[0])
+            waitFor(compose.activity.getString(R.string.journal_export_verify_error))
+            capture("journal-export-unverified")
+            assertEquals(before,JournalStore(compose.activity).use {it.archiveSnapshot()})
+            export(uris[1])
+            waitFor(compose.activity.getString(R.string.journal_exported))
+            compose.onAllNodesWithText(compose.activity.getString(R.string.journal_export_verify_error)).assertCountEquals(0)
+            capture("journal-export-verified")
+            val preview=requireNotNull(compose.activity.contentResolver.openInputStream(uris[1])).use(dev.bananajeans.solsleep.core.JournalArchive::inspect)
+            assertEquals(before.records,preview.records);assertEquals(before.deletedIds,preview.deletedIds)
+            assertEquals(before,JournalStore(compose.activity).use {it.archiveSnapshot()})
+        } finally {uris.forEach {compose.activity.contentResolver.delete(it,null,null)}}
+    }
     private fun capture(name: String) {
         compose.waitForIdle()
         PlatformTestStorageRegistry.getInstance().openOutputFile(name+".png").use {

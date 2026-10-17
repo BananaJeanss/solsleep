@@ -32,6 +32,7 @@ class JournalViewModel(app: Application): AndroidViewModel(app) {
                 mutable.update {it.copy(busy=true,error=null,notice=null,restoreResult=null)}
                 try {block()}
                 catch(_: RevisionConflict) {mutable.update {it.copy(error=R.string.journal_conflict)}}
+                catch(_: JournalVerificationException) {mutable.update {it.copy(error=R.string.journal_export_verify_error)}}
                 catch(c: CancellationException) {throw c}
                 catch(_: Exception) {mutable.update {it.copy(error=errorMessage)}}
                 finally {mutable.update {it.copy(busy=false)}}
@@ -64,7 +65,9 @@ class JournalViewModel(app: Application): AndroidViewModel(app) {
         val snapshot=store {it.archiveSnapshot()}
         withContext(Dispatchers.IO) {
             val resolver=getApplication<Application>().contentResolver
-            requireNotNull(resolver.openOutputStream(uri,"wt")).use {JournalArchive.write(snapshot,it)}
+            JournalDocument.exportVerified(snapshot,
+                {requireNotNull(resolver.openOutputStream(uri,"wt"))},
+                {requireNotNull(resolver.openInputStream(uri))})
         }
         mutable.update {it.copy(notice=R.string.journal_exported)}
     }

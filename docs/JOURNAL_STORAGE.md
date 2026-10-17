@@ -85,9 +85,16 @@ revision chains, checksum, UTF-8 validity, maximum nesting eight, 8 MiB input an
 confidentiality nor authenticity. This format is explicitly plaintext in the UI.
 
 Export takes one transactional logical snapshot of revisions, current pointers and markers, rejects inconsistent state, writes through SAF, closes the
-provider stream and only then reports completion. It never copies a live SQLite
+provider stream, reopens the selected URI and verifies its bounded full-document
+fingerprint before reporting verified completion. The expected bytes are frozen
+and validated before the destination opens, so changes to source records during
+provider I/O cannot change the snapshot being verified. It never copies a live SQLite
 file without its WAL. A provider write/close failure is reported as failed; the
-partial document may remain and the source is unchanged. Inspection validates
+partial document may remain and the source is unchanged. Read/parse/fingerprint/
+input-close failures after output close have a distinct written-but-unverified
+message. A valid but different archive also fails verification. Readback proves
+what the provider returned at that moment; it does not establish remote upload,
+future availability or physical provider durability. Inspection validates
 before showing a preview. Additive restore inserts complete histories for missing
 identities and missing deletion markers in one transaction. Existing local
 identities and local deletions win. Imported markers never delete local nights;
@@ -96,7 +103,7 @@ added/skipped markers and local nights kept despite incoming markers. Counts are
 computed again in the write transaction, so changes after preview cannot bypass
 the policy. Any insertion failure rolls back every new night and marker in that
 batch. Native journal export does not include alarms, raw sensor chunks or audio.
-A future complete archive, encryption, provider round-trip verification,
+A future complete archive, encryption, durable
 last-attempt/success audit and large-journal streaming/partitioning remain open.
 
 `archives/journal-v1.json` and `journal-v2.json` are independently serialized and hashed with Python for
@@ -173,3 +180,15 @@ filesystem/device implementations honoring flushes, requiring physical lab work.
 
 - AOSP SQLiteOpenHelper initialization ordering (version read before migration transaction):
   https://android.googlesource.com/platform/frameworks/base/+/HEAD/core/java/android/database/sqlite/SQLiteOpenHelper.java
+
+- ContentResolver stream ownership, provider-dependent modes and null/error results:
+  https://developer.android.com/reference/android/content/ContentResolver
+- ContentProvider openFile ownership and streaming descriptors:
+  https://developer.android.com/reference/android/content/ContentProvider
+
+The provider regression fixture is declared only in the instrumentation APK.
+It exposes synthetic files in that separate package, limited to canonical UUID
+names and explicit fault scenarios; it has no access to the application's private
+journal. Neither debug nor release application manifests include it. Real cloud
+quota/revocation, system-picker interaction, remote completion and actual reinstall
+must still be qualified separately.

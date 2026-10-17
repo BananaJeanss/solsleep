@@ -108,3 +108,26 @@ checks the preview and confirms the real restore via Compose. It verifies actual
 counts and the preserved local entry and captures preview/result screens. This
 is not a system picker, external provider, cross-app permission, actual uninstall
 or cloud-provider qualification. Those remain separate M2 tests.
+
+## Destination readback verification (results in STATUS.md)
+
+JournalDocumentTest covers exact bytes and output-close-before-read ordering,
+partial-write/quota, flush, output close, read, input close, changed valid archive,
+truncation, validation-before-destination-open and cancellation propagation.
+JournalDocumentProviderTest uses actual Binder/ContentResolver file transfers to
+a provider in the instrumentation package. It tests semantic restore from the
+verified result and preserves complete source revisions and deletion markers
+under denied write/read, truncated read and valid replacement scenarios.
+The fixture is test-only; these are controlled faults, not claims that a commercial
+cloud provider was tested. JournalUiTest checks the real ViewModel and displayed
+unverified/verified states using those provider URIs. It also verifies the saved
+source remains equal and the output document includes all revisions/markers.
+No external system picker or provider cloud upload is implied by this test.
+
+The provider runs as a component of the separate test package, not as Kotlin test
+code loaded into the instrumented target. Its Java-only implementation uses Android
+and JDK APIs: the generated test APK does not contain the target's Kotlin runtime
+(confirmed by inspecting all test DEX class definitions). This avoids an implicit
+runtime dependency on the app being tested. The actual cross-package provider
+suite remains the acceptance check; no fake resolver replaces Binder/file I/O.
+Reference: https://developer.android.com/studio/test/test-in-android-studio

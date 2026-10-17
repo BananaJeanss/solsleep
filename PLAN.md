@@ -1429,3 +1429,20 @@ API 29; path-scoped process opening locks fix it without suppressing schema
 errors or serializing complete write transactions. The alarm editor now has a
 fixed Save footer and stable draft identity after a 200%-text interaction failure.
 Both full device suites pass after these fixes. Provider readback is next.
+
+### Destination verification continuation — 17 October 2026 (verification pending)
+
+Freeze/validate the journal snapshot before the document provider opens. After
+write, flush and close, reopen the same selected URI, parse under the existing
+bounds and compare its full-document fingerprint with the frozen expected bytes.
+Only that result is called verified. Failed writes and written-but-unverified
+copies have different messages; no export path mutates authoritative records.
+
+Qualification adds stream failure/close/cancellation ordering, exact-byte mismatch
+including a different valid archive, and actual Android ContentResolver/Binder
+transfers against an instrumentation-only fault provider. Restore the verified
+preview into a clean database and compare every revision and deletion identity.
+Exercise visible unverified then verified outcomes and retained source data.
+This is current readback verification, not proof of future provider durability,
+remote cloud upload, an actual uninstall, or a durable attempt/success audit.
+Persistent audit, complete archives/encryption, ownership and streaming remain M2.
