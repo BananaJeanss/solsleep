@@ -64,6 +64,7 @@ class AlarmUiTest {
         compose.waitUntil(10000) {compose.onAllNodes(hasContentDescription("Enable 07:00 alarm") and isOff() and isEnabled()).fetchSemanticsNodes().isNotEmpty()}
         compose.onNodeWithContentDescription("Enable 07:00 alarm").assertIsOff().performClick()
         compose.waitUntil(10000) {AlarmGraph.engine(compose.activity).entries().single().rule.enabled}
+        compose.waitUntil(10000) {compose.onAllNodes(hasContentDescription("Enable 07:00 alarm") and isOn() and isEnabled()).fetchSemanticsNodes().isNotEmpty()}
         compose.onNodeWithContentDescription("Delete").performScrollTo().performClick()
         compose.onNodeWithText("Delete",useUnmergedTree=true).performClick()
         compose.waitUntil(10000) {AlarmGraph.engine(compose.activity).entries().isEmpty()}
@@ -139,6 +140,7 @@ class AlarmUiTest {
     private fun saveAlarm() {
         compose.waitUntil(10000) {compose.onAllNodes(hasTestTag("save_alarm") and isEnabled()).fetchSemanticsNodes().isNotEmpty()}
         compose.onNodeWithTag("save_alarm").performScrollTo().assertIsDisplayed().assertIsEnabled().performClick()
+        compose.waitUntil(10000) {compose.onAllNodesWithTag("save_alarm").fetchSemanticsNodes().isEmpty()}
     }
     private fun waitForTag(tag: String) = compose.waitUntil(10000) {
         compose.onAllNodesWithTag(tag).fetchSemanticsNodes().isNotEmpty()
@@ -147,7 +149,7 @@ class AlarmUiTest {
         compose.onAllNodesWithText(text).fetchSemanticsNodes().isNotEmpty()
     }
     private fun waitForDescription(text: String) = compose.waitUntil(10000) {
-        compose.onAllNodesWithContentDescription(text).fetchSemanticsNodes().isNotEmpty()
+        compose.onAllNodes(hasContentDescription(text) and isEnabled()).fetchSemanticsNodes().isNotEmpty()
     }
 
     private fun capture(name: String) {
