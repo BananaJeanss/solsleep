@@ -56,15 +56,19 @@ class JournalUiTest {
     @Test fun unsavedDraftSurvivesActivityRecreation() {
         compose.onNodeWithText("Add a night").performClick()
         compose.onNodeWithTag("journal_note").performScrollTo().performTextInput("Draft kept after rotation")
+        compose.onNodeWithTag("journal_tag_draft").performScrollTo().performTextInput("café, late")
+        compose.onNodeWithContentDescription("Add a tag").performClick()
         val editor=compose.onAllNodes(SemanticsMatcher("journal editor identity") {
             it.config.getOrNull(androidx.compose.ui.semantics.SemanticsProperties.TestTag)?.startsWith("journal_editor_")==true
         }).fetchSemanticsNodes().single().config[androidx.compose.ui.semantics.SemanticsProperties.TestTag]
         compose.activityRule.scenario.recreate()
         compose.onNodeWithTag(editor).assertExists()
+        compose.onNodeWithText("café, late").assertExists()
         compose.onNodeWithTag("journal_note").performScrollTo().assertTextContains("Draft kept after rotation")
         compose.onNodeWithTag("journal_save").assertIsDisplayed().performClick()
         compose.waitUntil(10000) {records().any {it.note=="Draft kept after rotation"}}
         assertEquals(editor.removePrefix("journal_editor_"),records().single().id)
+        assertEquals(setOf("café, late"),records().single().tags)
     }
     @Test fun staleUiDraftRemainsVisibleAndCannotOverwriteAnotherWriter() {
         compose.onNodeWithText("Add a night").performClick()

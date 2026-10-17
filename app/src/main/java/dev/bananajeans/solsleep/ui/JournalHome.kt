@@ -226,7 +226,7 @@ import java.time.temporal.ChronoUnit
                     val changed=local.with(Instant.ofEpochMilli(millis).atZone(ZoneOffset.UTC).toLocalDate())
                     if(picker==1) {start=changed.toString();startOffset=null} else {end=changed.toString();endOffset=null}
                 };picker=0
-            }) {Text(stringResource(R.string.choose_date))}},dismissButton={TextButton(onClick={picker=0}) {Text(stringResource(R.string.cancel))}}) {
+            },enabled=state.selectedDateMillis!=null) {Text(stringResource(R.string.choose_date))}},dismissButton={TextButton(onClick={picker=0}) {Text(stringResource(R.string.cancel))}}) {
                 DatePicker(state)
             }
         } else {
