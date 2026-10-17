@@ -1,63 +1,94 @@
 # Implementation status
 
-17 October 2026 — initial alarm foundation in progress.
+17 October 2026 — first software milestone verified and merged in [PR #1](https://github.com/BananaJeanss/solsleep/pull/1).
 
-This is a development build. M0, M1 and M2 are partially implemented; the full feature
-roadmap and release gates remain in PLAN.md.
+This is a development build. M0, M1 and M2 are **partial**. The full feature scope
+and production release gates remain in PLAN.md. Main now contains the app.
 
-## Implemented first slice
+## Working workflows
 
-- Native Kotlin / Compose Material 3 Expressive app; API 37 target, API 29 minimum.
-- Editable SVG sleeping Android mascot, vector launcher/monochrome icons; no
-  image-generated assets. Procedural local chime.
-- One-time, weekday, interval and alternating-week alarm UI; date/zone settings, labels, on/off, edit/delete, skip/undo.
-- Independently testable time policy: fixed dates, weekly, anchored intervals,
-  alternating ISO weeks, fixed/following zones, DST gaps/overlaps.
-- Durable device-protected alarm-only SQLite state and unique occurrence tokens.
-- Exact registration, readiness/permission flow, reboot/time-change reconciliation.
-- Private receiver/actions and foreground local playback with alarm attributes.
-- Configurable ramp, vibration and snooze duration/limit; dismiss, failed-snooze protection, bounded ringing.
-- Real empty/denied/error UI; editor state and identity survive recreation.
+- Native Kotlin / Compose Material 3 Expressive, API 37 target and API 29 minimum.
+- Original editable sleeping Android SVG, Android vector and monochrome icon;
+  no image-generated assets. Reproducible procedural local chime.
+- Dated, weekday, anchored-interval and alternating ISO-week alarms; fixed or
+  following time zones; labels, enable/disable, edit/delete and skip/undo.
+- Configurable sound ramp, vibration and snooze duration/count; local playback,
+  notification/full-screen controls, snooze/dismiss and bounded ringing.
+- Device-protected alarm-only SQLite state with unique occurrence tokens,
+  atomic claims, stale-action rejection and registration/reboot reconciliation.
+- Snooze retains the original ringing row until replacement OS registration and
+  durable publication succeed. Failed registration/publication keeps it active.
+- Bounded, versioned **plaintext alarm-only** export through a chosen document
+  provider; validation/preview before atomic additive restore. Existing identities
+  are preserved; imported alarms start disabled without pending deliveries.
+- Shared logical codec, schema history fixture and independent archive fixture.
+- Debug-only motion foreground-service probe, limited to five minutes. It stores
+  callback/timestamp statistics, not sensor vectors or sleep records. Probe code,
+  subtype and permission are excluded from release builds.
 
-- Bounded versioned plaintext alarm archives through a chosen document provider;
-  validation/preview before atomic additive restore with imported alarms disabled.
-- Shared logical codec and checked-in schema fixture; no raw live DB file copy.
+## Verified evidence
 
-## Evidence
+Tested source: `d8d4484c75873382dd93e2ba24a8b4ef172c07b2`.
+[Passing CI run and downloadable artifacts](https://github.com/BananaJeanss/solsleep/actions/runs/38991928418).
+Documentation/screenshots added afterward do not change the tested app source.
 
-- 61 JVM tests pass locally (19 recurrence, 27 engine, 15 archive).
-- Debug application and instrumentation APK compilation have completed.
-- Alarm baseline: debug APK, instrumentation APK, Android lint and shrunk release
-  build pass locally; hosted API 37 build/lint/core/release job also passes.
-- API 29 and API 37 expanded suites each passed 14 of 15 tests. The remaining
-  advanced-editor test attempted to click an off-screen control. It now scrolls
-  to that control and waits for the matching loaded record. Stable Espresso
-  3.7.0 resolves the earlier API 37 hidden-method failure.
-- A debug-only motion-service probe and 200% text UI test are implemented;
-  complete runtime validation is pending. The probe is absent from release.
-- New portability/advanced-editor checks are in progress; do not treat baseline
-  results as evidence for changes added afterward.
-- Android tests cover SQLite persistence/concurrency/rollback, receiver/service
-  delivery and snooze, privacy of components, and the real UI workflow.
-- No physical-device/OEM/acoustic/overnight claim is made.
+| Check | Actual result |
+| --- | --- |
+| JVM recurrence | 19 tests passed |
+| JVM alarm engine | 27 tests passed |
+| JVM archive/codec | 15 tests passed |
+| API 29 Google APIs x86_64 emulator | All 17 instrumentation tests passed; zero failures/errors/skips |
+| API 37 Google APIs x86_64 emulator | All 17 instrumentation tests passed; zero failures/errors/skips |
+| Android lint | No issues found locally; CI passes |
+| Debug and instrumentation APKs | Compile/package successfully |
+| Shrunk unsigned release APK | Build and release checks pass |
+| Generated artwork/chime | Reproducibility check passes |
+| Release merged manifest | Diagnostic service/activity/permission absent |
+| Captured UI | Real screens reviewed in API 29 light fallback and API 37 dark/dynamic theme, including the 200% text workflow |
 
-See docs/TESTING.md for commands and the required device lab work. Final results
-must replace the in-progress entries before a production claim.
+That is **61 JVM tests plus 34 device test executions**. The 17-test device suite
+contains ten SQLite tests, two alarm delivery/component tests, four UI tests and
+one motion-probe test. Evidence includes actual AlarmManager → private receiver →
+foreground service → durable snooze, SQLite reopen/concurrent claim/rollback,
+clean-store restore, schema compatibility, create/edit/skip/toggle/delete,
+rotation/draft/identity preservation, advanced settings, and 200% system text.
+The motion probe verifies advancing sensor counters during confirmed screen-off,
+explicit stop, and an unchanged independent hard-alarm token/OS deadline.
 
-## Parity status
+These results establish the tested software paths. The emulator uses virtual
+sensors and disabled host audio; it establishes neither audible output nor sleep
+measurement accuracy. Screenshots are in docs/screenshots; see docs/TESTING.md.
 
-A01–A04/A09/A11/A12/A18 and I01/I03/I14/I16 have partial initial implementations.
-See docs/TRACEABILITY.md for exact subsets, tests and missing variants. T01–T16,
-health/statistics, sound analysis, watch support, full health/audio backup, reference import, advanced tasks,
-smart wake-up, smart-home integrations, and AI features remain unimplemented.
-A screenshot, test double, or attractive control is not treated as implementation.
+## Concrete roadblock and release gates
 
-## Next
+No physical Android phone or Wear device is attached to this workspace. Closing
+the M0/M1 hardware gates requires measurements that software emulators cannot
+supply: speaker onset/volume and routes, actual locked reboot and update recovery,
+process loss/Doze/OEM behavior, and physical energy/haptic observations. A real
+reference phone and a recorded device-lab run are the next dependency. The app
+must not be advertised as a dependable production alarm until those gates pass.
 
-1. Finish validation and fix first-slice defects.
-2. Prove API 37 audio and locked reboot on physical hardware.
-3. Finish the M2 health schema/chunk recovery/encrypted-archive gates before collecting sleep records.
-4. Begin real motion tracking only after the foreground-service feasibility gate.
+The short debug probe is a foreground-execution feasibility result, not an
+implemented night recorder. Before collecting irreplaceable nights, M2 still
+requires the health/session schema, revision/chunk publication/recovery, retention,
+full archive/encryption/key-recovery design and fault injection. M3 then requires
+real overnight capture and validation. Store acceptance of a future tracking
+service subtype needs its own review; runtime success is not distribution approval.
 
-The canonical current source is the implementation branch/PR; main retains the
-planning baseline until the change is merged.
+Further physical work includes TalkBack/RTL/wide-screen coverage, denied access,
+full disk/corruption, headphones/Bluetooth/calls, unattended runs, and Wear data
+acquisition. Existing records are never destructively reset to recover a failure.
+
+## Parity and next work
+
+A01–A04/A09/A11/A12/A18 and I01/I03/I14/I16 have partial implementations.
+[Traceability](docs/TRACEABILITY.md) records exact subsets and missing variants.
+Tracking, sleep statistics/history, sound analysis, full health/audio backup,
+reference CSV migration, watch support, escalation/wake checks, challenges,
+smart wake-up, integrations and AI features remain unfinished or unimplemented.
+No screenshot or test double is counted as reference-feature parity.
+
+Next: complete the physical alarm/probe lab gate; implement the remaining M2 data
+safety work; then build a real capture workflow with source quality and gaps.
+Production signing, exhaustive dependency notices/SBOM and release qualification
+also remain open. No production signing key is stored in the repository.

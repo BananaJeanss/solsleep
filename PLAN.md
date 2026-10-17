@@ -3,7 +3,7 @@
 **Repository:** [BananaJeanss/solsleep](https://github.com/BananaJeanss/solsleep)  
 **Research date:** 17 October 2026  
 **Reference baseline:** Sleep as Android public documentation and release notes, latest documented release **20261006**. [S01] [S02]  
-**Project state:** implementation started after this research baseline. See [STATUS.md](STATUS.md) for current code, tests, and open gates. The repository was empty during the initial planning pass.
+**Project state:** implementation started after this research baseline. See [STATUS.md](STATUS.md) for verified code, tests, and the current physical-device gate, and [docs/TRACEABILITY.md](docs/TRACEABILITY.md) for implemented subsets. The repository was empty during the initial planning pass.
 **Document status:** initial engineering proposal. Implementation choices below are proposed decisions; research findings are identified separately and linked to primary sources.
 
 ## 1. Product contract

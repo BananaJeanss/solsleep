@@ -21,6 +21,17 @@ The first implementation is a **local alarm foundation**, not a finished sleep t
 
 Time-zone and DST behavior is defined and tested in the core; physical-device delivery gates are tracked separately.
 
+## App screens
+
+<p>
+  <img src="docs/screenshots/tonight-empty.png" width="230" alt="SolSleep first alarm screen with its sleeping Android mascot">
+  <img src="docs/screenshots/tonight-alarm.png" width="230" alt="A real scheduled weekday alarm">
+</p>
+
+[All captured screens, including large text](docs/SCREENSHOTS.md). The tested
+milestone passes 61 JVM tests and all 17 device tests on both API 29 and API 37.
+[Checks and development APK artifact](https://github.com/BananaJeanss/solsleep/actions/runs/38991928418).
+
 ## Build
 
 Requires JDK 17, Android platform `android-37.0` / API 37, and Build Tools 36.0.0. Set `ANDROID_HOME` or `sdk.dir` in an untracked `local.properties`.

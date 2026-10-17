@@ -60,9 +60,8 @@ has a five-minute deadline and bounded partial wake lock, no sticky restart, a
 visible Stop action, and no unrelated health/high-rate sensor permissions.
 
 The service, Activity, strings, subtype and special-use permission are debug-only;
-the release source/manifest contains no tracking service. Runtime checks for the
-probe are pending until STATUS.md records actual API-specific results. Even a
-passing emulator probe does not close the chunk durability, 12-hour capture,
+the release source/manifest contains no tracking service. The probe passed on API 29 and API 37 emulators; STATUS.md links the exact
+source/run and test counts. The passing emulator probe does not close the chunk durability, 12-hour capture,
 physical energy, algorithm accuracy or distribution-review gates above.
 
 ## Concrete dependencies
