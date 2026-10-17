@@ -118,4 +118,17 @@ class CaptureStoreTest {
         assertEquals(ids.reversed().take(20),store.sessions(20).map {it.id})
         assertEquals(ids.reversed().drop(20),store.sessions(20,20).map {it.id})
     }
+    @Test fun publishedFileMayLeadIndexButMissingAcknowledgedSamplesAreReported() {
+        val first=start();val source=stream(first);store.openStream(source,owner)
+        val files=MotionFiles.forSession(context,first.id)
+        try {
+            files.publish(MotionChunk(first.id,source.id,boot,0,wall,1,listOf(MotionSample(2,0f,0f,9.81f))))
+            assertEquals(1L,MotionFiles.inspectSession(context,store,first.id).samples)
+            assertTrue(MotionFiles.inspectSession(context,store,first.id).issues.isEmpty())
+            store.checkpoint(source.id,1,0,0);files.eraseOwned()
+            assertEquals(0L,MotionFiles.inspectSession(context,store,first.id).samples)
+            assertTrue(MotionFiles.inspectSession(context,store,first.id).issues.any {it.reason.contains("missing")})
+            assertEquals(1L,store.streams(first.id).single().committedSamples)
+        } finally {files.eraseOwned()}
+    }
 }

@@ -82,7 +82,7 @@ class MotionCaptureService: Service(),SensorEventListener {
                     RESUME->resume(id,revision)
                     PAUSE,STOP-> {
                         val saved=store.get(id)
-                        if(saved!=null && saved.revision==revision && !saved.terminal) {
+                        if(saved!=null && CaptureTransitions.acceptsControl(saved,revision) && !saved.terminal) {
                             if(current?.id==id) finish(if(action==PAUSE) CaptureState.PAUSED else CaptureState.COMPLETED,
                                 if(action==PAUSE) CaptureReason.PAUSE else CaptureReason.STOP)
                             else if(action==STOP && saved.state in setOf(CaptureState.PAUSED,CaptureState.INTERRUPTED))
@@ -172,7 +172,8 @@ class MotionCaptureService: Service(),SensorEventListener {
         }
     }
     private fun finish(to: CaptureState,reason: CaptureReason) {
-        accepting=false;sensors.unregisterListener(this);handler.removeCallbacks(tick)
+        accepting=false;handler.removeCallbacks(tick)
+        try {sensors.unregisterListener(this)} catch(_: Exception) {CaptureRuntime.failed()}
         var target=to;var actualReason=reason
         try {flush()} catch(_: Exception) {
             target=CaptureState.INTERRUPTED
@@ -181,8 +182,7 @@ class MotionCaptureService: Service(),SensorEventListener {
         }
         try {
             current?.let {saved->
-                val allowedTarget=if(saved.state==CaptureState.PREPARING && target==CaptureState.PAUSED) CaptureState.INTERRUPTED else target
-                current=store.transition(saved.id,saved.revision,allowedTarget,actualReason,ownerId,wall(),elapsed(),boot())
+                current=store.transition(saved.id,saved.revision,target,actualReason,ownerId,wall(),elapsed(),boot())
             }
         } finally {
             buffer=null;stream=null;current=null;acknowledgedSamples=-1;acknowledgedRejected=-1
@@ -219,7 +219,7 @@ class MotionCaptureService: Service(),SensorEventListener {
         handler.post {
             try {if(current!=null) finish(CaptureState.INTERRUPTED,CaptureReason.SERVICE_STOP)}
             catch(_: Exception) {CaptureRuntime.failed()}
-            finally {store.close();CaptureRuntime.closed(ownerId)}
+            finally {try {store.close()} finally {CaptureRuntime.closed(ownerId)}}
         }
         super.onDestroy()
     }

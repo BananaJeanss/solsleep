@@ -19,8 +19,13 @@ data class CaptureSession(val id: UUID,val requestId: UUID,val ownerId: UUID,val
 
 /** State is durable intent/last known acquisition, never a claim that a dead process is recording. */
 object CaptureTransitions {
+    /** The automatic first-checkpoint acknowledgement must not invalidate a user's Stop/Pause.
+     * An intervening pause/resume advances farther and still rejects the old control.
+     */
+    fun acceptsControl(session: CaptureSession,revision: Long): Boolean=
+        session.revision==revision || (session.state==CaptureState.RECORDING && revision>0 && session.revision-1==revision)
     fun permits(from: CaptureState,to: CaptureState): Boolean=when(from) {
-        CaptureState.PREPARING->to in setOf(CaptureState.RECORDING,CaptureState.INTERRUPTED,CaptureState.FAILED,CaptureState.COMPLETED)
+        CaptureState.PREPARING->to in setOf(CaptureState.RECORDING,CaptureState.PAUSED,CaptureState.INTERRUPTED,CaptureState.FAILED,CaptureState.COMPLETED)
         CaptureState.RECORDING->to in setOf(CaptureState.PAUSED,CaptureState.INTERRUPTED,CaptureState.COMPLETED)
         CaptureState.PAUSED,CaptureState.INTERRUPTED->to in setOf(CaptureState.PREPARING,CaptureState.COMPLETED)
         CaptureState.COMPLETED,CaptureState.FAILED->to==CaptureState.DELETING

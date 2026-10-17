@@ -10,7 +10,7 @@ import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
-import androidx.test.services.storage.PlatformTestStorageRegistry
+import androidx.test.platform.io.PlatformTestStorageRegistry
 import dev.bananajeans.solsleep.alarm.AlarmGraph
 import dev.bananajeans.solsleep.capture.*
 import dev.bananajeans.solsleep.core.*
@@ -45,6 +45,7 @@ class MotionCaptureTest {
         shell("appops set ${context.packageName} SCHEDULE_EXACT_ALARM allow")
         shell("input keyevent KEYCODE_WAKEUP")
         CaptureRuntime.clearError()
+        compose.activityRule.scenario.recreate()
     }
     @After fun cleanup() {
         shell("input keyevent KEYCODE_WAKEUP");shell("settings put system font_scale 1.0")
@@ -133,5 +134,13 @@ class MotionCaptureTest {
         assertNull(CaptureRuntime.liveOwner);assertEquals(0L,summary(old.id).samples)
         compose.onNodeWithTag("capture_home").performScrollToNode(hasTestTag("capture_state_${old.id}"))
         compose.onNodeWithTag("capture_state_${old.id}").assertTextEquals("Interrupted · Recording has stopped")
+    }
+    @Test fun firstCheckpointDoesNotInvalidateThePreparationFinishControl() {
+        start();val recording=session();assertEquals(2L,recording.revision)
+        val initialFinish=Intent(context,MotionCaptureService::class.java).setAction(MotionCaptureService.STOP)
+            .putExtra(MotionCaptureService.ID,recording.id.toString()).putExtra(MotionCaptureService.REVISION,1L)
+        context.startService(initialFinish)
+        await {session().state==CaptureState.COMPLETED && CaptureRuntime.liveOwner==null}
+        assertTrue(summary(recording.id).samples>0)
     }
 }

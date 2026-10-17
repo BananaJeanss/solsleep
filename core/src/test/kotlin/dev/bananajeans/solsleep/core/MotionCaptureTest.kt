@@ -109,4 +109,13 @@ class MotionCaptureTest {
         assertFalse(MotionCapturePolicy.hasSpace(reserve,cap-10,11))
         assertFalse(MotionCapturePolicy.hasSpace(reserve,cap))
     }
+    @Test fun initialControlSurvivesOnlyAutomaticFirstCheckpointAndNeverAResume() {
+        val preparing=CaptureSession(session,UUID.randomUUID(),UUID.randomUUID(),CaptureState.PREPARING,wall,wall,1)
+        assertTrue(CaptureTransitions.acceptsControl(preparing,1))
+        assertTrue(CaptureTransitions.acceptsControl(preparing.copy(state=CaptureState.RECORDING,revision=2),1))
+        assertFalse(CaptureTransitions.acceptsControl(preparing.copy(state=CaptureState.PAUSED,revision=3),2))
+        assertFalse(CaptureTransitions.acceptsControl(preparing.copy(state=CaptureState.PREPARING,revision=4),2))
+        assertFalse(CaptureTransitions.acceptsControl(preparing.copy(state=CaptureState.RECORDING,revision=5),2))
+        assertTrue(CaptureTransitions.acceptsControl(preparing.copy(state=CaptureState.RECORDING,revision=5),4))
+    }
 }
