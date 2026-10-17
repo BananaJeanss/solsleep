@@ -1336,3 +1336,35 @@ The reference's release notes take precedence for identifying newly announced fe
 [R05]: https://academic.oup.com/sleep/article/44/10/zsab103/6232042 "Measuring sleep regularity metric properties"
 
 [D34]: https://www.gnu.org/licenses/gpl-faq.en.html#GPLIncompatibleLibs "GPL FAQ on incompatible libraries"
+
+### M2 execution checkpoint — 17 October 2026
+
+The next implemented slice adds a real manual Journal workflow and the persistence
+foundation that a recorder will need. See `docs/JOURNAL_STORAGE.md` for the
+executable contract, independently authored archive/binary fixtures and remaining
+limits. Verification results belong in STATUS.md after actual runs.
+
+- Credential-protected schema 1, completely independent from direct-boot alarms.
+- Immutable full manual-report revisions, expected-revision concurrency checks,
+  transactional current pointer, complete correction history and local deletion
+  identity markers. No invented measurements/stages.
+- Human date/time pickers, explicit DST ambiguity handling, notes/rating/tags,
+  draft recreation, correction and complete local revision deletion.
+- Bounded plaintext native journal export, validated preview and atomic additive
+  restore; existing identities/deletions win. This is not the full encrypted
+  health/raw/audio archive required for M2 completion.
+- Bounded binary motion chunks with original monotonic/wall anchors and source/
+  boot identity; fsync → atomic rename → directory fsync; verified staging recovery,
+  conflict preservation, corrupt-byte retention and gap diagnostics.
+- Schema fixture, two-connection races, transaction fault injection, clean-install
+  semantic restore, every-byte truncation/corruption, publication crash points,
+  actual Android filesystem flushing and real UI workflows added to test suites.
+
+Remaining M2 dependencies are explicit: real sanitized reference export fixtures
+before claiming Sleep as Android import compatibility; full archive/encryption/
+key recovery; portable deletion propagation; raw/derived/audio ownership and
+retention; low-disk policy; large-history streaming; physical power-loss validation.
+M3 must connect a lawful user-started recorder to the durable store, add bounded
+checkpoints and pause/resume/interruption states, then validate real overnight
+capture and energy. The debug sensor probe is not that recorder. The five-second
+raw tail target remains unmeasured and must not be advertised as achieved.

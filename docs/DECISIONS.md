@@ -91,3 +91,19 @@ initial save: a new/edit alarm is persisted unarmed first so normal reconciliati
 can repair registration. The engine lock serializes callbacks with publication.
 Tests inspect durable state during registration and inject publication failure;
 physical process-kill/overnight gates still apply.
+
+## M2 — Manual journal and raw authority
+
+Use a separate lazy credential-protected SQLite helper for manual rest reports.
+Append full immutable revisions with expected-revision checks, and keep hard
+alarms independent of journal errors. A plaintext logical journal archive precedes
+live night recording. Deletion removes revisions and leaves a local identity
+marker so additive imports cannot resurrect a deleted night on this installation.
+See [JOURNAL_STORAGE.md](JOURNAL_STORAGE.md) for format, limits and remaining work.
+
+Raw motion uses bounded, checksummed, self-describing files as authority. Publish
+with file flush, atomic same-directory rename and directory flush; serialize
+writers/recovery with a process lock and file lock. A future SQL index must be
+rebuildable, so raw publication never relies on an imaginary cross-file/database
+transaction. Recovery retains invalid bytes and reports gaps. This is a persistence
+foundation, not a connected overnight recorder or a sleep-stage classifier.

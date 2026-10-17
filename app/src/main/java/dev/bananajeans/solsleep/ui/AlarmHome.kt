@@ -67,14 +67,14 @@ import kotlinx.coroutines.delay
             actions={IconButton(onClick={showSetup=true}) {AppIcon(R.drawable.ic_settings,stringResource(R.string.settings))}},
         )},
         bottomBar={NavigationBar(containerColor=MaterialTheme.colorScheme.surfaceContainer) {
-            listOf(R.string.tonight to R.drawable.ic_moon,R.string.alarms to R.drawable.ic_alarm).forEachIndexed {i,(label,icon)->
+            listOf(R.string.tonight to R.drawable.ic_moon,R.string.alarms to R.drawable.ic_alarm,R.string.journal_title to R.drawable.ic_journal).forEachIndexed {i,(label,icon)->
                 NavigationBarItem(selected=tab==i,onClick={tab=i},
                     icon={AppIcon(icon,null)},label={Text(stringResource(label))})
             }
         }},
         snackbarHost={SnackbarHost(snackbar)},
     ) {padding->
-        LazyColumn(Modifier.fillMaxSize().padding(padding).testTag("alarm_home"),
+        if(tab==2) JournalHome(padding) else LazyColumn(Modifier.fillMaxSize().padding(padding).testTag("alarm_home"),
             contentPadding=PaddingValues(start=24.dp,end=24.dp,top=12.dp,bottom=28.dp),
             verticalArrangement=Arrangement.spacedBy(16.dp)) {
             if(state.loading) item {LinearProgressIndicator(Modifier.fillMaxWidth())}

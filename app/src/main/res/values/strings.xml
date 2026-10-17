@@ -108,4 +108,36 @@
     <string name="number_range">%1$d to %2$d</string>
     <plurals name="interval_summary"><item quantity="one">Every %1$d day, from %2$s</item><item quantity="other">Every %1$d days, from %2$s</item></plurals>
     <string name="alternating_summary">%1$s · %2$s</string>
+    <string name="journal_title">Journal</string>
+    <string name="journal_explanation">Record the rest you remember. These are your reported intervals, not measured sleep or sleep stages.</string>
+    <string name="journal_add">Add a night</string>
+    <string name="journal_edit">Correct this night</string>
+    <string name="journal_empty">Your nights will appear here. Start with a manual entry.</string>
+    <string name="journal_duration">Reported rest · %1$d h %2$d min</string>
+    <string name="journal_rating_value">Restfulness · %1$d of 5</string>
+    <string name="journal_revision">Revision %1$d · Manual entry</string>
+    <string name="journal_start">Went to bed</string>
+    <string name="journal_end">Got up</string>
+    <string name="journal_zone">Times in %1$s</string>
+    <string name="journal_rating">How rested did you feel? (1 low, 5 high)</string>
+    <string name="journal_unrated">Unrated</string>
+    <string name="journal_note">Notes</string>
+    <string name="journal_tags">Tags</string>
+    <string name="journal_tags_hint">Separate tags with commas. Up to 32 tags, 40 characters each.</string>
+    <string name="journal_invalid">Choose an end after the start, within seven days. Notes allow 16,000 characters.</string>
+    <string name="journal_dst_gap">This local time does not exist because the clocks move forward. Choose another time.</string>
+    <string name="journal_dst_overlap">The clocks repeat this time. Choose which UTC offset you mean.</string>
+    <string name="journal_conflict">This night changed since you opened it. Close the editor, reload, then try again. Your draft has not been saved.</string>
+    <string name="journal_error">The journal operation failed. Existing records have been retained. A partial export may need to be deleted. Try again after checking available storage.</string>
+    <string name="journal_portability">Keep a copy of your journal</string>
+    <string name="journal_archive_detail">Plaintext JSON includes notes, tags, ratings and every saved correction. Store it somewhere private. Alarms and sensor data are separate. Older copies can still contain nights you later delete.</string>
+    <string name="journal_export">Export journal</string>
+    <string name="journal_import">Review journal archive</string>
+    <string name="journal_restore">Restore missing nights</string>
+    <string name="journal_exported">Journal export completed.</string>
+    <string name="journal_restored">Restore completed. Existing nights were kept.</string>
+    <string name="journal_preview">%1$d nights · %2$d revisions · %3$d identities already in this journal</string>
+    <string name="journal_restore_rule">Only missing nights are added. Existing entries and locally deleted identities are kept as they are. All corrections for added nights are restored together.</string>
+    <string name="journal_delete_title">Delete this night?</string>
+    <string name="journal_delete_body">The entry and all its saved corrections will be removed from this device. This device will remember its identity to prevent an old archive from adding it again. Exported copies are separate.</string>
 </resources>

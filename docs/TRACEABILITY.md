@@ -15,9 +15,11 @@ family or its physical-device gates pass. See STATUS.md for actual run results.
 | A11 | Local ramp and vibration during ringing | Core setting preservation; actual service lifecycle | Measured acoustic/haptic onset, delayed stages and screen sunrise |
 | A12 | Bundled procedural local tone with system/tone-generator fallback | APK/resource builds and service delivery | Custom URI loss, decode/runtime failures, silent mode, playlists/radio and routes |
 | A18 | Alarm notification, full-screen PendingIntent, private lock-screen activity and readiness | Private component test, actual service start, UI workflows | Locked physical device, denied access, OEM and full-screen behavior |
-| I01 | Alarm-only plaintext export, inspection and additive disabled restore | Archive malformed/bounds/round-trip fixtures; SQLite clean-store restore/rollback tests | Full session/audio archive, encryption/recovery and actual reinstall/provider tests |
+| H12 | Manual additions/corrections, notes, optional 1–5 rating, complete immutable revision log, local deletion marker | JournalTest and JournalStoreTest revision/race/rollback/clean-store restore; JournalUiTest | User-facing undo/history browser, tracked interval/awake edits and source observations |
+| H11 | Manual Unicode tags, preserved in revisions and archives | Codec/SQLite round trips | Quantities, rename/merge/undo, search and correlations |
+| I01 | Separate alarm and manual-journal plaintext export, validated preview and atomic additive restore; original journal revisions retained | Archive malformed/bounds/independent fixtures; SQLite clean-store restore/rollback tests | Complete combined sensor/audio archive, portable deletions, encryption/recovery and actual reinstall/provider tests |
 | I03 | User-selected document provider for a manual alarm file | Real Android document contracts; core I/O failures | Provider quota/revocation/offline tests, retained destination and cloud-specific adapters |
-| I14 | Tonight and Alarms screens using real saved records | AlarmUiTest create/edit/skip/toggle/delete and recreation | Health history, dashboard configuration and complete night workflow |
+| I14 | Tonight, Alarms and manual Journal screens using actual saved records | AlarmUiTest and JournalUiTest real workflows and recreation | Sensor history, dashboard configuration and complete recorded night workflow |
 | I16 | Expressive theme, edge-to-edge layouts, vector/monochrome artwork, localized resources | Lint/build; actual UI tests/screenshots | TalkBack, RTL, wide screens, 200% text, physical motion/contrast audit |
 
 All test fixtures are synthetic SolSleep data. The checked-in native archive
@@ -26,6 +28,6 @@ Android compatibility fixture. No reference CSV import or sensor measurement is
 implied by a native-format round trip.
 
 A10 escalation/wake-check, all task families C01–C11, tracking T01–T16,
-measurements/history H01–H16, sound analysis and dream/lullaby families, watch/health
+measurements/history apart from the H11/H12 subsets above, sound analysis and dream/lullaby families, watch/health
 integration and remaining integration families have no implemented workflow yet.
 The source contains no dormant controls pretending these features are available.

@@ -1,6 +1,27 @@
 # Implementation status
 
-17 October 2026 — first software milestone verified and merged in [PR #1](https://github.com/BananaJeanss/solsleep/pull/1).
+17 October 2026 — alarm milestone merged in [PR #1](https://github.com/BananaJeanss/solsleep/pull/1).
+
+## Current M2 work (verification in progress)
+
+The next slice implements a manual Journal tab: reported intervals with named
+zones/DST handling, nullable ratings, notes/tags, saved corrections, draft
+recreation, deletion, plaintext native export and validated additive restore.
+A separate credential-protected schema keeps alarms independent. Immutable
+revisions, expected-revision writes and transaction rollback prevent lost edits;
+local deletion identities prevent old-archive resurrection on this installation.
+
+The raw-data foundation adds bounded motion chunks, original wall/monotonic
+anchors, SHA-256, file flush/atomic rename/directory flush and recovery that keeps
+invalid files and reports gaps. No production recorder is connected to it.
+See [storage contract and limitations](docs/JOURNAL_STORAGE.md).
+
+Local JVM suite: **81 passed** (61 existing + 9 journal + 11 motion-chunk tests).
+Android build/lint/release and the expanded API 29/37 suites are being verified;
+the device counts below refer to the previous merged alarm milestone until the
+new run is recorded. New instrumentation covers journal revisions/races/rollback,
+clean-store restore/deletion/schema isolation, actual Android filesystem sync and
+manual-journal UI/recreation. No new device results are claimed yet.
 
 This is a development build. M0, M1 and M2 are **partial**. The full feature scope
 and production release gates remain in PLAN.md. Main now contains the app.
@@ -83,12 +104,13 @@ acquisition. Existing records are never destructively reset to recover a failure
 
 A01–A04/A09/A11/A12/A18 and I01/I03/I14/I16 have partial implementations.
 [Traceability](docs/TRACEABILITY.md) records exact subsets and missing variants.
-Tracking, sleep statistics/history, sound analysis, full health/audio backup,
+Tracking, sleep statistics/sensor history, sound analysis, full health/audio backup,
 reference CSV migration, watch support, escalation/wake checks, challenges,
 smart wake-up, integrations and AI features remain unfinished or unimplemented.
 No screenshot or test double is counted as reference-feature parity.
 
-Next: complete the physical alarm/probe lab gate; implement the remaining M2 data
-safety work; then build a real capture workflow with source quality and gaps.
+Next: validate and merge the journal/chunk slice; complete remaining M2 safety work
+and physical alarm/probe gates; then build a real capture workflow with source
+quality and gaps.
 Production signing, exhaustive dependency notices/SBOM and release qualification
 also remain open. No production signing key is stored in the repository.

@@ -6,7 +6,7 @@
 
 SolSleep is an independent, free and open-source Android™ sleep app in early development. The goal is the functional breadth of Sleep as Android, with an original Material 3 Expressive interface, durable records, and transparent measurements.
 
-The first implementation is a **local alarm foundation**, not a finished sleep tracker. See [STATUS.md](STATUS.md) for implemented behavior and evidence, and [PLAN.md](PLAN.md) for the full roadmap.
+The current implementation provides **local alarms and a manual sleep journal**. It is not a finished sleep tracker. See [STATUS.md](STATUS.md) for implemented behavior and evidence, and [PLAN.md](PLAN.md) for the full roadmap.
 
 ## First alarm workflow
 
@@ -20,6 +20,17 @@ The first implementation is a **local alarm foundation**, not a finished sleep t
 - No account, ads, network permission, or analytics; exports go only to a document destination you choose.
 
 Time-zone and DST behavior is defined and tested in the core; physical-device delivery gates are tracked separately.
+
+## Manual journal
+
+Use **Journal → Add a night** to record remembered bed/get-up times, restfulness,
+notes and tags. Corrections keep all earlier revisions; concurrent stale edits
+are rejected. Times retain their original zone, and repeated daylight-saving
+times require choosing the intended offset. Reported duration is not measured
+sleep. You can export every revision, inspect a journal file and restore missing
+nights. Journal data is credential protected and independent of alarm delivery.
+Deletion removes all local revisions; exported copies remain independent.
+See [journal/storage limits](docs/JOURNAL_STORAGE.md).
 
 ## App screens
 
