@@ -9,7 +9,6 @@ import dev.bananajeans.solsleep.alarm.AlarmGraph
 import dev.bananajeans.solsleep.core.*
 import java.time.*
 import android.os.SystemClock
-import android.util.AtomicFile
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.test.platform.app.InstrumentationRegistry
@@ -17,24 +16,44 @@ import dev.bananajeans.solsleep.diagnostics.*
 import org.json.JSONObject
 import org.junit.*
 import org.junit.Assert.*
-import java.io.File
 
 @RunWith(AndroidJUnit4::class)
 class MotionProbeTest {
     private val alarmId="motion-probe-hard-alarm"
     @get:Rule val compose=createAndroidComposeRule<MotionProbeActivity>()
     private val context get()=InstrumentationRegistry.getInstrumentation().targetContext
-    private fun snapshot(): JSONObject?=runCatching {JSONObject(AtomicFile(File(context.filesDir,MotionProbeService.FILE)).readFully().decodeToString())}.getOrNull()
+    private fun snapshot(): JSONObject?=runCatching {JSONObject(MotionProbeSnapshots.read(context).decodeToString())}.getOrNull()
     private fun shell(command: String) {
         InstrumentationRegistry.getInstrumentation().uiAutomation.executeShellCommand(command).use {fd->
             java.io.FileInputStream(fd.fileDescriptor).use {it.readBytes()}
         }
     }
-    @Before fun clear() {AtomicFile(File(context.filesDir,MotionProbeService.FILE)).delete()}
+    @Before fun clear() {MotionProbeSnapshots.clear(context)}
     @After fun cleanup() {
         shell("input keyevent KEYCODE_WAKEUP")
         context.stopService(Intent(context,MotionProbeService::class.java))
         AlarmGraph.engine(context).delete(alarmId)
+    }
+    @Test fun concurrentDiagnosticPollingCannotRollBackACommittedSnapshot() {
+        val payload="x".repeat(16384)
+        fun bytes(sequence: Int)=JSONObject().put("sequence",sequence).put("payload",payload).toString().toByteArray()
+        MotionProbeSnapshots.write(context,bytes(0))
+        val pool=java.util.concurrent.Executors.newFixedThreadPool(2)
+        val gate=java.util.concurrent.CountDownLatch(1)
+        try {
+            val writer=pool.submit {gate.await();for(sequence in 1..40) {MotionProbeSnapshots.write(context,bytes(sequence));Thread.yield()}}
+            val reader=pool.submit {
+                gate.await();var previous=0
+                repeat(200) {
+                    val value=JSONObject(MotionProbeSnapshots.read(context).decodeToString())
+                    assertEquals(payload,value.getString("payload"))
+                    val sequence=value.getInt("sequence");assertTrue(sequence>=previous);previous=sequence
+                    Thread.yield()
+                }
+            }
+            gate.countDown();writer.get(15,java.util.concurrent.TimeUnit.SECONDS);reader.get(15,java.util.concurrent.TimeUnit.SECONDS)
+            assertEquals(40,JSONObject(MotionProbeSnapshots.read(context).decodeToString()).getInt("sequence"))
+        } finally {pool.shutdownNow()}
     }
     @Test fun visibleStartCanAcquireMotionWhileScreenIsOffAndStopDurably() {
         shell("appops set "+context.packageName+" SCHEDULE_EXACT_ALARM allow")
@@ -57,7 +76,7 @@ class MotionProbeTest {
             assertTrue(captured.getLong("lastSensorNs")>captured.getLong("firstSensorNs"))
             assertEquals(0L,captured.getLong("nonMonotonic"))
         } finally {shell("input keyevent KEYCODE_WAKEUP")}
-        context.stopService(Intent(context,MotionProbeService::class.java))
+        compose.onNodeWithText("Stop motion probe").assertIsDisplayed().performClick()
         await {snapshot()?.optString("state")=="STOPPED"}
         val stopped=snapshot()!!.getLong("callbacks")
         SystemClock.sleep(1500)

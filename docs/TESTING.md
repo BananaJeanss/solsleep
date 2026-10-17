@@ -46,3 +46,23 @@ Hosted CI runs the device suite independently on API 29 and API 37. The cleanup
 trap collects screenshots and logcat even when a test fails. Documentation-only
 updates skip these expensive builds; source, build scripts and test changes do
 not. Latest test results always identify the tested source commit in STATUS.md.
+
+## Journal and raw-file foundation
+
+The expanded suite adds manual-revision and archive tests, byte truncation and
+corruption, and raw publication fault injection. Android tests use the actual
+credential-protected SQLite/filesystem APIs, two helpers racing a correction,
+transaction-abort triggers, a damaged database, and all publication boundaries.
+They exercise manual creation/correction/history restore/deletion, preserved
+identity/drafts, stale-writer rejection and 200% system text. These are distinct
+from a real overnight recorder, actual power loss and physical sleep accuracy.
+See JOURNAL_STORAGE.md and STATUS.md for precise claims and actual run results.
+
+An incremental generated-R dex collision was observed with AGP 9.4.1 and
+Gradle 9.7.1 after some resource edits. It reproduces locally as duplicate
+`androidx.activity.compose.R` archives; a fresh app build passes. For a reproducible
+local verification if this failure recurs, run `./gradlew :app:clean --no-daemon`
+first, then the documented verification commands in a separate invocation. CI
+uses fresh workspaces. Do not remove dependencies or suppress duplicate classes
+to hide this failure. The Gradle 9.8.1 security update is not evidence that this separate incremental
+issue is fixed. Re-qualify the reproducer before removing this note.

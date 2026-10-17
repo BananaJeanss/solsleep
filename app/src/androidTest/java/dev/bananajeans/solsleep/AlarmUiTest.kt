@@ -43,7 +43,7 @@ class AlarmUiTest {
         compose.onNodeWithTag("alarm_label").performImeAction()
         compose.onNodeWithText("Weekly").performClick()
         capture("alarm-editor")
-        compose.onNodeWithTag("save_alarm").performScrollTo().performClick()
+        saveAlarm()
         compose.waitUntil(10000) {AlarmGraph.engine(compose.activity).entries().any {it.rule.label=="Morning"}}
         waitForDescription("Edit alarm")
         compose.onNodeWithContentDescription("Edit alarm").assertExists()
@@ -53,7 +53,7 @@ class AlarmUiTest {
         compose.onNodeWithTag("alarm_label").performTextClearance()
         compose.onNodeWithTag("alarm_label").performTextInput("Fresh start")
         compose.onNodeWithTag("alarm_label").performImeAction()
-        compose.onNodeWithTag("save_alarm").performScrollTo().performClick()
+        saveAlarm()
         compose.waitUntil(10000) {AlarmGraph.engine(compose.activity).entries().single().rule.label=="Fresh start"}
         compose.onNodeWithText("Skip next alarm").performScrollTo().performClick()
         waitForText("Undo skip")
@@ -61,8 +61,10 @@ class AlarmUiTest {
         waitForText("Skip next alarm")
         compose.onNodeWithContentDescription("Enable 07:00 alarm").performClick()
         compose.waitUntil(10000) {!AlarmGraph.engine(compose.activity).entries().single().rule.enabled}
+        compose.waitUntil(10000) {compose.onAllNodes(hasContentDescription("Enable 07:00 alarm") and isOff() and isEnabled()).fetchSemanticsNodes().isNotEmpty()}
         compose.onNodeWithContentDescription("Enable 07:00 alarm").assertIsOff().performClick()
         compose.waitUntil(10000) {AlarmGraph.engine(compose.activity).entries().single().rule.enabled}
+        compose.waitUntil(10000) {compose.onAllNodes(hasContentDescription("Enable 07:00 alarm") and isOn() and isEnabled()).fetchSemanticsNodes().isNotEmpty()}
         compose.onNodeWithContentDescription("Delete").performScrollTo().performClick()
         compose.onNodeWithText("Delete",useUnmergedTree=true).performClick()
         compose.waitUntil(10000) {AlarmGraph.engine(compose.activity).entries().isEmpty()}
@@ -74,7 +76,7 @@ class AlarmUiTest {
         compose.onNodeWithTag("alarm_label").performImeAction()
         compose.activityRule.scenario.recreate()
         compose.onNodeWithTag("alarm_label").assertTextContains("Draft before rotation")
-        compose.onNodeWithTag("save_alarm").performScrollTo().performClick()
+        saveAlarm()
         compose.waitUntil(10000) {AlarmGraph.engine(compose.activity).entries().size==1}
         val original=AlarmGraph.engine(compose.activity).entries().single().rule.id
         waitForDescription("Edit alarm")
@@ -85,7 +87,7 @@ class AlarmUiTest {
         compose.onNodeWithTag("alarm_label").performImeAction()
         compose.activityRule.scenario.recreate()
         compose.onNodeWithTag("alarm_label").assertTextContains("Edited after rotation")
-        compose.onNodeWithTag("save_alarm").performScrollTo().performClick()
+        saveAlarm()
         compose.waitUntil(10000) {AlarmGraph.engine(compose.activity).entries().single().rule.label=="Edited after rotation"}
         assertEquals(original,AlarmGraph.engine(compose.activity).entries().single().rule.id)
     }
@@ -104,7 +106,7 @@ class AlarmUiTest {
         compose.onNodeWithTag("alarm_label").performTextClearance()
         compose.onNodeWithTag("alarm_label").performTextInput("Shift edited")
         compose.onNodeWithTag("alarm_label").performImeAction()
-        compose.onNodeWithTag("save_alarm").performScrollTo().performClick()
+        saveAlarm()
         compose.waitUntil(10000) {engine.entries().single().rule.label=="Shift edited"}
         assertEquals(original.copy(label="Shift edited",revision=2),engine.entries().single().rule)
     }
@@ -125,7 +127,7 @@ class AlarmUiTest {
             waitForTag("alarm_label")
             compose.onNodeWithTag("alarm_label").performTextInput("Large text morning")
             compose.onNodeWithTag("alarm_label").performImeAction()
-            compose.onNodeWithTag("save_alarm").performScrollTo().assertIsDisplayed().assertIsEnabled().performClick()
+            saveAlarm()
             compose.waitUntil(10000) {AlarmGraph.engine(compose.activity).entries().any {it.rule.label=="Large text morning"}}
             waitForDescription("Edit alarm")
             capture("large-text-alarm")
@@ -135,6 +137,11 @@ class AlarmUiTest {
         }
     }
 
+    private fun saveAlarm() {
+        compose.waitUntil(10000) {compose.onAllNodes(hasTestTag("save_alarm") and isEnabled()).fetchSemanticsNodes().isNotEmpty()}
+        compose.onNodeWithTag("save_alarm").performScrollTo().assertIsDisplayed().assertIsEnabled().performClick()
+        compose.waitUntil(10000) {compose.onAllNodesWithTag("save_alarm").fetchSemanticsNodes().isEmpty()}
+    }
     private fun waitForTag(tag: String) = compose.waitUntil(10000) {
         compose.onAllNodesWithTag(tag).fetchSemanticsNodes().isNotEmpty()
     }
@@ -142,7 +149,7 @@ class AlarmUiTest {
         compose.onAllNodesWithText(text).fetchSemanticsNodes().isNotEmpty()
     }
     private fun waitForDescription(text: String) = compose.waitUntil(10000) {
-        compose.onAllNodesWithContentDescription(text).fetchSemanticsNodes().isNotEmpty()
+        compose.onAllNodes(hasContentDescription(text) and isEnabled()).fetchSemanticsNodes().isNotEmpty()
     }
 
     private fun capture(name: String) {

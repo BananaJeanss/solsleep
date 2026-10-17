@@ -1,0 +1,4 @@
+<!-- SPDX-License-Identifier: GPL-3.0-or-later. Original code-drawn journal icon. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="24dp" android:height="24dp" android:viewportWidth="24" android:viewportHeight="24">
+    <path android:fillColor="#00000000" android:strokeColor="#FF000000" android:strokeWidth="1.8" android:strokeLineJoin="round" android:strokeLineCap="round" android:pathData="M6,3L19,3L19,21L6,21Q4,21 4,19L4,5Q4,3 6,3M8,3L8,21M11,8L16,8M11,12L16,12M11,16L14,16" />
+</vector>

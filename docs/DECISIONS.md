@@ -13,13 +13,13 @@ The sleeping Android robot is path artwork, with credit in NOTICE under CC BY 3.
 | Component | Pin |
 | --- | --- |
 | Java | 17 |
-| Gradle | 9.7.1, distribution SHA-256 pinned |
+| Gradle | 9.8.1, distribution SHA-256 pinned |
 | Android Gradle plugin | 9.4.1 |
 | Kotlin / Compose compiler | 2.4.21 |
 | Compose BOM | 2026.09.00 |
 | Material 3 Expressive | 1.5.0-beta01 |
 | Activity / Lifecycle | 1.13.0 / 2.11.0 |
-| AndroidX Core / Coroutines | 1.19.0 / 1.11.0 |
+| AndroidX Core / Coroutines | 1.19.1 / 1.11.0 |
 | compile / target / minimum API | 37 / 37 / 29 |
 
 AGP 9.4 supports API 37, Gradle 9.6+, and JDK 17. The BOM follows the official Compose setup guide; Expressive is an explicit beta override isolated from alarm policy. AGP built-in Kotlin compiles the app; the pure core uses Kotlin JVM.
@@ -91,3 +91,34 @@ initial save: a new/edit alarm is persisted unarmed first so normal reconciliati
 can repair registration. The engine lock serializes callbacks with publication.
 Tests inspect durable state during registration and inject publication failure;
 physical process-kill/overnight gates still apply.
+
+## M2 — Manual journal and raw authority
+
+Use a separate lazy credential-protected SQLite helper for manual rest reports.
+Append full immutable revisions with expected-revision checks, and keep hard
+alarms independent of journal errors. A plaintext logical journal archive precedes
+live night recording. Deletion removes revisions and leaves a local identity
+marker so additive imports cannot resurrect a deleted night on this installation.
+See [JOURNAL_STORAGE.md](JOURNAL_STORAGE.md) for format, limits and remaining work.
+
+Raw motion uses bounded, checksummed, self-describing files as authority. Publish
+with file flush, atomic same-directory rename and directory flush; serialize
+writers/recovery with a process lock and file lock. A future SQL index must be
+rebuildable, so raw publication never relies on an imaginary cross-file/database
+transaction. Recovery retains invalid bytes and reports gaps. This is a persistence
+foundation, not a connected overnight recorder or a sleep-stage classifier.
+
+## Toolchain patch qualification
+
+Pin Gradle 9.8.1 and its official distribution SHA-256; regenerate both wrapper
+launchers/JAR through the wrapper task. Its release notes describe build-channel
+deserialization and TLS failure-handling security fixes. Pin AndroidX Core/KTX
+1.19.1, the current stable patch; its lifecycle-runtime lint dependency update is
+already compatible with this app's explicit Lifecycle 2.11.0. Keep JDK 17, AGP
+9.4.1 and API 37. Qualify with the complete domain, API 29/37, lint and shrunk
+release checks; do not suppress dependency advisories.
+
+Primary references:
+- https://docs.gradle.org/9.8.1/release-notes.html
+- https://developer.android.com/jetpack/androidx/releases/core
+- https://developer.android.com/build/releases/agp-9-4-0-release-notes

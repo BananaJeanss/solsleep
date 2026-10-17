@@ -6,11 +6,9 @@ import android.content.*
 import android.content.pm.ServiceInfo
 import android.hardware.*
 import android.os.*
-import android.util.AtomicFile
 import androidx.core.app.NotificationCompat
 import dev.bananajeans.solsleep.R
 import org.json.JSONObject
-import java.io.File
 
 /** Disposable callback statistics only. Absent from release source and manifest. */
 class MotionProbeService : Service(),SensorEventListener {
@@ -76,14 +74,10 @@ class MotionProbeService : Service(),SensorEventListener {
     }
     override fun onAccuracyChanged(sensor: Sensor?,accuracy: Int) = Unit
     private fun publish() {
-        val file=File(filesDir,FILE).apply {parentFile!!.mkdirs()}
         val data=JSONObject().put("version",1).put("diagnosticOnly",true).put("state",state)
             .put("callbacks",count).put("firstSensorNs",first).put("lastSensorNs",last)
             .put("nonMonotonic",regressions).put("checkpointElapsedMs",SystemClock.elapsedRealtime()).toString().toByteArray(Charsets.UTF_8)
-        val atomic=AtomicFile(file)
-        var stream: java.io.FileOutputStream?=null
-        try {stream=atomic.startWrite();stream.write(data);stream.fd.sync();atomic.finishWrite(stream)}
-        catch(_: Exception) {atomic.failWrite(stream);stopSelf()}
+        try {MotionProbeSnapshots.write(this,data)} catch(_: Exception) {stopSelf()}
     }
     override fun onDestroy() {
         handler.post {

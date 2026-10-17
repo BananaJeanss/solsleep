@@ -67,14 +67,14 @@ import kotlinx.coroutines.delay
             actions={IconButton(onClick={showSetup=true}) {AppIcon(R.drawable.ic_settings,stringResource(R.string.settings))}},
         )},
         bottomBar={NavigationBar(containerColor=MaterialTheme.colorScheme.surfaceContainer) {
-            listOf(R.string.tonight to R.drawable.ic_moon,R.string.alarms to R.drawable.ic_alarm).forEachIndexed {i,(label,icon)->
+            listOf(R.string.tonight to R.drawable.ic_moon,R.string.alarms to R.drawable.ic_alarm,R.string.journal_title to R.drawable.ic_journal).forEachIndexed {i,(label,icon)->
                 NavigationBarItem(selected=tab==i,onClick={tab=i},
                     icon={AppIcon(icon,null)},label={Text(stringResource(label))})
             }
         }},
         snackbarHost={SnackbarHost(snackbar)},
     ) {padding->
-        LazyColumn(Modifier.fillMaxSize().padding(padding).testTag("alarm_home"),
+        if(tab==2) JournalHome(padding) else LazyColumn(Modifier.fillMaxSize().padding(padding).testTag("alarm_home"),
             contentPadding=PaddingValues(start=24.dp,end=24.dp,top=12.dp,bottom=28.dp),
             verticalArrangement=Arrangement.spacedBy(16.dp)) {
             if(state.loading) item {LinearProgressIndicator(Modifier.fillMaxWidth())}
@@ -237,6 +237,7 @@ import kotlinx.coroutines.delay
 @Composable private fun AlarmEditor(rule: AlarmRule?,busy: Boolean,onDismiss: ()->Unit,onSave: (AlarmRule)->Unit) {
     val context=LocalContext.current
     val keyboard=LocalSoftwareKeyboardController.current
+    val focus=LocalFocusManager.current
     val locale=LocalConfiguration.current.locales[0]
     val time=rememberTimePickerState(initialHour=rule?.time?.hour ?: 7,initialMinute=rule?.time?.minute ?: 0,
         is24Hour=DateFormat.is24HourFormat(context))
@@ -288,7 +289,7 @@ import kotlinx.coroutines.delay
             TimeInput(time,modifier=Modifier.align(Alignment.CenterHorizontally))
             OutlinedTextField(label,{if(it.length<=120) label=it},modifier=Modifier.fillMaxWidth().testTag("alarm_label"),singleLine=true,
                 keyboardOptions=androidx.compose.foundation.text.KeyboardOptions(imeAction=androidx.compose.ui.text.input.ImeAction.Done),
-                keyboardActions=androidx.compose.foundation.text.KeyboardActions(onDone={keyboard?.hide()}),
+                keyboardActions=androidx.compose.foundation.text.KeyboardActions(onDone={focus.clearFocus();keyboard?.hide()}),
                 label={Text(stringResource(R.string.label))},placeholder={Text(stringResource(R.string.label_placeholder))})
             Text(stringResource(R.string.repeat),style=MaterialTheme.typography.titleMedium)
             FlowRow(horizontalArrangement=Arrangement.spacedBy(8.dp)) {

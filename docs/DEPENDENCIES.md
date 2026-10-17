@@ -8,7 +8,7 @@ service access or changes the app's GPL license.
 | Family | Version policy | Purpose | Upstream license/source |
 | --- | --- | --- | --- |
 | Android Gradle Plugin | 9.4.1 | Android packaging/compiler integration | Apache-2.0; Android tools |
-| Gradle wrapper | 9.7.1, distribution SHA-256 pinned | Reproducible build entry point | Apache-2.0; gradle/gradle |
+| Gradle wrapper | 9.8.1, distribution SHA-256 pinned | Reproducible build entry point | Apache-2.0; gradle/gradle |
 | Kotlin / Compose compiler | 2.4.21 | JVM and Compose compilation | Apache-2.0; JetBrains/kotlin |
 | Compose UI / Foundation | BOM 2026.09.00 | Native UI and semantics | Apache-2.0; AndroidX |
 | Material 3 | Explicit 1.5.0-beta01 | Expressive theme/components | Apache-2.0; AndroidX |
