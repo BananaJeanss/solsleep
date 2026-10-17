@@ -23,6 +23,26 @@ class AlarmStoreTest {
     private val pending=PendingAlarm("first-token",Instant.parse("2026-10-17T04:00:00Z"),LocalDate.parse("2026-10-17"))
     @After fun cleanup() {runCatching {store.close()};context.createDeviceProtectedStorageContext().deleteDatabase(name)}
 
+    @Test fun releasedV1SchemaFixtureCanBeOpenedWithoutReplacingData() {
+        store.close()
+        val path=context.createDeviceProtectedStorageContext().getDatabasePath(name)
+        path.parentFile!!.mkdirs()
+        val testContext=InstrumentationRegistry.getInstrumentation().context
+        SQLiteDatabase.openOrCreateDatabase(path,null).use {db->
+            val schema=testContext.assets.open("alarm/1.sql").bufferedReader().use {it.readText()}
+            schema.lines().filterNot {it.trimStart().startsWith("--")}.joinToString("\n").split(';')
+                .map {it.trim()}.filter {it.isNotEmpty()}.forEach {db.execSQL(it)}
+            val payload="""{"version":1,"id":"legacy","time":"07:00","kind":"weekly","days":31,"label":"Original","enabled":true,"vibrate":true,"ramp":20,"snooze":5,"limit":3,"revision":7}"""
+            db.execSQL("INSERT INTO alarms(id,payload) VALUES (?,?)",arrayOf("legacy",payload))
+        }
+        store=AlarmStore(context,name)
+        val expected=AlarmRule("legacy",LocalTime.of(7,0),Repeat.Weekly(DayOfWeek.entries.take(5).toSet()),"Original",revision=7)
+        assertEquals(AlarmEntry(expected,null),store.entries().single())
+        store.put(rule,pending)
+        store.close();store=AlarmStore(context,name)
+        assertEquals(2,store.entries().size)
+        assertEquals(expected,store.entries().single {it.rule.id=="legacy"}.rule)
+    }
     @Test fun confirmedRecordAndActionSurviveCloseAndReopen() {
         store.put(rule,pending)
         store.close();store=AlarmStore(context,name)
@@ -74,6 +94,32 @@ class AlarmStoreTest {
             db.rawQuery("SELECT COUNT(*) FROM alarms",null).use {c->c.moveToFirst();assertEquals(1,c.getInt(0))}
             assertEquals(2,db.version)
         }
+    }
+    @Test fun restoreBatchIsAtomicWhenALaterIdentityConflicts() {
+        store.put(rule,pending)
+        val original=store.entries()
+        try {
+            store.insertDisabled(listOf(rule.copy(id="new",enabled=false),rule.copy(enabled=false)))
+            fail("Conflict must abort the complete batch")
+        } catch(_: android.database.sqlite.SQLiteConstraintException) { }
+        store.close();store=AlarmStore(context,name)
+        assertEquals(original,store.entries())
+    }
+    @Test fun archiveRestoresSemanticDefinitionsAfterASeparateDatabaseInstallation() {
+        store.put(rule,pending)
+        val bytes=java.io.ByteArrayOutputStream().also {out->AlarmArchive.write(store.entries().map {it.rule},out)}.toByteArray()
+        val preview=AlarmArchive.inspect(java.io.ByteArrayInputStream(bytes))
+        store.close();context.createDeviceProtectedStorageContext().deleteDatabase(name)
+        store=AlarmStore(context,name)
+        val scheduler=object: WakeScheduler {
+            override fun canSchedule()=false
+            override fun schedule(rule: AlarmRule,pending: PendingAlarm) {fail("Restored alarms must not arm")}
+            override fun cancel(token: String) {fail("No existing alarms to cancel")}
+        }
+        val engine=AlarmEngine(store,scheduler)
+        assertEquals(AlarmRestoreResult(1,0),engine.restore(preview))
+        store.close();store=AlarmStore(context,name)
+        assertEquals(AlarmEntry(rule.copy(enabled=false),null),store.entries().single())
     }
     @Test fun deleteAlsoRemovesTheScheduledOccurrence() {
         store.put(rule,pending);store.delete(rule.id)

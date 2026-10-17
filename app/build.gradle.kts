@@ -18,6 +18,7 @@ android {
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
     }
+    sourceSets.getByName("androidTest").assets.srcDir(rootProject.file("schemas"))
     buildFeatures { compose = true }
     compileOptions { sourceCompatibility = JavaVersion.VERSION_17; targetCompatibility = JavaVersion.VERSION_17 }
     lint { abortOnError = true; checkReleaseBuilds = true }
@@ -39,6 +40,7 @@ dependencies {
     testImplementation(libs.junit)
     androidTestImplementation(platform(libs.compose.bom))
     androidTestImplementation(libs.compose.test)
+    androidTestImplementation(libs.espresso)
     androidTestImplementation(libs.test.runner)
     androidTestImplementation(libs.test.ext)
 }

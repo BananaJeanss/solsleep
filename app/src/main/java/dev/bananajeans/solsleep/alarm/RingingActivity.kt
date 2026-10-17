@@ -6,6 +6,8 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -31,7 +33,7 @@ class RingingActivity : ComponentActivity() {
             SolSleepTheme(night=true) {
                 Surface(Modifier.fillMaxSize(),color=MaterialTheme.colorScheme.background) {
                     val current=entry
-                    Column(Modifier.fillMaxSize().safeDrawingPadding().padding(32.dp),
+                    Column(Modifier.fillMaxSize().safeDrawingPadding().verticalScroll(rememberScrollState()).padding(32.dp),
                         horizontalAlignment=Alignment.CenterHorizontally,
                         verticalArrangement=Arrangement.spacedBy(24.dp,Alignment.CenterVertically)) {
                         Image(painterResource(R.drawable.ic_sleeping_android),null,Modifier.size(156.dp))

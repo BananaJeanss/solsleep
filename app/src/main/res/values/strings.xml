@@ -25,8 +25,6 @@
     <string name="repeat_hint">Choose at least one day.</string>
     <string name="vibrate">Vibrate</string>
     <string name="gentle">Ease in gently</string>
-    <string name="gentle_detail">Sound builds over 20 seconds</string>
-    <string name="snooze_detail">Snooze for 5 minutes, up to 3 times.</string>
     <string name="skip_next">Skip next alarm</string>
     <string name="undo_skip">Undo skip</string>
     <string name="settings">Alarm setup</string>
@@ -35,7 +33,7 @@
     <string name="empty_body">Set your first alarm. We’ll take care of the morning.</string>
     <string name="no_enabled">Nothing to wake up for.</string>
     <string name="no_enabled_body">Your saved alarms are switched off. Enjoy the quiet, or turn one on.</string>
-    <string name="private_footer">Your alarms stay on this device.</string>
+    <string name="private_footer">Local by default. Export only when you choose.</string>
     <string name="setup_needed">Finish alarm setup</string>
     <string name="setup_hint">A few phone settings need your attention.</string>
     <string name="exact_title">Precise alarms</string>
@@ -72,4 +70,42 @@
         <item quantity="one">%d snooze left</item>
         <item quantity="other">%d snoozes left</item>
     </plurals>
+    <string name="portability_title">Your data, in your hands</string>
+    <string name="portability_body">Export alarm definitions to a file you choose. Inspect an archive to verify it before restoring. Existing alarms are kept.</string>
+    <string name="archive_plaintext">This file is not encrypted. It contains alarm times, labels and settings. Sleep records and recordings are not included.</string>
+    <string name="archive_attempt">Last export attempted: %1$s</string>
+    <string name="archive_success">Last export completed: %1$s</string>
+    <string name="never">Never</string>
+    <string name="export_alarms">Export alarms</string>
+    <string name="inspect_archive">Inspect or restore a file</string>
+    <string name="export_success">Export completed. Keep the file somewhere safe.</string>
+    <string name="archive_error">Couldn’t complete the file operation. Check the file, available space and destination access. Existing alarms have been kept.</string>
+    <string name="archive_review">Archive checked</string>
+    <plurals name="archive_count"><item quantity="one">%d alarm in this file.</item><item quantity="other">%d alarms in this file.</item></plurals>
+    <plurals name="archive_conflicts"><item quantity="one">%d existing alarm will be skipped.</item><item quantity="other">%d existing alarms will be skipped.</item></plurals>
+    <string name="archive_created">Created %1$s</string>
+    <string name="restore_disabled">Restored alarms start switched off. Review their dates and settings, then enable the ones you want.</string>
+    <string name="archive_empty">This archive is valid and contains no alarms.</string>
+    <plurals name="archive_more"><item quantity="one">And %d more alarm.</item><item quantity="other">And %d more alarms.</item></plurals>
+    <string name="restore_alarms">Add missing alarms</string>
+    <plurals name="restore_added"><item quantity="one">Added %d alarm, switched off.</item><item quantity="other">Added %d alarms, switched off.</item></plurals>
+    <string name="interval_repeat">Every N days</string>
+    <string name="alternating_repeat">Alternating weeks</string>
+    <string name="interval_days">Days between alarms</string>
+    <string name="odd_weeks">Odd weeks</string>
+    <string name="even_weeks">Even weeks</string>
+    <string name="iso_weeks_hint">Uses ISO week numbers, with Monday as the first day. Check your schedule around New Year.</string>
+    <string name="alarm_date">Date: %1$s</string>
+    <string name="anchor_date">Starting date: %1$s</string>
+    <string name="choose_date">Choose date</string>
+    <string name="future_date">Choose a future date or time.</string>
+    <string name="fixed_zone">Use a fixed time zone</string>
+    <string name="time_zone">Time zone</string>
+    <string name="zone_hint">For example, Europe/Tallinn or America/New_York</string>
+    <string name="ramp_seconds">Sound ramp (seconds)</string>
+    <string name="snooze_duration">Snooze duration (minutes)</string>
+    <string name="snooze_limit">Maximum snoozes (0 disables snooze)</string>
+    <string name="number_range">%1$d to %2$d</string>
+    <plurals name="interval_summary"><item quantity="one">Every %1$d day, from %2$s</item><item quantity="other">Every %1$d days, from %2$s</item></plurals>
+    <string name="alternating_summary">%1$s · %2$s</string>
 </resources>

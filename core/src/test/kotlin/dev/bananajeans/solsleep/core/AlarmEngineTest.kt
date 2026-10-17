@@ -38,6 +38,10 @@ class AlarmEngineTest {
             return true
         }
         override fun delete(id: String) {data.remove(id)}
+        override fun insertDisabled(rules: List<AlarmRule>) {
+            require(rules.all {!it.enabled && it.id !in data})
+            rules.forEach {data[it.id]=AlarmEntry(it,null)}
+        }
     }
     private class Platform : WakeScheduler {
         var allowed=true
@@ -202,6 +206,25 @@ class AlarmEngineTest {
         engine.setEnabled("morning",false)
         time.now=Instant.parse("2026-10-17T04:00:00Z")
         assertNull(engine.fire(token))
+    }
+    @Test fun enablingADisabledFutureDatedOneShotKeepsTheChosenDate() {
+        val future=rule().copy(repeat=Repeat.Once(LocalDate.parse("2027-03-31")),enabled=false)
+        engine.save(future);engine.setEnabled(future.id,true)
+        assertEquals(future.repeat,current().rule.repeat)
+        assertEquals(Instant.parse("2027-03-31T04:00:00Z"),current().pending!!.at)
+    }
+    @Test fun restoreIsAdditiveIdempotentDisabledAndDoesNotTouchCurrentDelivery() {
+        val ringing=ring();val before=current()
+        val incoming=rule().copy(id="restored",label="Imported")
+        val preview=AlarmArchivePreview(time.now,listOf(rule().copy(label="Conflict"),incoming),"fixture")
+        assertEquals(AlarmRestoreResult(1,1),engine.restore(preview))
+        assertEquals(before,engine.entries().first {it.rule.id==before.rule.id})
+        val restored=engine.entries().first {it.rule.id==incoming.id}
+        assertEquals(incoming.copy(enabled=false),restored.rule)
+        assertNull(restored.pending)
+        assertEquals(AlarmRestoreResult(0,2),engine.restore(preview))
+        assertTrue(platform.registrations.containsKey(ringing))
+        assertEquals(1,platform.registrations.size)
     }
     @Test fun travelRecalculatesCivilTimeButKeepsSnoozeAsAnInstant() {
         engine.save(rule(Repeat.Weekly(DayOfWeek.entries.toSet())))

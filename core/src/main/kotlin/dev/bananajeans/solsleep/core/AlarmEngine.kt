@@ -15,6 +15,7 @@ data class PendingAlarm(
     val startedAt: Instant? = null,
 )
 data class AlarmEntry(val rule: AlarmRule, val pending: PendingAlarm?)
+data class AlarmRestoreResult(val added: Int,val skippedExisting: Int)
 enum class ArmResult { ARMED, ACCESS_REQUIRED, FAILED }
 
 /** Implementations must atomically publish rule+pending and atomically claim/finish. */
@@ -26,6 +27,8 @@ interface AlarmPersistence {
     fun claim(token: String, now: Instant): AlarmEntry?
     fun finish(token: String, missed: Boolean = false): Boolean
     fun delete(id: String)
+    /** Insert every provided disabled definition atomically; fail on any conflict. */
+    fun insertDisabled(rules: List<AlarmRule>)
 }
 
 interface WakeScheduler {
@@ -53,6 +56,17 @@ class AlarmEngine(
 
     @Synchronized fun entries(): List<AlarmEntry> = store.entries()
 
+    @Synchronized fun restore(archive: AlarmArchivePreview): AlarmRestoreResult {
+        require(archive.alarms.size<=AlarmArchive.MAX_ALARMS)
+        require(archive.alarms.map {it.id}.distinct().size==archive.alarms.size)
+        val existing=store.entries().map {it.rule.id}.toSet()
+        val fresh=archive.alarms.filter {it.id !in existing}.map {it.copy(enabled=false)}
+        fresh.forEach {AlarmRuleCodec.decode(AlarmRuleCodec.encode(it))}
+        store.insertDisabled(fresh)
+        // Never recreate tokens, replay old deliveries, or register restored definitions.
+        return AlarmRestoreResult(fresh.size,archive.alarms.size-fresh.size)
+    }
+
     @Synchronized fun save(input: AlarmRule): ArmResult {
         val old = store.entries().find { it.rule.id == input.id }
         requireEditable(old)
@@ -67,7 +81,8 @@ class AlarmEngine(
     @Synchronized fun setEnabled(id: String, enabled: Boolean): ArmResult {
         val old = store.entries().first { it.rule.id == id }
         val repeat = if (enabled && old.rule.repeat is Repeat.Once)
-            Repeat.Once(Recurrence.nextOneShotDate(old.rule.time, clock.instant(), effectiveZone(old.rule)))
+            old.rule.repeat.takeIf {Recurrence.resolve(it.date,old.rule.time,effectiveZone(old.rule))>clock.instant()}
+                ?: Repeat.Once(Recurrence.nextOneShotDate(old.rule.time, clock.instant(), effectiveZone(old.rule)))
             else old.rule.repeat
         return save(old.rule.copy(enabled = enabled, repeat = repeat, skipDate = null))
     }

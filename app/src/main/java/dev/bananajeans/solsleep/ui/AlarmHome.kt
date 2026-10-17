@@ -210,9 +210,14 @@ import kotlinx.coroutines.delay
                 is Repeat.Once -> repeat.date.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).withLocale(locale))
                 is Repeat.Weekly -> if(repeat.days.size==7) stringResource(R.string.every_day)
                     else repeat.days.sortedBy {it.value}.joinToString(" · ") {it.getDisplayName(TextStyle.SHORT,locale)}
-                else -> rule.repeat.toString()
+                is Repeat.EveryDays -> pluralStringResource(R.plurals.interval_summary,repeat.interval,repeat.interval,
+                    repeat.anchor.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).withLocale(locale)))
+                is Repeat.AlternatingWeeks -> stringResource(R.string.alternating_summary,
+                    repeat.days.sortedBy {it.value}.joinToString(" · ") {it.getDisplayName(TextStyle.SHORT,locale)},
+                    stringResource(if(repeat.odd) R.string.odd_weeks else R.string.even_weeks))
             }
             Text(days,style=MaterialTheme.typography.bodyMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)
+            rule.zoneId?.let {Text(it,style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)}
             if(rule.enabled && entry.pending?.armed!=true && !active) Text(stringResource(R.string.not_armed),
                 color=MaterialTheme.colorScheme.error,style=MaterialTheme.typography.labelLarge)
             if(active) Text(stringResource(R.string.ringing),color=MaterialTheme.colorScheme.primary)
@@ -236,32 +241,62 @@ import kotlinx.coroutines.delay
     val time=rememberTimePickerState(initialHour=rule?.time?.hour ?: 7,initialMinute=rule?.time?.minute ?: 0,
         is24Hour=DateFormat.is24HourFormat(context))
     var label by rememberSaveable {mutableStateOf(rule?.label ?: "")}
-    var weekly by rememberSaveable {mutableStateOf(rule?.repeat is Repeat.Weekly)}
-    var dayMask by rememberSaveable {mutableIntStateOf(
-        (rule?.repeat as? Repeat.Weekly)?.days?.sumOf {1 shl (it.value-1)} ?: 31)}
+    var kind by rememberSaveable {mutableIntStateOf(when(rule?.repeat) {
+        is Repeat.Weekly -> 1;is Repeat.EveryDays -> 2;is Repeat.AlternatingWeeks -> 3;else -> 0
+    })}
+    var dayMask by rememberSaveable {mutableIntStateOf(when(val r=rule?.repeat) {
+        is Repeat.Weekly -> r.days.sumOf {1 shl (it.value-1)}
+        is Repeat.AlternatingWeeks -> r.days.sumOf {1 shl (it.value-1)}
+        else -> 31
+    })}
     val days=DayOfWeek.entries.filter {dayMask and (1 shl (it.value-1))!=0}.toSet()
     var vibrate by rememberSaveable {mutableStateOf(rule?.vibrate ?: true)}
     var gentle by rememberSaveable {mutableStateOf((rule?.rampSeconds ?: 20)>0)}
+    var ramp by rememberSaveable {mutableStateOf((rule?.rampSeconds?.takeIf {it>0} ?: 20).toString())}
+    var snooze by rememberSaveable {mutableStateOf((rule?.snoozeMinutes ?: 5).toString())}
+    var limit by rememberSaveable {mutableStateOf((rule?.snoozeLimit ?: 3).toString())}
+    var interval by rememberSaveable {mutableStateOf(((rule?.repeat as? Repeat.EveryDays)?.interval ?: 2).toString())}
+    var odd by rememberSaveable {mutableStateOf((rule?.repeat as? Repeat.AlternatingWeeks)?.odd ?: true)}
+    var fixedZone by rememberSaveable {mutableStateOf(rule?.zoneId!=null)}
+    var zoneText by rememberSaveable {mutableStateOf(rule?.zoneId ?: ZoneId.systemDefault().id)}
+    val zone=if(fixedZone) runCatching {ZoneId.of(zoneText.trim())}.getOrNull() else ZoneId.systemDefault()
+    val local=LocalTime.of(time.hour,time.minute)
+    var explicitDate by rememberSaveable {mutableStateOf(rule?.repeat is Repeat.Once || rule?.repeat is Repeat.EveryDays)}
+    var dateText by rememberSaveable {mutableStateOf(when(val r=rule?.repeat) {
+        is Repeat.Once -> r.date;is Repeat.EveryDays -> r.anchor
+        else -> Recurrence.nextOneShotDate(LocalTime.of(7,0),Instant.now(),ZoneId.systemDefault())
+    }.toString())}
+    val date=if(kind==0 && !explicitDate && zone!=null) Recurrence.nextOneShotDate(local,Instant.now(),zone) else LocalDate.parse(dateText)
+    var showDate by rememberSaveable {mutableStateOf(false)}
+    val repeat=when(kind) {
+        1 -> days.takeIf {it.isNotEmpty()}?.let {Repeat.Weekly(it)}
+        2 -> interval.toIntOrNull()?.takeIf {it in 1..366}?.let {Repeat.EveryDays(date,it)}
+        3 -> days.takeIf {it.isNotEmpty()}?.let {Repeat.AlternatingWeeks(it,odd)}
+        else -> Repeat.Once(date)
+    }
+    val future=kind!=0 || rule?.enabled==false || zone==null || Recurrence.resolve(date,local,zone)>Instant.now()
+    val valid=repeat!=null && zone!=null && future && snooze.toIntOrNull() in 1..60 &&
+        limit.toIntOrNull() in 0..10 && (!gentle || ramp.toIntOrNull() in 1..120)
     ModalBottomSheet(onDismissRequest=onDismiss,sheetState=rememberBottomSheetState(initialValue=SheetValue.Hidden,enabledValues=setOf(SheetValue.Hidden,SheetValue.Expanded))) {
         Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).imePadding()
             .padding(start=24.dp,end=24.dp,bottom=24.dp),verticalArrangement=Arrangement.spacedBy(20.dp)) {
             Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically) {
-                Text(stringResource(if(rule==null) R.string.new_alarm else R.string.edit_alarm),
-                    style=MaterialTheme.typography.headlineMedium,modifier=Modifier.weight(1f))
+                Text(stringResource(if(rule==null) R.string.new_alarm else R.string.edit_alarm),style=MaterialTheme.typography.headlineMedium,
+                    modifier=Modifier.weight(1f))
                 IconButton(onClick=onDismiss,enabled=!busy) {AppIcon(R.drawable.ic_close,stringResource(R.string.close))}
             }
-            Box(Modifier.fillMaxWidth(),contentAlignment=Alignment.Center) {TimeInput(time)}
-            OutlinedTextField(value=label,onValueChange={if(it.length<=120) label=it},
-                modifier=Modifier.fillMaxWidth().testTag("alarm_label"),singleLine=true,
+            TimeInput(time,modifier=Modifier.align(Alignment.CenterHorizontally))
+            OutlinedTextField(label,{if(it.length<=120) label=it},modifier=Modifier.fillMaxWidth().testTag("alarm_label"),singleLine=true,
                 keyboardOptions=androidx.compose.foundation.text.KeyboardOptions(imeAction=androidx.compose.ui.text.input.ImeAction.Done),
                 keyboardActions=androidx.compose.foundation.text.KeyboardActions(onDone={keyboard?.hide()}),
                 label={Text(stringResource(R.string.label))},placeholder={Text(stringResource(R.string.label_placeholder))})
             Text(stringResource(R.string.repeat),style=MaterialTheme.typography.titleMedium)
-            Row(horizontalArrangement=Arrangement.spacedBy(12.dp)) {
-                FilterChip(selected=!weekly,onClick={weekly=false},label={Text(stringResource(R.string.once))})
-                FilterChip(selected=weekly,onClick={weekly=true},label={Text(stringResource(R.string.weekly))})
+            FlowRow(horizontalArrangement=Arrangement.spacedBy(8.dp)) {
+                listOf(R.string.once,R.string.weekly,R.string.interval_repeat,R.string.alternating_repeat).forEachIndexed {i,title ->
+                    FilterChip(selected=kind==i,onClick={kind=i},label={Text(stringResource(title))})
+                }
             }
-            if(weekly) {
+            if(kind==1 || kind==3) {
                 FlowRow(horizontalArrangement=Arrangement.spacedBy(6.dp),maxItemsInEachRow=7) {
                     DayOfWeek.entries.forEach {day->
                         FilterChip(selected=day in days,onClick={dayMask=dayMask xor (1 shl (day.value-1))},
@@ -271,21 +306,55 @@ import kotlinx.coroutines.delay
                 }
                 if(days.isEmpty()) Text(stringResource(R.string.repeat_hint),color=MaterialTheme.colorScheme.error)
             }
+            if(kind==3) {
+                Text(stringResource(R.string.iso_weeks_hint),style=MaterialTheme.typography.bodySmall)
+                FlowRow(horizontalArrangement=Arrangement.spacedBy(8.dp)) {
+                    FilterChip(odd,{odd=true},label={Text(stringResource(R.string.odd_weeks))})
+                    FilterChip(!odd,{odd=false},label={Text(stringResource(R.string.even_weeks))})
+                }
+            }
+            if(kind==2) NumberSetting(R.string.interval_days,interval,{interval=it},1..366,"interval_days")
+            if(kind==0 || kind==2) {
+                OutlinedButton(onClick={showDate=true}) {Text(stringResource(if(kind==2) R.string.anchor_date else R.string.alarm_date,
+                    date.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).withLocale(locale))))}
+                if(!future) Text(stringResource(R.string.future_date),color=MaterialTheme.colorScheme.error)
+            }
+            ToggleRow(stringResource(R.string.fixed_zone),null,fixedZone) {fixedZone=it}
+            if(fixedZone) OutlinedTextField(zoneText,{zoneText=it.take(100)},label={Text(stringResource(R.string.time_zone))},
+                supportingText={Text(stringResource(R.string.zone_hint))},singleLine=true,isError=zone==null,
+                modifier=Modifier.fillMaxWidth().testTag("time_zone"))
             ToggleRow(stringResource(R.string.vibrate),null,vibrate) {vibrate=it}
-            ToggleRow(stringResource(R.string.gentle),stringResource(R.string.gentle_detail),gentle) {gentle=it}
-            Text(stringResource(R.string.snooze_detail),style=MaterialTheme.typography.bodyMedium,
-                color=MaterialTheme.colorScheme.onSurfaceVariant)
-            Button(enabled=!busy && (!weekly || days.isNotEmpty()),onClick={
-                val local=LocalTime.of(time.hour,time.minute)
-                val repeat=if(weekly) Repeat.Weekly(days) else Repeat.Once(Recurrence.nextOneShotDate(local,
-                    Instant.now(),rule?.zoneId?.let(ZoneId::of) ?: ZoneId.systemDefault()))
-                val base=rule ?: AlarmRule(UUID.randomUUID().toString(),local,repeat)
-                onSave(base.copy(time=local,repeat=repeat,label=label.trim(),vibrate=vibrate,rampSeconds=if(gentle) 20 else 0))
+            ToggleRow(stringResource(R.string.gentle),null,gentle) {gentle=it}
+            if(gentle) NumberSetting(R.string.ramp_seconds,ramp,{ramp=it},1..120,"ramp_seconds")
+            NumberSetting(R.string.snooze_duration,snooze,{snooze=it},1..60,"snooze_minutes")
+            NumberSetting(R.string.snooze_limit,limit,{limit=it},0..10,"snooze_limit")
+            Button(enabled=!busy && valid,onClick={
+                val base=rule ?: AlarmRule(UUID.randomUUID().toString(),local,requireNotNull(repeat))
+                onSave(base.copy(time=local,repeat=requireNotNull(repeat),label=label.trim(),vibrate=vibrate,
+                    zoneId=if(fixedZone) requireNotNull(zone).id else null,rampSeconds=if(gentle) ramp.toInt() else 0,
+                    snoozeMinutes=snooze.toInt(),snoozeLimit=limit.toInt()))
             },modifier=Modifier.fillMaxWidth().heightIn(min=56.dp).testTag("save_alarm")) {
                 Text(stringResource(R.string.save))
             }
         }
     }
+    if(showDate) {
+        val picker=rememberDatePickerState(initialSelectedDateMillis=date.atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli(),yearRange=1900..9999)
+        DatePickerDialog(onDismissRequest={showDate=false},confirmButton={TextButton(onClick={
+            picker.selectedDateMillis?.let {dateText=Instant.ofEpochMilli(it).atZone(ZoneOffset.UTC).toLocalDate().toString();explicitDate=true}
+            showDate=false
+        },enabled=picker.selectedDateMillis!=null) {Text(stringResource(R.string.choose_date))}},
+            dismissButton={TextButton(onClick={showDate=false}) {Text(stringResource(R.string.cancel))}}) {DatePicker(picker)}
+    }
+}
+
+@Composable private fun NumberSetting(title: Int,value: String,onChange: (String)->Unit,range: IntRange,tag: String) {
+    OutlinedTextField(value,{if(it.length<=3 && it.all(Char::isDigit)) onChange(it)},
+        label={Text(stringResource(title))},supportingText={Text(stringResource(R.string.number_range,range.first,range.last))},
+        keyboardOptions=androidx.compose.foundation.text.KeyboardOptions(keyboardType=androidx.compose.ui.text.input.KeyboardType.Number,
+            imeAction=androidx.compose.ui.text.input.ImeAction.Done),
+        keyboardActions=androidx.compose.foundation.text.KeyboardActions(onDone={}),singleLine=true,
+        isError=value.toIntOrNull() !in range,modifier=Modifier.fillMaxWidth().testTag(tag))
 }
 
 @Composable private fun ToggleRow(title: String,detail: String?,checked: Boolean,onChange: (Boolean)->Unit) {
@@ -337,6 +406,8 @@ import kotlinx.coroutines.delay
                 Text(stringResource(R.string.test_sound))
             }
             TextButton(onClick=onRefresh) {Text(stringResource(R.string.retry))}
+            HorizontalDivider()
+            PortabilityCard(onRestored=onRefresh)
             TextButton(onClick={about=true}) {Text(stringResource(R.string.about))}
         }
     }

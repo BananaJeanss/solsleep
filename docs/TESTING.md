@@ -34,3 +34,11 @@ git diff --exit-code -- app/src/main/res/drawable app/src/main/res/raw
 Still required in the device lab: physical acoustic onset/volume; locked boot and update recovery; actual process loss and force-stop boundaries; Doze/OEM behavior; headphones/Bluetooth/calls and permission denial; full-disk/corruption fault injection; TalkBack, 200% text, landscape/long translations; 12-hour runs and the release-candidate period.
 
 Read STATUS.md for actual completed evidence. Test code existing is not a claim its device gates passed.
+
+AlarmArchiveTest adds complete-definition round trips (all recurrences, Unicode,
+null fields and limits), repeatable output, historical codec compatibility,
+checksum/version/type/count/identity/time-zone rejection, every byte truncation,
+UTF-8/depth/size limits, and I/O failure propagation. Engine restore tests prove
+additive, disabled, idempotent behavior without touching a ringing occurrence.
+SQLite tests additionally restore into a clean database, roll back an entire
+conflicting batch, and open the checked-in v1 schema fixture with original data.

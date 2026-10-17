@@ -10,15 +10,16 @@ The first implementation is a **local alarm foundation**, not a finished sleep t
 
 ## First alarm workflow
 
-- Create/edit one-time or selected-weekday alarms.
+- Create/edit dated, selected-weekday, interval and alternating ISO-week alarms, with optional fixed time zones.
 - Enable/disable, skip the next weekly occurrence, and undo a skip.
 - Receive an exact local alarm, with a gentle sound ramp and optional vibration.
-- Snooze for five minutes up to three times, or dismiss.
+- Choose the sound ramp, vibration, snooze duration and maximum snoozes, or dismiss.
 - Check exact-alarm, notification, full-screen, and volume readiness.
 - Recover schedules after a reboot, including before first unlock.
-- Keep alarm data on the device: no account, ads, network permission, or analytics.
+- Export a portable alarm file, inspect it, and restore missing alarms switched off.
+- No account, ads, network permission, or analytics; exports go only to a document destination you choose.
 
-The core also defines anchored intervals, alternating ISO weeks, and fixed-zone schedules. These are tested domain capabilities awaiting their UI.
+Time-zone and DST behavior is defined and tested in the core; physical-device delivery gates are tracked separately.
 
 ## Build
 
@@ -37,6 +38,10 @@ Debug APK: `app/build/outputs/apk/debug/app-debug.apk`. Debug ID: `dev.bananajea
 Allow precise alarms and notifications in **Alarm setup**, and full-screen access if desired. Use the sound preview at your intended alarm volume.
 
 A force-stopped application or powered-off phone cannot be made dependable by this app. Physical-device, OEM, and overnight validation remain required. This development build is not production ready.
+
+## Alarm archives
+
+In **Alarm setup**, use **Export alarms** to save a plaintext JSON file. **Inspect or restore a file** validates it and previews conflicts before any change. **Add missing alarms** keeps existing definitions and adds restored ones switched off. Re-enable them after reviewing dates and settings. Sleep records/audio are not part of this initial archive. See [the format and restore contract](docs/ARCHIVE_FORMAT.md).
 
 ## Design and privacy
 

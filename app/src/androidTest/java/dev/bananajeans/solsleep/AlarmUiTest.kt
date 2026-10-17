@@ -82,6 +82,23 @@ class AlarmUiTest {
         assertEquals(original,AlarmGraph.engine(compose.activity).entries().single().rule.id)
     }
 
+    @Test fun editingAnAdvancedRulePreservesRecurrenceZoneAndOutputSettings() {
+        val engine=AlarmGraph.engine(compose.activity)
+        val original=AlarmRule("advanced",java.time.LocalTime.of(8,45),
+            Repeat.EveryDays(java.time.LocalDate.of(2030,3,31),23),"Shift schedule",enabled=false,
+            zoneId="Europe/Tallinn",rampSeconds=45,snoozeMinutes=9,snoozeLimit=7,vibrate=false)
+        engine.save(original)
+        compose.activityRule.scenario.recreate()
+        compose.waitUntil(10000) {compose.onAllNodesWithContentDescription("Edit alarm").fetchSemanticsNodes().isNotEmpty()}
+        compose.onNodeWithContentDescription("Edit alarm").performClick()
+        compose.onNodeWithTag("alarm_label").performTextClearance()
+        compose.onNodeWithTag("alarm_label").performTextInput("Shift edited")
+        compose.onNodeWithTag("alarm_label").performImeAction()
+        compose.onNodeWithTag("save_alarm").performScrollTo().performClick()
+        compose.waitUntil(10000) {engine.entries().single().rule.label=="Shift edited"}
+        assertEquals(original.copy(label="Shift edited",revision=2),engine.entries().single().rule)
+    }
+
     private fun capture(name: String) {
         compose.waitForIdle()
         val folder=File(compose.activity.filesDir,"qa").apply {mkdirs()}

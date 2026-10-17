@@ -57,3 +57,23 @@ References:
 ## Initial limits
 
 No tracking, watches, health imports, backups, tasks, streaming, smart wake-up, or vendor service is simulated. M0/M1 are not fully complete: physical acoustic timing, locked boot, OEM survival, and overnight/energy validation remain open.
+
+## ADR-006/007 — Initial alarm portability
+
+Use a bounded versioned logical JSON document and shared codec, not a raw SQLite
+file copy. The initial format is explicitly plaintext and alarm-only. Full
+archive encryption, session/audio inclusion and reference import remain separate
+M2 gates. Validate before preview; adding missing identities is one transaction;
+existing definitions and deliveries are unchanged; restored alarms are disabled.
+See ARCHIVE_FORMAT.md for the reader/writer and threat model contract. Device
+permissions and pending tokens never come from an archive. Schema 1 is tracked
+under schemas/alarm and opened independently by an instrumentation fixture test.
+
+## Test runtime compatibility
+
+Pin Espresso core 3.7.0 explicitly in androidTest dependencies. The stable Compose
+BOM's UI-test artifact brings an older transitive Espresso; on API 37 it failed
+before UI actions with `InputManager.getInstance` reflection. AndroidX Test's
+3.7.0 release notes document the replacement with `getSystemService`. Upgrade the
+test dependency rather than disabling API 37 UI checks or patching Android hidden
+APIs. [Release notes](https://developer.android.com/jetpack/androidx/releases/test).

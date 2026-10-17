@@ -7,7 +7,6 @@ import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteException
 import android.database.sqlite.SQLiteOpenHelper
 import dev.bananajeans.solsleep.core.*
-import org.json.JSONObject
 import java.time.*
 
 /** Authoritative alarm-only device-protected store; never stores sleep/health data. */
@@ -107,6 +106,13 @@ class AlarmStore(context: Context, name: String = "alarms.db") : AlarmPersistenc
         helper.writableDatabase.delete("alarms","id=?",arrayOf(id))
     }
 
+    @Synchronized override fun insertDisabled(rules: List<AlarmRule>) = transaction {db ->
+        require(rules.all {!it.enabled})
+        rules.forEach {r ->
+            db.insertOrThrow("alarms",null,ContentValues().apply {put("id",r.id);put("payload",encode(r))})
+        }
+    }
+
     private fun writePending(db: SQLiteDatabase,id: String,p: PendingAlarm) {
         db.insertWithOnConflict("pending",null,ContentValues().apply {
             put("alarm_id",id);put("token",p.token);put("due_ms",p.at.toEpochMilli())
@@ -124,36 +130,6 @@ class AlarmStore(context: Context, name: String = "alarms.db") : AlarmPersistenc
 
     @Synchronized override fun close() = helper.close()
 
-    private fun encode(r: AlarmRule): String = JSONObject().apply {
-        put("version",1);put("id",r.id);put("time",r.time.toString());put("label",r.label)
-        put("enabled",r.enabled);put("zone",r.zoneId);put("skip",r.skipDate?.toString())
-        put("vibrate",r.vibrate);put("ramp",r.rampSeconds);put("snooze",r.snoozeMinutes)
-        put("limit",r.snoozeLimit);put("revision",r.revision)
-        when(val repeat=r.repeat) {
-            is Repeat.Once -> {put("kind","once");put("date",repeat.date.toString())}
-            is Repeat.Weekly -> {put("kind","weekly");put("days",repeat.days.sumOf { 1 shl (it.value-1) })}
-            is Repeat.EveryDays -> {put("kind","interval");put("date",repeat.anchor.toString());put("interval",repeat.interval)}
-            is Repeat.AlternatingWeeks -> {
-                put("kind","alternating");put("days",repeat.days.sumOf { 1 shl (it.value-1) });put("odd",repeat.odd)
-            }
-        }
-    }.toString()
-
-    private fun decode(payload: String): AlarmRule {
-        val j=JSONObject(payload)
-        require(j.getInt("version")==1) { "Unsupported alarm payload version" }
-        val days=DayOfWeek.entries.filter { j.optInt("days",0) and (1 shl (it.value-1)) != 0 }.toSet()
-        val repeat=when(j.getString("kind")) {
-            "once" -> Repeat.Once(LocalDate.parse(j.getString("date")))
-            "weekly" -> Repeat.Weekly(days)
-            "interval" -> Repeat.EveryDays(LocalDate.parse(j.getString("date")),j.getInt("interval"))
-            "alternating" -> Repeat.AlternatingWeeks(days,j.getBoolean("odd"))
-            else -> error("Unknown recurrence")
-        }
-        return AlarmRule(j.getString("id"),LocalTime.parse(j.getString("time")),repeat,
-            j.getString("label"),j.getBoolean("enabled"),
-            if(j.isNull("zone")) null else j.getString("zone"),
-            if(j.isNull("skip")) null else LocalDate.parse(j.getString("skip")),
-            j.getBoolean("vibrate"),j.getInt("ramp"),j.getInt("snooze"),j.getInt("limit"),j.getLong("revision"))
-    }
+    private fun encode(r: AlarmRule)=AlarmRuleCodec.encode(r)
+    private fun decode(payload: String)=AlarmRuleCodec.decode(payload)
 }
