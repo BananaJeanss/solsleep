@@ -238,6 +238,7 @@ import kotlinx.coroutines.delay
     val context=LocalContext.current
     val keyboard=LocalSoftwareKeyboardController.current
     val focus=LocalFocusManager.current
+    val draftId=rememberSaveable {rule?.id ?: UUID.randomUUID().toString()}
     val locale=LocalConfiguration.current.locales[0]
     val time=rememberTimePickerState(initialHour=rule?.time?.hour ?: 7,initialMinute=rule?.time?.minute ?: 0,
         is24Hour=DateFormat.is24HourFormat(context))
@@ -279,8 +280,9 @@ import kotlinx.coroutines.delay
     val valid=repeat!=null && zone!=null && future && snooze.toIntOrNull() in 1..60 &&
         limit.toIntOrNull() in 0..10 && (!gentle || ramp.toIntOrNull() in 1..120)
     ModalBottomSheet(onDismissRequest=onDismiss,sheetState=rememberBottomSheetState(initialValue=SheetValue.Hidden,enabledValues=setOf(SheetValue.Hidden,SheetValue.Expanded))) {
-        Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).imePadding()
-            .padding(start=24.dp,end=24.dp,bottom=24.dp),verticalArrangement=Arrangement.spacedBy(20.dp)) {
+        Column(Modifier.fillMaxWidth().fillMaxHeight(0.94f).imePadding()) {
+        Column(Modifier.fillMaxWidth().weight(1f).verticalScroll(rememberScrollState())
+            .padding(24.dp).testTag("alarm_editor_$draftId"),verticalArrangement=Arrangement.spacedBy(20.dp)) {
             Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically) {
                 Text(stringResource(if(rule==null) R.string.new_alarm else R.string.edit_alarm),style=MaterialTheme.typography.headlineMedium,
                     modifier=Modifier.weight(1f))
@@ -329,14 +331,17 @@ import kotlinx.coroutines.delay
             if(gentle) NumberSetting(R.string.ramp_seconds,ramp,{ramp=it},1..120,"ramp_seconds")
             NumberSetting(R.string.snooze_duration,snooze,{snooze=it},1..60,"snooze_minutes")
             NumberSetting(R.string.snooze_limit,limit,{limit=it},0..10,"snooze_limit")
+        }
+        Column(Modifier.fillMaxWidth().padding(horizontal=24.dp).padding(bottom=16.dp)) {
             Button(enabled=!busy && valid,onClick={
-                val base=rule ?: AlarmRule(UUID.randomUUID().toString(),local,requireNotNull(repeat))
+                val base=rule ?: AlarmRule(draftId,local,requireNotNull(repeat))
                 onSave(base.copy(time=local,repeat=requireNotNull(repeat),label=label.trim(),vibrate=vibrate,
                     zoneId=if(fixedZone) requireNotNull(zone).id else null,rampSeconds=if(gentle) ramp.toInt() else 0,
                     snoozeMinutes=snooze.toInt(),snoozeLimit=limit.toInt()))
             },modifier=Modifier.fillMaxWidth().heightIn(min=56.dp).testTag("save_alarm")) {
                 Text(stringResource(R.string.save))
             }
+        }
         }
     }
     if(showDate) {

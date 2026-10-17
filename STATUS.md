@@ -128,8 +128,12 @@ imported marker. Preview conflicts and final actual counts are visible.
 New regression tests cover independent v2 bytes, marker checksum/type/UUID/count
 limits, deletion-only archives and truncation, clean-install deletion preservation,
 old-archive resurrection prevention, mixed batch rollback, concurrent restores,
-and UI preview/result with a retained local entry. These changes are not yet
-qualified; the verified results above remain the previous merged milestone.
+and UI preview/result with a retained local entry. The first API 37 run passes all 43 tests. API 29 exposed concurrent first-open
+creation across journal helpers and the alarm editor’s scrolling Save target at
+200% text. Opening helpers for one path is now serialized before SQLite schema
+initialization; transactions still race under SQLite. Alarm Save now lives in a
+fixed footer above the keyboard, and a new alarm retains its draft identity.
+These fixes require new complete verification; the verified results above remain the previous merged milestone.
 
 ## Remaining production and parity gates
 

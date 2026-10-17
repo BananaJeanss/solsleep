@@ -139,7 +139,7 @@ class AlarmUiTest {
 
     private fun saveAlarm() {
         compose.waitUntil(10000) {compose.onAllNodes(hasTestTag("save_alarm") and isEnabled()).fetchSemanticsNodes().isNotEmpty()}
-        compose.onNodeWithTag("save_alarm").performScrollTo().assertIsDisplayed().assertIsEnabled().performClick()
+        compose.onNodeWithTag("save_alarm").assertIsDisplayed().assertIsEnabled().performClick()
         compose.waitUntil(10000) {compose.onAllNodesWithTag("save_alarm").fetchSemanticsNodes().isEmpty()}
     }
     private fun waitForTag(tag: String) = compose.waitUntil(10000) {

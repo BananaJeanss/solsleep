@@ -10,7 +10,12 @@ import dev.bananajeans.solsleep.core.*
 
 /** Independent credential-protected journal. Alarm initialization never opens this database. */
 class JournalStore(context: Context,name: String="journal.db") : AutoCloseable {
+    companion object {
+        // SQLiteOpenHelper's instance lock does not coordinate separate helpers creating one DB.
+        private val openLocks=Array(32) {Any()}
+    }
     private val credential=context.applicationContext.also {check(!it.isDeviceProtectedStorage) {"Credential storage required"}}
+    private val openLock=openLocks[(credential.getDatabasePath(name).absolutePath.hashCode() and Int.MAX_VALUE)%openLocks.size]
     private val helper=object: SQLiteOpenHelper(credential,name,null,1,DatabaseErrorHandler {
         android.util.Log.e("SolSleepJournal","Database corruption detected; original files retained")
     }) {
@@ -34,7 +39,9 @@ class JournalStore(context: Context,name: String="journal.db") : AutoCloseable {
         }
     }.apply {setWriteAheadLoggingEnabled(true)}
 
-    @Synchronized fun current(): List<SleepRecord> = helper.readableDatabase.rawQuery("""SELECT s.id,s.current_revision,r.payload FROM sessions s
+    private fun database(): SQLiteDatabase = synchronized(openLock) {helper.writableDatabase}
+
+    @Synchronized fun current(): List<SleepRecord> = database().rawQuery("""SELECT s.id,s.current_revision,r.payload FROM sessions s
         LEFT JOIN revisions r ON r.session_id=s.id AND r.revision=s.current_revision""",null).use {c->
         buildList {while(c.moveToNext()) {
             check(!c.isNull(2)) {"Missing current revision; original data retained"}
@@ -43,11 +50,11 @@ class JournalStore(context: Context,name: String="journal.db") : AutoCloseable {
             add(record)
         }}.sortedByDescending {it.start}
     }
-    @Synchronized fun knownIds(): Set<String> = helper.readableDatabase.rawQuery(
+    @Synchronized fun knownIds(): Set<String> = database().rawQuery(
         "SELECT id FROM sessions UNION SELECT id FROM tombstones",null).use {c->
         buildSet {while(c.moveToNext()) add(c.getString(0))}
     }
-    @Synchronized fun history(id: String): List<SleepRecord> = readHistory(helper.readableDatabase,id)
+    @Synchronized fun history(id: String): List<SleepRecord> = readHistory(database(),id)
     @Synchronized fun snapshot(): List<SleepRecord> = transaction {db->
         readRecords(db)
     }
@@ -118,7 +125,7 @@ class JournalStore(context: Context,name: String="journal.db") : AutoCloseable {
         })
     }
     private fun <T> transaction(block: (SQLiteDatabase)->T): T {
-        val db=helper.writableDatabase;db.beginTransactionNonExclusive()
+        val db=database();db.beginTransactionNonExclusive()
         try {val result=block(db);db.setTransactionSuccessful();return result} finally {db.endTransaction()}
     }
     @Synchronized override fun close()=helper.close()
