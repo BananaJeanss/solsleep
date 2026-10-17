@@ -1,118 +1,157 @@
 # Implementation status
 
-17 October 2026 — alarm milestone merged in [PR #1](https://github.com/BananaJeanss/solsleep/pull/1);
-manual journal and persistence foundation merged in [PR #2](https://github.com/BananaJeanss/solsleep/pull/2);
-portable deletions and first-open/large-text fixes merged in [PR #3](https://github.com/BananaJeanss/solsleep/pull/3);
-destination readback merged in [PR #4](https://github.com/BananaJeanss/solsleep/pull/4);
-bounded construction/Unicode byte limits merged in [PR #5](https://github.com/BananaJeanss/solsleep/pull/5);
-local export history merged in [PR #6](https://github.com/BananaJeanss/solsleep/pull/6).
+18 October 2026 — [phone motion capture and foreground lifecycle fixes, PR #7](https://github.com/BananaJeanss/solsleep/pull/7), merged after exact-source qualification.
 
-This is a development build. M0, M1 and M2 remain **partial**. Full reference
-parity and production readiness are not claimed.
+This is a **development build**. M0, M1, M2 and M3 remain partial. Full reference
+parity, physiological accuracy and production readiness are not claimed.
 
-## Working workflows
+## Can it be used overnight?
 
-- Kotlin / Compose Material 3 Expressive; API 37 target, API 29 minimum;
-  edge-to-edge layout, dynamic/fallback themes and monochrome vector icons.
-- Original editable sleeping Android artwork and procedural chime. No
-  image-generated assets.
-- Dated, weekday, anchored-interval and alternating ISO-week alarms; fixed or
-  following zones; labels, enable/disable, edit/delete and skip/undo.
-- Configurable ramp, vibration and bounded snooze/dismiss; actual alarm playback,
-  private notification/full-screen controls and device-protected SQLite state.
-- Atomic delivery claims, stale-token rejection and reboot/registration recovery.
-  Failed snooze registration/publication retains the ringing occurrence.
-- Plaintext alarm export, validation/preview and atomic additive disabled restore.
-- **Manual Journal:** reported bed/get-up intervals, optional 1–5 restfulness,
-  notes and removable Unicode tags. Duration is reported rest, not measured sleep.
-  Original zones are retained; DST gaps are rejected and overlaps require an
-  explicit offset. Display respects the device's 12/24-hour setting.
-- Corrections append immutable revisions. Saved corrections can restore an earlier
-  version as a new revision. Stale edits/deletes cannot overwrite newer work.
-  Draft identity, notes and tags survive activity recreation; punctuation inside
-  a tag stays intact. Save/Cancel remain visible above the keyboard at 200% text.
-- Independent credential-protected journal schema with FULL/WAL transactions,
-  expected-revision checks, consistent logical snapshots and explicit errors for
-  inconsistent current pointers. Unknown schemas/corrupt files are retained.
-  Alarm initialization never opens the journal database.
-- Plaintext native journal export includes every correction; inspection validates
-  before preview; missing histories restore atomically. Existing local identities
-  and deletion markers win. Deletion removes all local revisions and retains a
-  minimal identity marker. Journal v2 carries these markers to a clean installation;
-  v1 files remain readable. Imported markers never erase existing destination
-  entries. Preview explains conflicts and committed results report actual counts.
-  Restore a newer archive first to block later old-archive resurrection. External
-  copies cannot know later deletions and remain independent.
-- Debug-only five-minute sensor probe verifies screen-off callbacks without
-  changing the hard alarm. Snapshot reads/writes now share a lock, as AtomicFile
-  alone provides no concurrent-access locking. Probe code/permission are absent
-  from release.
+Alarms and the manual journal are implemented. **Phone motion** can now save real
+accelerometer observations with pause/resume/finish and explicit interruptions.
+It is experimental, not a completed sleep tracker: there are no sleep statistics,
+sleep stages, snoring analysis or watch measurements. Keep a separately trusted
+wake-up alarm while physical qualification is unfinished.
 
-## Raw persistence foundation
+No physical phone/watch is attached here (`adb devices -l` was empty at this
+checkpoint). Audible/haptic wake-up, OEM background behavior, 12-hour battery and
+temperature, real placement/signal usefulness and hardware power-loss durability
+have not been qualified. Emulator callback tests do not close these gates.
 
-Bounded versioned motion chunks preserve wall/monotonic anchors, boot/stream
-identity and exact finite float readings. Publication uses file flush, atomic
-same-directory rename and directory flush. Process/OS locks coordinate writers
-and recovery. Recovery verifies hashes and identity, retains invalid bytes,
-rejects conflicting retries and reports sequence gaps.
+Raw recordings are **not included in Journal exports** and have no portable
+recovery format yet. The recording consent explains this before acquisition.
+Do not treat an installation holding irreplaceable raw data as disposable or
+uninstall it to switch debug signers. Instrumentation uses dedicated test installs
+and may clear/uninstall their data.
 
-**No production night recorder is connected to these files.** No measured sleep
-stages, overnight accuracy or five-second recovery objective is claimed.
-See [JOURNAL_STORAGE.md](docs/JOURNAL_STORAGE.md) for formats, independent fixtures,
-publication/recovery contracts and limits.
+## Working alarm workflows
+
+- Compose Material 3 Expressive, API 37 target / API 29 minimum, edge-to-edge,
+  dynamic/fallback themes and monochrome original sleeping Android vectors.
+- Dated, weekday, anchored-interval and alternating ISO-week recurrence; fixed
+  or following zones, labels, edit/delete, enable/disable and skip/undo.
+- Actual local playback, ramp, vibration, bounded snooze/dismiss and private
+  notification/full-screen actions. Original deadline/ringing start survives
+  recovery; failed snooze registration/publication retains the ringing occurrence.
+- Device-protected FULL/WAL SQLite, atomic delivery claims, stale tokens and
+  registration/reboot/update/time-change recovery. No health store is opened by
+  alarm initialization. Plaintext alarm preview/export and additive disabled restore.
+- An API 29 full run exposed shutdown racing an undelivered foreground start.
+  Ringing now acknowledges foreground execution before its ready marker and
+  stops only the current start ID. An older async result cannot cancel a newer
+  request known to Android. The same guarded shutdown is used by capture.
+
+## Manual journal and portability
+
+- Remembered bed/get-up intervals, optional restfulness, Unicode notes/tags,
+  original IANA zones and device 12/24-hour display. Duration is reported rest,
+  not measured sleep. DST gaps reject; overlaps require an explicit offset.
+- Immutable corrections, expected revisions, saved-correction restore as a new
+  revision, persistent draft identity and controls usable above the keyboard at
+  200% text. Deletion removes local revisions and retains a minimal identity marker.
+- Independent credential-protected SQLite with retained corruption/unknown
+  schemas, consistent snapshots, explicit missing-pointer errors, first-open
+  process locks, rollback/CAS tests and no destructive reset.
+- Native journal v2 preserves complete histories and portable deletion markers;
+  v1 stays readable. Atomic additive restore keeps local identities and reports
+  conflicts. Imported markers never erase live destination entries. Restore newer
+  archives first; an older copy cannot know later deletions.
+- Bounded 8 MiB / 10,000 revision / 10,000 marker archives; strict UTF-8, fields,
+  histories and checksums. Byte/count preflight precedes full allocation; oversized
+  output fails without omitting data or writing a destination. Preview reads IDs.
+- Journal output is closed, reopened through the chosen provider, inspected and
+  fingerprint-compared before verified success. Failed write and written but
+  unverified outcomes differ. Independent local attempt/verified history cannot
+  block actual recovery when its metadata store fails. Unavailable differs from
+  known absence. Readback proves that response, not future cloud retention/upload.
+
+## Experimental phone motion
+
+Use **Tonight → Phone motion → Set up a motion recording**. Consent precedes the
+private user-started `specialUse` foreground service. No sticky/boot auto-resume,
+network, microphone, health/body, activity-recognition or Bluetooth access is added.
+Notification access/channel are required and rechecked; Finish opens from a
+session-scoped notification. Play subtype review is still required for that channel.
+
+One durable open session, idempotent start identity and expected revisions protect
+state. Separate source segments retain boot/stream identities, sensor descriptors,
+wall/monotonic anchors, requested interval and original finite float vectors in
+m/s² including gravity. Duplicate/late/invalid readings stay missing; timestamp
+gaps and accuracy changes are explicit. A new stream is required after resume.
+PREPARING becomes RECORDING only after a real raw batch publishes. A dead owner
+becomes INTERRUPTED; reopening never invents capture or automatically resumes it.
+
+At most 128 samples per batch, with approximately four-second flushing. Files use
+checksums, file sync, atomic same-directory rename, directory sync and process/OS
+locks. Exact retries preserve sequence. Files precede the rebuildable SQL index;
+there is no file/database atomicity claim. Saved checks stream bounded files and
+report corruption, sequence/timestamp overlap, changed anchors, missing source
+metadata or indexed samples without files. Valid bytes remain retained.
+
+A segment stops at 12 hours, 15 seconds without fresh readings, notification
+access loss, a clock difference over two seconds, a storage failure or its free-
+space/raw-size bounds. A bounded wake lock is released on pause/finish/interruption.
+These are software policies; the five-second crash-tail/physical flush and battery
+objectives remain unqualified. Current raw bound is 64 MiB per session, with a
+64 MiB free-space check before writes. No primary records are silently evicted.
+
+A completed/failed session can enter durable DELETING before raw removal. Only
+owned regular files in its UUID namespace are removed under the existing lock;
+unknown files/symlinks retain a retryable error. Directory sync precedes SQL
+metadata removal. The empty lock inode/directory remains; unlink is not secure
+erasure. Manual journals and alarms are untouched. Recording history uses bounded
+pages; source/event and file-path metadata pagination remain open.
+
+See [MOTION_CAPTURE.md](docs/MOTION_CAPTURE.md) and the [SQL fixture](schemas/capture/1.sql).
+The older debug-only five-minute probe still stores diagnostic counters, not a
+night. Its components are absent from release; the actual recorder and its
+SPECIAL_USE permission are intentionally present in release now.
 
 ## Verified evidence
 
-Tested source: `ddce75987f87bfbe1d5ce0647efc42ba111d1bf5`.
-Merge: `91925a8f84c292bc302c085381f4e150f100d9f4`.
-[Passing CI run, reports, captured screens, logs and debug APK](https://github.com/BananaJeanss/solsleep/actions/runs/39043526164).
-Documentation updates after this run do not change app source.
+Tested source: `8c2460e33acab009308992ca33955a9b4c838406`.
+Merge: `9190d971f6963fe47ffc71071401266783dd24bb`.
+[CI36 reports, device captures, logs and debug APK](https://github.com/BananaJeanss/solsleep/actions/runs/39073894634).
+Documentation/capture copies after this run change no app source.
 
 | Check | Actual result |
 | --- | --- |
 | JVM recurrence | 19 passed |
 | JVM alarm engine | 27 passed |
-| JVM alarm archive/codec | 15 passed |
-| JVM journal/archive/Unicode/DST/deletion markers/construction | 17 passed |
-| JVM motion codec/publication/recovery | 12 passed |
-| JVM destination transfer/failure ordering | 8 passed |
-| JVM export audit/failure/cancellation ordering | 9 passed |
-| API 29 Google APIs x86_64 emulator | All 61 passed |
-| API 37 Google APIs x86_64 emulator | All 61 passed |
-| Lint, debug and test APKs | Pass locally and in CI |
-| Shrunk unsigned release APK / vital checks | Pass locally and in CI |
-| Artwork/chime | CI reproducibility check passes |
-| Final release manifest | Diagnostic components/special-use permission absent; no network/microphone/health access |
-| Incremental resource probe | Temporary resource addition built under 9.8.1; original restored and clean debug rebuilt |
+| JVM alarm archive | 15 passed |
+| JVM journal/archive | 17 passed |
+| JVM raw motion codec/publication/recovery | 12 passed |
+| JVM destination transfer | 8 passed |
+| JVM export audit | 9 passed |
+| JVM capture buffering/policies/control/anchor/time bounds | 13 passed |
+| API 29 Google APIs x86_64 emulator | All 79 passed |
+| API 37 Google APIs x86_64 emulator | All 79 passed |
+| Lint / debug and test APKs | Pass; zero lint issues |
+| Shrunk unsigned release / vital checks | Pass locally and in CI |
+| Original artwork/chime reproducibility | Pass in CI; no image-generated assets |
+| Release manifest | Private recorder + specialUse; no diagnostic/test-provider components or network/microphone/health/Bluetooth permissions |
+| Native saved/200% captures | Reviewed and copied for both APIs with source attribution |
 
-That is **107 JVM tests plus 122 device test executions**. Each 61-test device suite
-contains ten alarm-store tests, two delivery/component tests, four alarm UI tests,
-two diagnostic tests, twenty journal-store tests, two motion-file tests, seven
-journal UI tests, six separate-package provider tests and eight export-history
-SQLite tests.
+**120 JVM tests and 158 device test executions**, zero failures/errors/skips in
+the downloaded final JUnit reports. Each 79-test native suite has 10 alarm-store,
+3 delivery/foreground, 4 alarm UI, 2 diagnostic, 20 journal-store, 2 raw-file,
+7 journal UI, 6 provider, 8 export-history, 12 capture-store and 5 recording UI/
+framework-sensor cases. Host audio is disabled and sensors are virtual.
 
-Evidence includes actual AlarmManager → private receiver → playback service →
-durable snooze; SQLite reopen/two-helper races/transaction rollback; checked-in
-schema compatibility; clean-store semantic restore; retained damaged database
-bytes; explicit inconsistent-pointer failure; deleted-identity preservation;
-every archive truncation; single-byte motion corruption; publication interruption
-boundaries; concurrent diagnostic polling; and real create/correct/revision
-restore/delete/recreation/stale-draft/200%-text workflows. Native JSON and binary
-fixtures are independently serialized with Python.
+Evidence includes actual AlarmManager delivery/snooze, repeated framework starts
+racing shutdown, screen-off SensorManager callbacks, pause/resume/new segments,
+unchanged hard alarm deadlines, actual file/vector/source readback, stale action
+rejection, unexpected service-stop retention, explicit old-owner interruption,
+native deletion and 200% consent/control/completed-state workflows. Storage tests
+cover real SQLite/schema/reopen/races/rollback/corruption and mismatched source/
+file progress. No test or assertion was disabled to obtain the pass.
 
-Failed runs exposed a keyboard/large-text Save issue, asynchronous UI-test
-selection, and unsafe concurrent AtomicFile access in diagnostics. The final
-complete suites pass after the layout, focus, synchronization and locking fixes.
-No test was disabled or assertion removed to obtain a pass. Emulator sensors are
-virtual and host audio is disabled: this proves tested software paths, not audible
-output, physical sleep accuracy or hardware power-loss durability.
+Earlier failures exposed a malformed extended-year date bound, a screenshot
+storage import, and UI checks racing rendered state; all were fixed. The API 29
+foreground crash above was fixed rather than dismissed as a flaky test. Earlier
+journal milestones are documented in PLAN.md and PRs #1–#6.
 
-Toolchain qualification uses **Gradle 9.8.1**, official distribution SHA-256,
-regenerated wrapper, AndroidX Core/KTX 1.19.1, JDK 17, SDK 37.0 and Build Tools
-36.0.0. The Gradle patch includes upstream build-channel/TLS security fixes.
-See docs/DECISIONS.md and docs/DEPENDENCIES.md.
-
-Local verification commands (CI also qualifies the exact source above):
+Local commands (JDK 17 / SDK 37.0 / Build Tools 36.0.0):
 
 ```sh
 ./gradlew :app:clean --no-daemon
@@ -120,137 +159,29 @@ Local verification commands (CI also qualifies the exact source above):
 ./gradlew :app:assembleRelease --no-daemon
 ```
 
-CI additionally runs connectedDebugAndroidTest on both APIs. An incremental
-generated-R collision was observed with Gradle 9.7.1; one resource-update probe
-passes with 9.8.1. Broader incremental qualification remains open; the clean-build
-recovery is documented in docs/TESTING.md. Gradle reports deprecations relevant
-to a future Gradle 10 migration; the qualified wrapper remains 9.8.1.
+CI runs connectedDebugAndroidTest separately on both APIs. Gradle 9.8.1 (official
+checksum), AGP 9.4.1, Kotlin 2.4.21 and AndroidX Core/KTX 1.19.1 remain pinned.
+The Gradle 10 deprecation banner is retained. A prior incremental generated-R
+collision and the clean-build recovery remain documented in TESTING.md; one
+resource probe is not proof every upstream incremental case is fixed.
 
-## Portable deletion milestone (verified)
+## Next work and concrete gates
 
-The workspace is reconnected and synchronized. Final CI18 journal PNGs are now
-checked in with their original provenance. CI21 adds captured portable-restore
-preview/result screens in both device artifacts. Independent v2 bytes, marker
-checksum/type/UUID/count limits, deletion-only truncation, clean-store deletion
-preservation, old-archive blocking, mixed batch rollback and concurrent restores
-are tested.
-
-The first expanded API 29 run exposed simultaneous first-open helpers attempting
-to create the same schema, plus an alarm Save click that did not close the
-scrolling editor at 200% text. Journal database opening now shares a per-path
-process lock before helper initialization; write transactions remain coordinated
-by SQLite. This fixes the observed single-process creation race, not arbitrary
-multi-process schema management. Alarm Save now stays in a fixed footer above
-the keyboard and the draft keeps its identity. Complete build and both 43-test
-suites pass after these fixes. No test was disabled or assertion removed.
-
-## Destination verification milestone (verified)
-
-Journal export now freezes a validated snapshot before opening the destination,
-writes/flushes/closes it, reopens that chosen URI and parses the returned bytes
-under the archive limits. Only an exact full-document fingerprint match reports
-verified success. A failed write differs from a written but unverified copy;
-truncation, changed valid documents, unavailable reads and close failures cannot
-become a success notice. Source records are never mutated by export.
-
-New tests cover failure ordering and close/cancellation behavior, an actual
-ContentResolver talking to a separate test-APK provider, provider denial/truncation/
-valid replacement, semantic clean-store restore, and visible unverified/verified
-UI outcomes. The complete suites and shrunk release pass at the source above.
-The Java-only provider fixture does not depend on the target Kotlin runtime and
-is absent from debug/release app manifests. Durable audit is covered below;
-provider-specific cloud upload guarantees remain separate work.
-
-## Bounded archive milestone (verified)
-
-A separate continuation caps archive construction before large JSON allocation,
-preflights record/marker counts and actual UTF-8 payload bytes in SQLite, and uses
-identity-only import preview without loading every historical note. The limit
-error explains that all original records remain. Tests add valid CJK-heavy stores,
-reopen equality, marker overflow, and no destination writes on oversized output.
-The 98-core/51-per-API complete suites, lint and shrunk release pass in CI26.
-Independent v2 fixture bytes remain identical. Large-history streaming/pagination
-remains open.
-
-## Export-history milestone (verified)
-
-A separate credential-protected metadata database records attempt, written,
-verified, failed-write and unverified states, optional document display names,
-readback fingerprints and wall-clock times. Ordered identities preserve the last
-verified result when a later attempt fails or the clock changes. Nonterminal
-attempts are never promoted to verified after reopening. This is not an atomic
-file/database transaction or a promise of cloud upload/retention.
-
-The Journal screen shows last attempt and last verified copy; unavailable history
-is distinct from known absence. History failures are reported but do not block a
-verified journal recovery. Alarm initialization and authoritative journal state
-remain independent. Domain and actual SQLite/reopen/race/rollback/schema/
-corruption, provider-recovery and UI tests pass at the source above. The exact CI30 source has 107 JVM tests
-and all 61 device tests on each API; zero failures/errors/skips. Lint/debug/test
-APKs, generated assets and shrunk unsigned release pass. Debug/release manifest
-checks exclude the test provider; release also excludes diagnostic components
-and special-use/network/microphone permissions. History screens were reviewed in
-API 29 light and API 37 dark themes. See docs/EXPORT_HISTORY.md.
-
-## Remaining production and parity gates
-
-No physical phone or Wear device is attached. Acoustic/haptic onset and routes,
-locked reboot/update, Doze/OEM/process loss, overnight energy, real sensor quality
-and hardware flush behavior require recorded device-lab runs. TalkBack/RTL/wide
-screens and broader physical accessibility/contrast coverage remain open.
-
-M2 still needs complete combined/raw/audio archives, encryption and portable key
-recovery, automatic deletion synchronization, raw/derived/audio ownership and retention,
-low-space policy, large-history streaming/pagination, retained destination identity
-and actual provider quota/revocation/remote-completion qualification.
-Current exports are bounded plaintext documents. The researched
-[encrypted archive plan](docs/ENCRYPTED_ARCHIVE_DESIGN.md) defines qualification,
-secret lifecycle, authenticated staging and interop/fault tests; encryption is not
-implemented. A real sanitized reference export fixture is needed before claiming
-Sleep as Android CSV compatibility.
-
-M3 must connect a lawful user-started recorder, checkpoints, pause/resume,
-interruption/gap diagnostics and ownership before overnight validation.
-Measured statistics/stages, sound analysis, watch/Health Connect acquisition,
-challenges, wake checks/escalation, smart wake-up and most integrations remain
-unfinished. [Traceability](docs/TRACEABILITY.md) identifies implemented subsets.
-
-Next software work: complete native/raw/audio archives, encryption/recovery and
-ownership/retention, then the real capture workflow. Physical alarm/probe and
-minimum-phone KDF qualification need a reference device; no phone or watch is
-connected at this checkpoint. A consented real reference export is also missing
-for CSV compatibility. These prevent the corresponding accuracy/release gates
-from closing; independent software tasks remain in PLAN.md. Stable production
-signing, full dependency notices/SBOM and release qualification remain open. No production
-signing key is committed. Instrumentation uses disposable debug installs and can
-clear/uninstall their data; it must not target personal debug records.
-
-## Physical qualification handoff
-
-`adb devices -l` returned an empty device list in this workspace on 17 October.
-The reproducible protocol, blank NOT RUN result sheet and read-only build/APK
-collector are in [docs/device-lab](docs/device-lab/README.md). The collector does
-not install, reboot, change settings or read private records. Its Bash syntax,
-help/invalid-argument handling and no-device rejection were checked; rejection
-created no report and no physical qualification result. A connected authorized
-reference phone and actual measurements are required to continue that lab gate.
-No emulator result is presented as acoustic, physiological, overnight-energy or
-hardware power-loss evidence. M0/M1/M2 remain partial, and substantial feature
-implementation beyond this manual journal/alarm foundation remains.
-
-## Phone motion recording continuation — qualification pending
-
-New source on `feature/phone-motion-capture` adds an experimental real phone
-accelerometer recorder, independent durable session/source/event state,
-pause/resume/finish, explicit gaps and orphan interruption, bounded writes,
-streaming saved-file inspection and conservative retryable deletion. Native
-consent states that this is raw movement, not sleep/stages, and raw files are not
-included in Journal export yet. See [MOTION_CAPTURE.md](docs/MOTION_CAPTURE.md).
-The prior exact-source test counts above do not cover this new source. Expanded
-qualification is running; physical overnight use remains unqualified.
-
-This source intentionally adds SPECIAL_USE to the production manifest for the
-private recorder. The earlier manifest exclusion describes the prior tested
-source; debug probe components must still be absent from release. No microphone,
-network, health, Bluetooth or location permission is introduced. M0–M3 are partial;
-complete raw/encrypted portability, analytics and Wear acquisition remain open.
+- **Physical reference phone:** no attached device; record actual acoustic/haptic
+  onset, locked boot/update, OEM/Doze/process loss, 12-hour power/temperature,
+  real sensor placement/quality, storage faults and assistive interaction.
+  [The lab protocol](docs/device-lab/README.md) and blank NOT RUN sheet are ready.
+- **M2 software:** complete combined/raw/audio archives, encryption and portable
+  key recovery, deletion propagation, retention, provider/destination identity,
+  large-history streaming and broader pagination. Encryption is researched, not
+  implemented. Minimum-phone KDF cost also needs physical hardware.
+- **M3/M4:** observed coverage and transparent morning analytics, validated
+  sleep/awake inference and further sensor quality policies. There is no measured
+  hypnogram, sleep score, smart wake-up, sound analysis or clinical claim.
+- **M5 and parity:** implement watch/Health Connect acquisition and remaining
+  reference families. A real consented sanitized reference CSV is still missing
+  before importer compatibility can be claimed.
+- **Release:** stable production signing, full dependency notices/SBOM, physical
+  matrix, TalkBack/RTL/wide layouts and release-candidate qualification. No
+  production signing key is committed. Independent software work remains in PLAN.md;
+  hardware gates are not a claim the remaining coding work is finished.

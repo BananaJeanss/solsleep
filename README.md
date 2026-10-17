@@ -6,7 +6,7 @@
 
 SolSleep is an independent, free and open-source Android™ sleep app in early development. The goal is the functional breadth of Sleep as Android, with an original Material 3 Expressive interface, durable records, and transparent measurements.
 
-The current implementation provides **local alarms and a manual sleep journal**. It is not a finished sleep tracker. See [STATUS.md](STATUS.md) for implemented behavior and evidence, and [PLAN.md](PLAN.md) for the full roadmap.
+The current implementation provides **local alarms, a manual sleep journal and experimental raw phone motion recording**. It is not a finished sleep tracker. See [STATUS.md](STATUS.md) for implemented behavior and evidence, and [PLAN.md](PLAN.md) for the full roadmap.
 
 ## First alarm workflow
 
@@ -40,6 +40,20 @@ entries back. Existing destination entries are kept and conflicts are reported.
 Previously exported copies remain independent.
 See [journal/storage limits](docs/JOURNAL_STORAGE.md).
 
+## Experimental phone motion
+
+Use **Tonight → Phone motion → Set up a motion recording**. The app saves actual
+accelerometer vectors with source/clock metadata, pause/resume/finish and explicit
+interruptions. The notification has a Finish control; killed capture never resumes
+silently. Saved-file checks report actual valid samples and damaged/missing files.
+Finished recordings can be deleted with a retryable durable deletion workflow.
+
+This is raw movement, **not measured sleep or sleep stages**. Physical overnight
+battery, temperature, placement and alarm reliability are unqualified; keep a
+separately trusted wake-up alarm. Raw recordings are not in Journal exports yet.
+Do not uninstall/switch signers on an installation holding irreplaceable raw data.
+The app explains these limits before starting. See [the capture contract](docs/MOTION_CAPTURE.md).
+
 ## App screens
 
 <p>
@@ -47,9 +61,14 @@ See [journal/storage limits](docs/JOURNAL_STORAGE.md).
   <img src="docs/screenshots/tonight-alarm.png" width="230" alt="A real scheduled weekday alarm">
 </p>
 
+<p>
+  <img src="docs/screenshots/phone-motion-saved-api37.png" width="230" alt="Actual saved motion-file counts and source metadata">
+  <img src="docs/screenshots/phone-motion-large-text-api37.png" width="230" alt="Finished recording at 200 percent system text">
+</p>
+
 [All captured screens, including large text](docs/SCREENSHOTS.md). The tested
-milestone passes 107 JVM tests and all 61 device tests on both API 29 and API 37.
-[Checks and development APK artifact](https://github.com/BananaJeanss/solsleep/actions/runs/39043526164).
+milestone passes 120 JVM tests and all 79 device tests on both API 29 and API 37.
+[Checks and development APK artifact](https://github.com/BananaJeanss/solsleep/actions/runs/39073894634).
 
 ## Build
 

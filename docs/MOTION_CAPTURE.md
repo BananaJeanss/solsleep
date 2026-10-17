@@ -1,8 +1,11 @@
 # Experimental phone motion capture
 
-Implementation checkpoint: 18 October 2026. Qualification is pending; the previous
-107-core/61-per-API evidence does not cover this new source. See STATUS.md for the
-exact final tested revision and results when available.
+Implemented and software-qualified in PR #7, 18 October 2026. Tested source
+`8c2460e33acab009308992ca33955a9b4c838406`,
+[CI36](https://github.com/BananaJeanss/solsleep/actions/runs/39073894634):
+120 core tests and all 79 native tests on each of API 29/37, zero failures/errors/
+skips and zero lint issues; shrunk unsigned release passes. Final reports and
+actual saved/200% captures were checked. Physical overnight qualification is open.
 
 ## What the feature records
 
@@ -28,7 +31,9 @@ activity or high-rate permissions to make itself eligible. `specialUse` needs
 review for Play distribution; no approval is claimed. Notification access and the
 recording channel are required and rechecked during capture. The notification
 opens recording controls and contains a session/revision-scoped Finish action.
-A stale action cannot finish a newer revision/session.
+A stale action cannot finish a later resumed segment/session. The automatic
+PREPARING → RECORDING first-checkpoint acknowledgement does not invalidate a
+Finish/Pause control for that same acquisition.
 
 The production manifest now deliberately includes SPECIAL_USE and this recorder.
 The earlier debug-only diagnostic remains separate and absent from release. Alarm
@@ -112,7 +117,7 @@ recovery tooling and automatic deletion propagation remain M2 work. Recording
 history uses bounded pages, newest first, independently of changing wall clocks;
 the open session stays accessible while browsing older history.
 
-## Qualification to run
+## Software evidence and remaining qualification
 
 - Core: exact batching/finite values/monotonic rejection/gaps, size/time bounds,
   publish/rename retry, streaming summary and conservative ownership deletion.
@@ -137,3 +142,28 @@ the open session stays accessible while browsing older history.
 - https://developer.android.com/reference/android/hardware/SensorEvent
 - https://developer.android.com/reference/android/os/PowerManager.WakeLock
 - https://developer.android.com/reference/android/database/sqlite/SQLiteDatabase
+
+
+## Foreground lifecycle regression
+
+The complete API 29 suite exposed the existing alarm service stopping while a
+newer foreground request was still awaiting delivery. Android rejected that
+shutdown and crashed the process. Ringing now promotes before reporting ready;
+async stops capture their start ID and use stopSelfResult before removing the
+foreground state. Capture uses the same guarded shutdown. The native regression
+races actual repeated framework starts with a queued no-ringing stop; it does not
+replace the framework with a mock. Stored alarms remain unchanged.
+
+The synchronous boot identity commit deliberately checks its Boolean result.
+KTX edit(commit=true) discards that acknowledgement, so only this local variable
+has a documented UseKtx productivity-hint exemption. No storage failure, test or
+functional lint check is suppressed. Final lint reports zero issues.
+
+References:
+- https://developer.android.com/reference/android/app/Service#stopSelfResult(int)
+- https://android.googlesource.com/platform/frameworks/base/+/android-10.0.0_r1/services/core/java/com/android/server/am/ActiveServices.java
+- https://developer.android.com/develop/background-work/services/fgs/handle-user-stopping
+
+Android's task-manager Stop can kill the process without a service callback.
+Orphan reconciliation therefore remains necessary; a normal onDestroy test alone
+does not qualify process kill or reboot. Those physical cases remain NOT RUN.

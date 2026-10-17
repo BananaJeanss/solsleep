@@ -1535,7 +1535,7 @@ steps and collector are in `docs/device-lab/README.md`; information collection
 alone passes no gate. Independent software work remains authorized in this plan.
 M0/M1/M2 remain partial; the full production/readiness and parity scope is open.
 
-### Phone motion recording continuation — 18 October 2026 (qualification pending)
+### Phone motion recording continuation — 18 October 2026 (qualified subset)
 
 Prioritize a useful recording vertical slice now that bounded journal portability
 is qualified. This changes execution order, not the unclosed complete-archive,
@@ -1548,11 +1548,53 @@ starting. No fabricated sleep summary or inactive tracking controls are allowed.
 - [x] Connect a private user-started specialUse accelerometer service with actual raw chunk publication, notification Finish, pause/resume/finish and bounded wake lock.
 - [x] Add stale/clock/space/time interruption policies, visible stopped/gap states, streaming raw validation, conservative retryable deletion and bounded history pages.
 - [x] Add native consent/control/detail UI and externalized strings without image-generated assets or physiological claims.
-- [ ] Qualify core/native SQLite/actual sensor/UI tests, lint/debug/test APKs and shrunk release on the exact final source.
-- [ ] Review actual API 29/37 captures; preserve the hard alarm across recording controls and stale actions.
+- [x] Qualify core/native SQLite/actual sensor/UI tests, lint/debug/test APKs and shrunk release on the exact final source.
+- [x] Review actual API 29/37 captures; preserve the hard alarm across recording controls and stale actions.
 - [ ] Record physical 12-hour energy/temperature/callback/checkpoint/OEM and alarm measurements; no attached reference phone currently.
 - [ ] Complete raw/combined encrypted portability and retention; then build transparent observed-coverage/morning analytics and watch/health adapters.
 
 See docs/MOTION_CAPTURE.md for execution, data ownership, stop conditions,
 permission rationale, test protocol and primary Android documentation. No
 production or sleep-accuracy qualification is inferred from implementation.
+
+
+### Verified phone motion checkpoint — 18 October 2026
+
+PR #7 source `8c2460e33acab009308992ca33955a9b4c838406`, merged as
+`9190d971f6963fe47ffc71071401266783dd24bb`.
+[CI36](https://github.com/BananaJeanss/solsleep/actions/runs/39073894634):
+120 JVM tests, all 79 native tests on each of API 29/37, zero failures/errors/skips,
+zero lint issues, generated assets and shrunk unsigned release. Actual final XML
+reports were checked; saved-file and completed 200% UI captures for both APIs
+were reviewed and copied with source attribution. Local debug/test APKs, lint,
+release and final permission/component manifests also pass.
+
+The full API 29 run exposed a ringing-service foreground startup/shutdown race.
+A prior async stop could cancel a newer request before Android delivered its
+onStartCommand, causing a process crash. Promote before the ready marker and use
+stopSelfResult(startId) before removing foreground state, preserving newer pending
+requests. A real native repeated-start/shutdown case now passes; original
+snooze/deadline/failed-registration guarantees remain unchanged. Recorder shutdown
+also uses the guarded pattern. Do not use a blind rerun to hide a lifecycle crash.
+
+Tests additionally caught the extended-year constructor bound and async rendering
+checks; corrected boundary tests and explicit rendered completed-state assertions
+remain. No test/assertion was removed or disabled. The production manifest now
+intentionally includes the private specialUse recorder; debug probe/test provider
+components remain excluded and no microphone/network/health/Bluetooth access is
+added. Play subtype approval is not inferred from runtime success.
+
+- [x] Real user-started phone vectors, finite monotonic bounded batches and exact retry.
+- [x] Durable single-owner sessions, sources/events, pause/resume/finish and orphan interruption.
+- [x] Gap/clock/stale/space/time handling, streamed checks and conservative retryable local deletion.
+- [x] Recording history pagination, native consent and 200% controls; independent alarm deadline.
+- [x] Foreground-start/shutdown regression fix, complete software matrix and actual UI evidence.
+- [ ] Physical phone overnight/acoustic/thermal/OEM/storage qualification (no device attached).
+- [ ] Raw/combined encrypted backup and key recovery, retention and further stream/event pagination.
+- [ ] Honest observed-coverage/morning analytics, validated inference, Wear/Health Connect and remaining parity.
+
+M0–M3 remain partial. Raw recording is experimental and cannot yet replace a full
+sleep tracker or a separately trusted wake-up alarm. Missing observations remain
+missing; this work establishes neither physiological accuracy nor production
+readiness. Physical gates require hardware, while independent software backlog
+remains authorized above.

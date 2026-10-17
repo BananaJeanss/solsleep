@@ -64,3 +64,23 @@ dark captures were reviewed. Last attempt and last verified receipt are distinct
 and the controlled provider copy contains the unchanged original journal. The
 suite also asserts unavailable history is not rendered as known absence and
 cannot block a verified recovery. No physical/remote-cloud guarantee is implied.
+
+
+## Phone motion recording
+
+Source `8c2460e33acab009308992ca33955a9b4c838406`,
+[CI36](https://github.com/BananaJeanss/solsleep/actions/runs/39073894634),
+merged in PR #7. These are exact copied PNGs from the passing native device
+artifacts, reviewed in API 29 light and API 37 dark. They contain actual virtual
+SensorManager observations, not generated human nights or image-model output.
+The 200% test asserts the rendered Finished state, not just a database update.
+The long screen/dialog scrolls; these captures show its current viewport.
+
+| Screen | API 37 dark | API 29 light fallback |
+| --- | --- | --- |
+| Checked files and source counters | ![Saved motion](screenshots/phone-motion-saved-api37.png) | ![Saved motion light](screenshots/phone-motion-saved-api29.png) |
+| Finished at 200% text | ![Motion large text](screenshots/phone-motion-large-text-api37.png) | ![Motion large text light](screenshots/phone-motion-large-text-api29.png) |
+
+Counts differ between runs because samples are actually acquired. Requested
+interval and original vectors/clock metadata are retained; these pictures do not
+establish real mattress signals, sleep/stage accuracy or overnight energy.

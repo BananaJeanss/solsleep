@@ -208,3 +208,16 @@ must still be qualified separately.
   https://www.sqlite.org/lang_corefunc.html#length
   https://www.sqlite.org/lang_expr.html#castexpr
   https://www.sqlite.org/pragma.html#pragma_encoding
+
+
+## Phone capture ownership (PR #7)
+
+The raw chunk foundation is now connected to an experimental user-started
+recorder. Its separate credential-protected schema, owned session/source/event
+metadata, publish-before-index ordering, source-anchor checks, interruption and
+retryable local deletion are specified in [MOTION_CAPTURE.md](MOTION_CAPTURE.md).
+The schema fixture is `schemas/capture/1.sql`. Journal JSON still contains neither
+capture metadata nor raw motion files; a journal export is not their backup.
+Combined/streamed/encrypted portability and automatic deletion propagation remain
+unimplemented. Empty lock inodes/directories are deliberately retained after raw
+unlink; no secure erasure or file/database atomic commit is claimed.

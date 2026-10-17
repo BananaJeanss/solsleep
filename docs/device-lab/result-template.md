@@ -13,6 +13,9 @@ Status: NOT RUN
 | Scenario and exact steps | Not recorded |
 | Original scheduled deadlines / monotonic boot anchor | Not recorded |
 | Observed timings, gaps, failures and repetition count | Not recorded |
+| Sensor/source/placement and segment/boot identity | Not recorded |
+| Recording requested/observed rate, samples, gaps and file issues | Not recorded |
+| Overnight battery/temperature method and actual start/end observations | Not recorded |
 | Raw evidence locations and analysis method | Not recorded |
 | Expected criterion and observed comparison | Not recorded |
 | PASS / FAIL / BLOCKED / NOT RUN | NOT RUN |

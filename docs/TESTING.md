@@ -160,3 +160,43 @@ querying offscreen history. Disposable test cleanup also clears export metadata.
 next hardware qualification workflow. The helper passes Bash syntax/help/invalid
 argument checks; without a connected device it exits 3 before creating a report.
 No acoustic/overnight/energy/power-loss pass is inferred from these helper checks.
+
+
+## Real phone motion and foreground lifetime
+
+PR #7 qualifies 120 core tests and all 79 tests per API in CI36 at the source in
+STATUS.md. MotionCaptureTest (core) covers exact finite batching, source anchors,
+monotonic rejection/gaps, bounded checkpoints, identical publication retries,
+conservative owned-file deletion, time/space policies, constructor bounds,
+cross-chunk overlap/anchor inconsistencies and control identity across first
+checkpoint versus a later resume. It adds no clinical accuracy assertion.
+
+CaptureStoreTest has 12 actual SQLite cases: complete source/state/event reopen,
+start idempotency/terminal replay, simultaneous cold starts, stale/wrong-owner
+writes, orphan interruption, trigger rollback, non-regressing progress and durable
+deletion intent, independent schema/future version retention, unchanged corrupt
+bytes, pagination, file-leading-index versus missing acknowledged files, and
+mismatched source clock anchors. Original observation files remain on damage.
+
+The five native recording cases use a visible Activity, real SensorManager and
+actual chunk/filesystem/SQLite adapters. They cover screen-off samples,
+pause/resume into distinct sources, Finish/readback, unchanged hard alarm,
+stale actions, service-stop retention, explicit old-owner interruption, local
+deletion, 200% consent/control/completed-state rendering, and a preparation Finish
+remaining valid across the first checkpoint. Rendered controls are awaited after
+the durable commit; Compose lifecycle/frame scheduling is not replaced with a
+fixed sleep. Disposable cleanup waits for service closure and quiesces the screen.
+
+AlarmDeliveryTest adds actual repeated starts racing foreground shutdown, with a
+visible Activity and a controlled queue gate on the real alarm executor. The
+original API 29 crash is not waived as infrastructure flakiness. The service must
+acknowledge foreground execution before its ready marker and guard shutdown by
+start ID; no test assertion is disabled. Repeated starts cannot mutate saved
+alarm state. Physical acoustic onset and audio routes are still unqualified.
+
+Saved-data and 200% captures use PlatformTestStorage and the final source. The
+fixture's virtual sensor readings are not human sleep/physiological data. Confirm
+12-hour battery/temperature, real placement, sensor rate/continuity, notification
+revocation, process/task-manager stop/reboot and hardware flush behavior in the
+physical lab. Raw capture is not in Journal archives; never run these destructive
+instrumentation fixtures on an install holding personal raw observations.

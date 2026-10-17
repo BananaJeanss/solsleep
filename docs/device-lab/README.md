@@ -7,7 +7,7 @@ satisfy acoustic, OEM, sensor, energy or hardware power-loss gates.
 Use a dedicated reference install. Instrumentation clears/uninstalls debug data;
 CI debug signing identities may change. Before any installation/signing transition
 on a device holding personal records, export, verify and independently reopen the
-copy. This protocol does not install, uninstall, clear data, reboot, change settings,
+copy for portable journal/alarm data. Raw capture has no portable export yet: do not uninstall or change signers on an install holding irreplaceable raw observations. Use a dedicated stable reference install. This protocol does not install, uninstall, clear data, reboot, change settings,
 start recording, enable permissions or send reports automatically.
 
 ## Identify the actual build
@@ -72,12 +72,30 @@ separate from the pass/fail interpretation and proposed engineering targets.
 
 ## Tracking, crypto and watch dependencies
 
-The release has **no production recorder**. The debug motion probe is limited to
-five minutes and stores counters, not a night. Use its visible Start/Stop flow only
-for that bounded screen-off delivery check; never represent it as a 12-hour run or
-sleep accuracy result. A lawful durable recorder/ownership workflow must exist
-before real overnight capture, sample continuity, battery/thermal and algorithm
-validation. Human reports are not physiological ground truth.
+The build now contains **experimental actual phone motion capture**, not a
+production-qualified sleep tracker. Use the exact PR #7 source/build in STATUS.md.
+The separate debug five-minute probe still stores counters only; never substitute
+it for a 12-hour recording. No sleep/stage inference is implemented. Human reports
+are not physiological ground truth.
+
+On a dedicated reference phone, manually run these cases and retain actual
+measurements; all are **NOT RUN** in this workspace:
+
+| Case | Procedure and evidence | Completion rule |
+| --- | --- | --- |
+| Visible consent and Stop | Tonight → Phone motion; read consent, start, inspect ongoing notification, Pause/Resume/Finish. | Real source samples and separate resume anchors; listener/wake lock/notification released; the original hard alarm is unchanged. |
+| Screen-off overnight | Record real sensor placement, charger/route/power mode, start/end battery and temperature, measurement tools and sample-rate/continuity evidence for 12 hours. Keep an independent wake-up alarm. Keep the phone ventilated and away from bedding. | Report actual counts/intervals/gaps, energy and temperature; elapsed service time is not sleep duration or proof of useful mattress motion. Do not invent an energy result from emulator counters. |
+| Clock and source quality | Document natural/controlled clock discontinuity, stale or unavailable channel and actual requested-versus-observed timing. | Explicit stopped/interrupted state, retained prior vectors, new anchor on explicit Resume, no filled missing values. |
+| Process/task-manager stop and reboot | Use a disposable profile, keep original files and deadlines, stop/kill/reboot as separately identified scenarios, reopen after credential unlock. | Dead ownership becomes interrupted; no automatic recording, no invented gap samples, original committed chunks compare equal. Task-manager Stop may provide no onDestroy callback. |
+| Notification access | Change actual notification/channel access while capturing, then inspect state and repair access. | Capture stops with retained observations; starting/resuming requires visible setup, no hidden retry loop. |
+| Storage/deletion faults | Use dedicated controlled fixtures, not personal data. Measure reserve/cap behavior and interruption at file/index/deletion boundaries. | No cache-style eviction of primary data; invalid bytes retained; DELETING remains retryable, metadata removal follows owned-file flush. Unlink is not secure flash erasure. |
+
+Check saved observations after Finish and compare validated file counts with
+per-segment index counts. A process-interrupted publication may leave the index
+behind; missing acknowledged files or mismatched anchors must be reported. Record
+actual interruptions and coverage instead of assuming a continuous night. Raw
+capture is not included in journal JSON and currently has no portable restore;
+do not collect irreplaceable observations or uninstall to test a new signer.
 
 The encrypted-archive design has maintained implementation candidates and test
 requirements, but encryption is not implemented. Finish the selected-library

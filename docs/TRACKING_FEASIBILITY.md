@@ -1,17 +1,16 @@
 # M0 tracking feasibility gate
 
-Research checked 17 October 2026. This is an engineering decision record, not a
-claim that overnight tracking has been implemented or approved for distribution.
+Research checked 17–18 October 2026. This is an engineering decision record; software qualification does not establish physical overnight performance or distribution approval.
 
 ## Current verdict
 
-The alarm build intentionally requests no microphone, health, activity-recognition,
-high-rate sensor or tracking-service permission. A phone-only motion tracker needs
-a separate foreground execution path; alarm audio does not confer sensor access.
-The proposed path for the next spike is a user-started `specialUse` service with a
-specific manifest subtype describing visible, continuous overnight motion capture.
-This is a candidate requiring platform tests and distribution review, not an
-approval inferred from a service starting successfully.
+The build now has an experimental, user-started `specialUse` phone accelerometer
+recorder with a specific manifest subtype. Its complete software matrix passes
+at the exact PR #7 source in STATUS.md. Alarm audio remains a separate execution
+path; it does not confer sensor access. No microphone, health, activity-recognition,
+high-rate, Bluetooth or network permission is requested for motion. Physical
+energy/signal/accuracy and Play subtype review remain open; service startup is not
+an approval for distribution or a validated sleep measurement.
 
 | Candidate | Decision and evidence needed |
 | --- | --- |
@@ -21,9 +20,9 @@ approval inferred from a service starting successfully.
 | `dataSync`, `shortService`, media playback | These do not describe overnight sensor acquisition. Keep file transfer and alarm sound in their own permitted paths. |
 | WorkManager | Appropriate for deferrable follow-up work, not continuous motion capture or exact wake-up deadlines. |
 
-## Spike to implement before a tracking screen
+## Original spike requirements and remaining physical gates
 
-Create an isolated debug-only diagnostic entry point, not a pretend tracking UI.
+The initial debug probe preceded the actual recorder. The following requirements remain the acceptance framework for that recorder:
 A visible Start action must request only required access, commit a session start,
 start the foreground service, and immediately show an ongoing status/Stop action.
 Use a bounded sensor-event buffer on a HandlerThread. Persist timestamped sample
@@ -59,8 +58,7 @@ stores only counters/timing/state, not sample vectors or sleep records. The prob
 has a five-minute deadline and bounded partial wake lock, no sticky restart, a
 visible Stop action, and no unrelated health/high-rate sensor permissions.
 
-The service, Activity, strings, subtype and special-use permission are debug-only;
-the release source/manifest contains no tracking service. The probe passed on API 29 and API 37 emulators; STATUS.md links the exact
+The probe service, Activity, strings and subtype remain debug-only. Release now intentionally includes the separate private recorder and SPECIAL_USE permission; the probe components remain excluded. The probe passed on API 29 and API 37 emulators; STATUS.md links the exact
 source/run and test counts. The passing emulator probe does not close the chunk durability, 12-hour capture,
 physical energy, algorithm accuracy or distribution-review gates above.
 
@@ -72,9 +70,7 @@ physical phone or Wear device is attached to this workspace. Software builds and
 emulator tests can proceed; they cannot establish speaker onset, wrist delivery,
 real overnight motion continuity, or OEM energy behavior. Full release readiness
 remains blocked on those measurements. The manual journal, chunk-publication foundation, portable deletion/readback and
-local export history are now implemented subsets of M2. Complete raw/audio
-ownership, archives/encryption, retention, low-space/streaming and a lawful
-recorder still precede collecting irreplaceable nights. See
+local export history are now implemented subsets of M2. Experimental phone capture now has local ownership/deletion, bounded storage and streaming file checks. Complete raw/audio archives/encryption, retention and recovery still precede collecting irreplaceable nights or treating this as production. See
 [the physical qualification protocol](device-lab/README.md) for exact build
 identification and NOT RUN evidence records.
 
@@ -85,3 +81,14 @@ identification and NOT RUN evidence records.
 - [Foreground service launch rules](https://developer.android.com/develop/background-work/services/fgs/launch)
 - [Background start and while-in-use restrictions](https://developer.android.com/develop/background-work/services/fgs/restrictions-bg-start)
 - [Android 17 behavior changes](https://developer.android.com/about/versions/17/behavior-changes-all)
+
+
+## Actual recorder checkpoint
+
+[PR #7](https://github.com/BananaJeanss/solsleep/pull/7),
+[CI36](https://github.com/BananaJeanss/solsleep/actions/runs/39073894634):
+120 core tests and all 79 native tests on each of API 29/37 pass, including real
+screen-off framework callbacks, pause/resume/readback and hard-alarm preservation.
+No actual phone/watch was connected at this checkpoint. The native runtime path
+is implemented; the 12-hour physical run, reference placement/calibration and
+accuracy/distribution gates are not. See [the capture contract](MOTION_CAPTURE.md).
