@@ -48,6 +48,23 @@ Run on API 37 and the oldest supported API. Verify:
    evidence. Optional microphone acquisition needs its own visible-start and
    while-in-use checks; alarm or boot recovery does not silently re-enable it.
 
+## Debug probe implementation
+
+`src/debug` now contains an unexported diagnostic Activity and a `specialUse`
+foreground service. Instrumentation starts it from a visible button, checks actual
+accelerometer callback counters and monotonic timestamps, turns the emulator
+screen off, verifies later persisted counters, stops acquisition, and verifies the
+hard alarm definition/token and OS deadline are unchanged. An AtomicFile snapshot
+stores only counters/timing/state, not sample vectors or sleep records. The probe
+has a five-minute deadline and bounded partial wake lock, no sticky restart, a
+visible Stop action, and no unrelated health/high-rate sensor permissions.
+
+The service, Activity, strings, subtype and special-use permission are debug-only;
+the release source/manifest contains no tracking service. Runtime checks for the
+probe are pending until STATUS.md records actual API-specific results. Even a
+passing emulator probe does not close the chunk durability, 12-hour capture,
+physical energy, algorithm accuracy or distribution-review gates above.
+
 ## Concrete dependencies
 
 A physical Android reference phone, locked-reboot/acoustic test setup, and an

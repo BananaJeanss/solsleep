@@ -1,0 +1,10 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+    <application>
+        <activity android:name=".diagnostics.MotionProbeActivity" android:exported="false" />
+        <service android:name=".diagnostics.MotionProbeService" android:exported="false" android:foregroundServiceType="specialUse">
+            <property android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Debug-only user-started screen-off accelerometer delivery diagnostics; visible stop control; no sleep inference or health records" />
+        </service>
+    </application>
+</manifest>

@@ -11,3 +11,7 @@ https://github.com/gradle/gradle/blob/master/LICENSE
 
 All artwork is authored as SVG/path data. No image-generation model is used.
 The dawn alarm sound is synthesized from sine waves by tools/generate_tone.py.
+
+The Apache License 2.0 text for Apache-licensed build/runtime components is
+provided in third_party/Apache-2.0.txt. See docs/DEPENDENCIES.md for the initial
+upstream inventory and remaining release notice audit.

@@ -25,13 +25,16 @@ roadmap and release gates remain in PLAN.md.
 
 ## Evidence
 
-- 55 JVM tests passed locally (19 recurrence, 22 engine, 14 archive); an additional future-date enabling regression is under validation.
+- 61 JVM tests pass locally (19 recurrence, 27 engine, 15 archive).
 - Debug application and instrumentation APK compilation have completed.
 - Alarm baseline: debug APK, instrumentation APK, Android lint and shrunk release
   build pass locally; hosted API 37 build/lint/core/release job also passes.
-- API 37 emulator baseline: 9 storage/delivery tests pass; 2 UI tests exposed an
-  old transitive Espresso reflection failure before any UI actions. Stable
-  Espresso 3.7.0 is now explicit; the expanded suite is being rerun.
+- API 29 and API 37 expanded suites each passed 14 of 15 tests. The remaining
+  advanced-editor test attempted to click an off-screen control. It now scrolls
+  to that control and waits for the matching loaded record. Stable Espresso
+  3.7.0 resolves the earlier API 37 hidden-method failure.
+- A debug-only motion-service probe and 200% text UI test are implemented;
+  complete runtime validation is pending. The probe is absent from release.
 - New portability/advanced-editor checks are in progress; do not treat baseline
   results as evidence for changes added afterward.
 - Android tests cover SQLite persistence/concurrency/rollback, receiver/service

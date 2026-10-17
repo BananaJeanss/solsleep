@@ -12,7 +12,7 @@ import dev.bananajeans.solsleep.core.*
 import org.junit.*
 import org.junit.Assert.*
 import org.junit.runner.RunWith
-import java.io.File
+import androidx.test.platform.io.PlatformTestStorageRegistry
 
 @RunWith(AndroidJUnit4::class)
 class AlarmUiTest {
@@ -48,7 +48,7 @@ class AlarmUiTest {
         waitForDescription("Edit alarm")
         compose.onNodeWithContentDescription("Edit alarm").assertExists()
         capture("tonight-alarm")
-        compose.onNodeWithContentDescription("Edit alarm").performClick()
+        compose.onNodeWithContentDescription("Edit alarm").performScrollTo().assertIsDisplayed().performClick()
         waitForTag("alarm_label")
         compose.onNodeWithTag("alarm_label").performTextClearance()
         compose.onNodeWithTag("alarm_label").performTextInput("Fresh start")
@@ -78,7 +78,7 @@ class AlarmUiTest {
         compose.waitUntil(10000) {AlarmGraph.engine(compose.activity).entries().size==1}
         val original=AlarmGraph.engine(compose.activity).entries().single().rule.id
         waitForDescription("Edit alarm")
-        compose.onNodeWithContentDescription("Edit alarm").performClick()
+        compose.onNodeWithContentDescription("Edit alarm").performScrollTo().assertIsDisplayed().performClick()
         waitForTag("alarm_label")
         compose.onNodeWithTag("alarm_label").performTextClearance()
         compose.onNodeWithTag("alarm_label").performTextInput("Edited after rotation")
@@ -97,8 +97,9 @@ class AlarmUiTest {
             zoneId="Europe/Tallinn",rampSeconds=45,snoozeMinutes=9,snoozeLimit=7,vibrate=false)
         engine.save(original)
         compose.activityRule.scenario.recreate()
-        compose.waitUntil(10000) {compose.onAllNodesWithContentDescription("Edit alarm").fetchSemanticsNodes().isNotEmpty()}
-        compose.onNodeWithContentDescription("Edit alarm").performClick()
+        waitForText("Shift schedule")
+        waitForDescription("Edit alarm")
+        compose.onNodeWithContentDescription("Edit alarm").performScrollTo().assertIsDisplayed().performClick()
         waitForTag("alarm_label")
         compose.onNodeWithTag("alarm_label").performTextClearance()
         compose.onNodeWithTag("alarm_label").performTextInput("Shift edited")
@@ -106,6 +107,32 @@ class AlarmUiTest {
         compose.onNodeWithTag("save_alarm").performScrollTo().performClick()
         compose.waitUntil(10000) {engine.entries().single().rule.label=="Shift edited"}
         assertEquals(original.copy(label="Shift edited",revision=2),engine.entries().single().rule)
+    }
+
+    @Test fun creatingAnAlarmWorksAtTwoHundredPercentSystemTextSize() {
+        val instrumentation=androidx.test.platform.app.InstrumentationRegistry.getInstrumentation()
+        fun shell(command: String) {
+            instrumentation.uiAutomation.executeShellCommand(command).use {fd->
+                java.io.FileInputStream(fd.fileDescriptor).use {it.readBytes()}
+            }
+        }
+        val oldScale=compose.activity.resources.configuration.fontScale
+        try {
+            shell("settings put system font_scale 2.0")
+            compose.waitUntil(15000) {runCatching {compose.activity.resources.configuration.fontScale>=1.99f}.getOrDefault(false)}
+            waitForText("Add alarm")
+            compose.onNodeWithText("Add alarm").performClick()
+            waitForTag("alarm_label")
+            compose.onNodeWithTag("alarm_label").performTextInput("Large text morning")
+            compose.onNodeWithTag("alarm_label").performImeAction()
+            compose.onNodeWithTag("save_alarm").performScrollTo().assertIsDisplayed().assertIsEnabled().performClick()
+            compose.waitUntil(10000) {AlarmGraph.engine(compose.activity).entries().any {it.rule.label=="Large text morning"}}
+            waitForDescription("Edit alarm")
+            capture("large-text-alarm")
+        } finally {
+            shell("settings put system font_scale "+oldScale)
+            compose.waitUntil(15000) {runCatching {kotlin.math.abs(compose.activity.resources.configuration.fontScale-oldScale)<0.01f}.getOrDefault(false)}
+        }
     }
 
     private fun waitForTag(tag: String) = compose.waitUntil(10000) {
@@ -120,8 +147,7 @@ class AlarmUiTest {
 
     private fun capture(name: String) {
         compose.waitForIdle()
-        val folder=File(compose.activity.filesDir,"qa").apply {mkdirs()}
-        File(folder,name+".png").outputStream().use {
+        PlatformTestStorageRegistry.getInstance().openOutputFile(name+".png").use {
             compose.onRoot().captureToImage().asAndroidBitmap().compress(Bitmap.CompressFormat.PNG,100,it)
         }
     }

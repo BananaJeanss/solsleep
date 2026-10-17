@@ -11,17 +11,16 @@ The core tests use independent time fixtures and cover stale/concurrent callback
 Android tests run on a fresh debug installation:
 - AlarmStoreTest: actual SQLite, close/reopen, two helpers, foreign-key rollback, disabled records, cascade deletion, and refusal of unknown schemas without deletion.
 - AlarmDeliveryTest: actual near-future AlarmManager → receiver → foreground service, snooze, OS deadline, and database reopen; private control components.
-- AlarmUiTest: real create/edit/skip/toggle/delete flow and draft/identity preservation through recreation.
+- AlarmUiTest: real create/edit/skip/toggle/delete flow, draft/identity preservation through recreation, advanced settings preservation, and creating an alarm at 200% system font size.
+- MotionProbeTest: debug-only visible foreground start, real accelerometer callback statistics during confirmed screen-off, explicit stop, and an unchanged prearmed hard deadline. This is a runtime feasibility probe, not a sleep-accuracy test.
 
 The delivery test grants its debug package test-device exact-alarm/notification access through the shell. Production code never bypasses permission checks.
 
-Screenshots are saved to the debug app's `files/qa` directory:
-
-```sh
-adb exec-out run-as dev.bananajeans.solsleep.debug cat files/qa/tonight-empty.png > tonight-empty.png
-adb exec-out run-as dev.bananajeans.solsleep.debug cat files/qa/alarm-editor.png > alarm-editor.png
-adb exec-out run-as dev.bananajeans.solsleep.debug cat files/qa/tonight-alarm.png > tonight-alarm.png
-```
+Screenshots use AndroidX PlatformTestStorage, which AGP collects before uninstalling
+the test application. Find them under
+`app/build/outputs/connected_android_test_additional_output/`; CI publishes that
+directory with test reports. App-private files are not available after AGP's test
+cleanup. See the [storage API](https://developer.android.com/reference/androidx/test/platform/io/PlatformTestStorageRegistry).
 
 Reproduce source-defined assets:
 
@@ -42,3 +41,8 @@ UTF-8/depth/size limits, and I/O failure propagation. Engine restore tests prove
 additive, disabled, idempotent behavior without touching a ringing occurrence.
 SQLite tests additionally restore into a clean database, roll back an entire
 conflicting batch, and open the checked-in v1 schema fixture with original data.
+
+Hosted CI runs the device suite independently on API 29 and API 37. The cleanup
+trap collects screenshots and logcat even when a test fails. Documentation-only
+updates skip these expensive builds; source, build scripts and test changes do
+not. Latest test results always identify the tested source commit in STATUS.md.

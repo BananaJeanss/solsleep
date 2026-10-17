@@ -49,6 +49,7 @@ class AlarmEngineTest {
     private class Platform : WakeScheduler {
         var allowed=true
         var fail=false
+        var failAfterInstall=false
         var onSchedule: (() -> Unit)?=null
         val registrations=mutableMapOf<String,Instant>()
         override fun canSchedule()=allowed
@@ -56,6 +57,7 @@ class AlarmEngineTest {
             onSchedule?.invoke()
             if(fail) throw IllegalStateException("Injected scheduler failure")
             registrations[pending.token]=pending.at
+            if(failAfterInstall) throw IllegalStateException("Injected failure after OS installation")
         }
         override fun cancel(token: String) {registrations.remove(token)}
     }
@@ -211,6 +213,21 @@ class AlarmEngineTest {
         engine.setEnabled("morning",false)
         time.now=Instant.parse("2026-10-17T04:00:00Z")
         assertNull(engine.fire(token))
+    }
+    @Test fun partiallyInstalledFailedSnoozeIsCancelledAndOriginalKeepsRinging() {
+        val token=ring();val before=current()
+        platform.failAfterInstall=true
+        assertFalse(engine.snooze(token))
+        assertEquals(before,current())
+        assertEquals(setOf(token),platform.registrations.keys)
+    }
+    @Test fun pastDatedEnabledSaveIsRejectedWithoutChangingTheExistingAlarm() {
+        engine.save(rule());val before=current();val registered=platform.registrations.toMap()
+        assertThrows(IllegalArgumentException::class.java) {
+            engine.save(rule().copy(repeat=Repeat.Once(LocalDate.parse("2026-01-01"))))
+        }
+        assertEquals(before,current())
+        assertEquals(registered,platform.registrations)
     }
     @Test fun snoozeDoesNotReplaceTheDurableRingingRowBeforeOsRegistration() {
         val token=ring();val before=current()

@@ -72,6 +72,7 @@ class AlarmEngine(
         requireEditable(old)
         val rule = input.copy(revision = (old?.rule?.revision ?: 0) + 1)
         val next = pending(rule)
+        require(!rule.enabled || next!=null) {"An enabled alarm requires a future occurrence"}
         store.put(rule, next)
         val result = if (next == null) ArmResult.ARMED else arm(rule, next)
         old?.pending?.let { cancel(it.token) }

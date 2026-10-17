@@ -2,7 +2,9 @@ name: Android checks
 on:
   push:
     branches: [main]
+    paths-ignore: ["**/*.md", "docs/**", "LICENSE", "NOTICE"]
   pull_request:
+    paths-ignore: ["**/*.md", "docs/**", "LICENSE", "NOTICE"]
   workflow_dispatch:
 
 permissions:
@@ -81,13 +83,7 @@ jobs:
           "$ANDROID_HOME/emulator/emulator" -avd solsleep -no-window -no-audio -no-boot-anim -no-snapshot -gpu swiftshader -memory 2048 > emulator.log 2>&1 &
           emulator_pid=$!
           collect_and_stop() {
-            mkdir -p screenshots
             timeout 10 adb logcat -d -v threadtime > device-logcat.txt 2>&1 || true
-            for name in tonight-empty alarm-editor tonight-alarm; do
-              if ! timeout 5 adb exec-out run-as dev.bananajeans.solsleep.debug cat "files/qa/$name.png" > "screenshots/$name.png"; then
-                rm -f "screenshots/$name.png"
-              fi
-            done
             timeout 5 adb emu kill >/dev/null 2>&1 || true
             kill "$emulator_pid" 2>/dev/null || true
           }
@@ -111,7 +107,7 @@ jobs:
           path: |
             app/build/reports/androidTests/
             app/build/outputs/androidTest-results/
-            screenshots/
+            app/build/outputs/connected_android_test_additional_output/
             emulator.log
             device-logcat.txt
           if-no-files-found: error
