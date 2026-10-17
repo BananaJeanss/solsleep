@@ -20,6 +20,9 @@ move backward. Every write supplies the expected prior revision. Competing edits
 or stale deletes fail visibly. The editor retains its original base revision,
 including across activity recreation, rather than silently rebasing a draft.
 
+The Saved corrections view can use an earlier version by appending a new
+revision. All intervening versions remain in exports; it never rewrites history.
+
 Deletion removes all revisions and the current pointer in one transaction. A
 minimal identity tombstone prevents an old archive or stale draft from resurrecting
 that identity on this installation. There is no background purge. Already exported

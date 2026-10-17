@@ -140,4 +140,7 @@
     <string name="journal_restore_rule">Only missing nights are added. Existing entries and locally deleted identities are kept as they are. All corrections for added nights are restored together.</string>
     <string name="journal_delete_title">Delete this night?</string>
     <string name="journal_delete_body">The entry and all its saved corrections will be removed from this device. This device will remember its identity to prevent an old archive from adding it again. Exported copies are separate.</string>
+    <string name="journal_history">Saved corrections</string>
+    <string name="journal_history_hint">Using an earlier version saves a new correction. Later versions stay in the history and in exports.</string>
+    <string name="journal_use_revision">Use revision %1$d</string>
 </resources>

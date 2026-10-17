@@ -110,6 +110,14 @@ class JournalStoreTest {
             }
         }
     }
+    @Test fun unreadableDatabaseIsRetainedByteForByteInsteadOfReset() {
+        store.save(r,0);store.close()
+        val path=credential.getDatabasePath(name)
+        val damaged=path.readBytes().also {bytes->"BROKEN-HEADER!!!".toByteArray().copyInto(bytes)}
+        path.writeBytes(damaged);store=JournalStore(context,name)
+        try {store.current();fail("Corrupt store must not become an empty journal")} catch(_: SQLiteException) { }
+        assertTrue(path.exists());assertArrayEquals(damaged,path.readBytes())
+    }
     @Test fun journalFailureDoesNotPreventIndependentAlarmStoreUse() {
         store.close()
         val path=credential.getDatabasePath(name);path.parentFile!!.mkdirs()

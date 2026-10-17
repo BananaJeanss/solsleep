@@ -18,6 +18,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.bananajeans.solsleep.R
@@ -61,9 +62,10 @@ import java.time.temporal.ChronoUnit
                     Text(stringResource(R.string.journal_duration,minutes/60,minutes%60))
                     Text(record.zone,style=MaterialTheme.typography.labelMedium)
                     record.rating?.let {Text(stringResource(R.string.journal_rating_value,it))}
-                    if(record.note.isNotBlank()) Text(record.note)
+                    if(record.note.isNotBlank()) Text(record.note,maxLines=3,overflow=TextOverflow.Ellipsis)
                     if(record.tags.isNotEmpty()) Text(record.tags.sorted().joinToString(" · "))
                     Text(stringResource(R.string.journal_revision,record.revision),style=MaterialTheme.typography.labelSmall)
+                    TextButton(onClick={model.showHistory(record.id)},enabled=!state.busy) {Text(stringResource(R.string.journal_history))}
                     TextButton(onClick={deleting=record},enabled=!state.busy) {Text(stringResource(R.string.delete))}
                 }
             }
@@ -87,6 +89,23 @@ import java.time.temporal.ChronoUnit
         text={Text(stringResource(R.string.journal_delete_body))},
         confirmButton={TextButton(onClick={model.delete(record);deleting=null}) {Text(stringResource(R.string.delete))}},
         dismissButton={TextButton(onClick={deleting=null}) {Text(stringResource(R.string.cancel))}})}
+    state.history?.let {history->
+        AlertDialog(onDismissRequest=model::closeHistory,title={Text(stringResource(R.string.journal_history))},
+            text={Column(Modifier.verticalScroll(rememberScrollState()),verticalArrangement=Arrangement.spacedBy(12.dp)) {
+                Text(stringResource(R.string.journal_history_hint))
+                history.asReversed().forEach {revision->
+                    Text(stringResource(R.string.journal_revision,revision.revision),style=MaterialTheme.typography.titleSmall)
+                    Text(formatter.format(revision.start.atZone(ZoneId.of(revision.zone)))+" – "+formatter.format(revision.end.atZone(ZoneId.of(revision.zone))))
+                    if(revision.note.isNotBlank()) Text(revision.note,maxLines=3,overflow=TextOverflow.Ellipsis)
+                    if(revision.revision!=history.last().revision) OutlinedButton(onClick={model.restoreRevision(revision)},
+                        enabled=!state.busy,modifier=Modifier.semantics {testTag="restore_revision_${revision.revision}"}) {
+                        Text(stringResource(R.string.journal_use_revision,revision.revision))
+                    }
+                    HorizontalDivider()
+                }
+                state.error?.let {Text(stringResource(it),color=MaterialTheme.colorScheme.error)}
+            }},confirmButton={TextButton(onClick=model::closeHistory,enabled=!state.busy) {Text(stringResource(R.string.close))}})
+    }
     state.preview?.let {preview->
         AlertDialog(onDismissRequest=model::closePreview,title={Text(stringResource(R.string.journal_import))},
             text={Column(Modifier.verticalScroll(rememberScrollState()),verticalArrangement=Arrangement.spacedBy(12.dp)) {

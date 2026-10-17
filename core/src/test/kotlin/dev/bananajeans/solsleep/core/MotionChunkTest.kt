@@ -82,6 +82,12 @@ class MotionChunkTest {
         catch(_: IOException) { }
         assertEquals(listOf(chunk),store().recover().chunks)
     }
+    @Test fun recoveredFinalFileIsNotAcknowledgedWhenDirectorySyncFails() {
+        store().publish(chunk)
+        try {MotionChunkStore(directory,session,syncDirectory={throw IOException("sync failed")}).recover();fail("Cannot acknowledge without directory flush")}
+        catch(_: IOException) { }
+        assertEquals(listOf(chunk),store().recover().chunks)
+    }
     @Test fun twoHelpersSerializeIdenticalPublicationsAndNeverOverwrite() {
         val executor=Executors.newFixedThreadPool(2);val gate=CountDownLatch(1)
         try {

@@ -14,7 +14,7 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
 data class JournalState(val records: List<SleepRecord> = emptyList(),val busy: Boolean=false,
-    val error: Int?=null,val notice: Int?=null,val preview: JournalPreview?=null,val existing: Int=0)
+    val error: Int?=null,val notice: Int?=null,val preview: JournalPreview?=null,val existing: Int=0,val history: List<SleepRecord>?=null)
 
 class JournalViewModel(app: Application): AndroidViewModel(app) {
     private val mutable=MutableStateFlow(JournalState())
@@ -45,6 +45,19 @@ class JournalViewModel(app: Application): AndroidViewModel(app) {
     fun delete(record: SleepRecord)=launch {
         val records=store {it.delete(record.id,record.revision);it.current()}
         mutable.update {it.copy(records=records)}
+    }
+    fun showHistory(id: String)=launch {
+        val history=store {it.history(id)}
+        mutable.update {it.copy(history=history)}
+    }
+    fun closeHistory() {if(!mutable.value.busy) mutable.update {it.copy(history=null)}}
+    fun restoreRevision(record: SleepRecord)=launch {
+        val base=requireNotNull(mutable.value.history).last()
+        require(base.id==record.id)
+        val revised=record.copy(revision=base.revision+1,
+            modifiedAt=maxOf(java.time.Instant.now().truncatedTo(java.time.temporal.ChronoUnit.MILLIS),base.modifiedAt))
+        val records=store {it.save(revised,base.revision);it.current()}
+        mutable.update {it.copy(records=records,history=null)}
     }
     fun export(uri: Uri)=launch {
         val records=store {it.snapshot()}
