@@ -29,6 +29,7 @@ import dev.bananajeans.solsleep.R
 import dev.bananajeans.solsleep.capture.CaptureRuntime
 import dev.bananajeans.solsleep.core.*
 import kotlinx.coroutines.delay
+import java.util.UUID
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
@@ -39,6 +40,13 @@ import java.time.format.DateTimeFormatter
     LaunchedEffect(model,lifecycle) {lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {while(true) {model.reload();delay(2000)}}}
     var consent by rememberSaveable {mutableStateOf(false)}
     var deleting by remember {mutableStateOf<CaptureSession?>(null)}
+    var exportId by rememberSaveable {mutableStateOf<String?>(null)}
+    var discard by rememberSaveable {mutableStateOf(false)}
+    val create=rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/octet-stream")) {uri->
+        val id=exportId;exportId=null
+        if(uri!=null && id!=null) model.export(UUID.fromString(id),uri)
+    }
+    val open=rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) {uri->if(uri!=null) model.stage(uri)}
     val notificationPermission=rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {model.reload()}
     val context=LocalContext.current
     val locale=LocalConfiguration.current.locales[0]
@@ -54,6 +62,7 @@ import java.time.format.DateTimeFormatter
                 Text(stringResource(R.string.capture_explanation))
             }
             if(state.unavailable) item {Text(stringResource(R.string.capture_unavailable),color=MaterialTheme.colorScheme.error)}
+            state.message?.let {message->item {Text(stringResource(message),Modifier.semantics {testTag="motion_archive_message"})}}
             if(state.error || serviceError) item {Text(stringResource(R.string.capture_error),color=MaterialTheme.colorScheme.error)}
             if(!state.notifications) item {
                 Text(stringResource(R.string.capture_notifications_needed))
@@ -68,21 +77,50 @@ import java.time.format.DateTimeFormatter
             }
             state.active?.let {active->item {
                 CaptureCard(active,formatter,enabled=!state.busy && !state.unavailable,
-                    onResume={model.resume(active)},onPause={model.pause(active)},onStop={model.stop(active)},onInspect={model.inspect(active)},onDelete={})
+                    onResume={model.resume(active)},onPause={model.pause(active)},onStop={model.stop(active)},onInspect={model.inspect(active)},onDelete={},onExport={})
             }}
             item {Text(stringResource(R.string.capture_saved),style=MaterialTheme.typography.titleLarge)}
             items(state.sessions.filter {it.id!=state.active?.id},key={it.id}) {session->
                 CaptureCard(session,formatter,enabled=!state.busy && !state.unavailable,onResume={model.resume(session)},onPause={model.pause(session)},
-                    onStop={model.stop(session)},onInspect={model.inspect(session)},onDelete={deleting=session})
+                    onStop={model.stop(session)},onInspect={model.inspect(session)},onDelete={deleting=session},onExport={
+                        exportId=session.id.toString();create.launch("solsleep-motion-${session.id}.solmotion")
+                    })
             }
             item {FlowRow(horizontalArrangement=Arrangement.spacedBy(12.dp)) {
                 if(state.page>0) TextButton(onClick={model.page(-1)},enabled=!state.busy) {Text(stringResource(R.string.capture_newer))}
                 if(state.older) TextButton(onClick={model.page(1)},enabled=!state.busy) {Text(stringResource(R.string.capture_older))}
                 TextButton(onClick=model::reload,enabled=!state.busy) {Text(stringResource(R.string.capture_reload))}
             }}
+            item {
+                HorizontalDivider()
+                Text(stringResource(R.string.motion_archive_title),style=MaterialTheme.typography.titleMedium)
+                Text(stringResource(R.string.motion_archive_hint))
+                OutlinedButton(onClick={open.launch(arrayOf("application/octet-stream"))},enabled=!state.busy && !state.recoveryPresent,
+                    modifier=Modifier.fillMaxWidth().semantics {testTag="motion_import"}) {Text(stringResource(R.string.motion_import))}
+                if(state.recoveryPresent) {
+                    Text(stringResource(R.string.motion_recovery_hint))
+                    if(state.recoveryError) Text(stringResource(R.string.motion_recovery_error),color=MaterialTheme.colorScheme.error)
+                    state.pending?.let {pending->
+                        val preview=pending.preview
+                        Text(formatter.format(preview.recording.session.startedAt.atZone(ZoneId.systemDefault())))
+                        Text(stringResource(R.string.capture_file_count,preview.chunks))
+                        Text(stringResource(R.string.capture_sample_count,preview.samples))
+                        Text(stringResource(R.string.capture_byte_count,preview.rawBytes))
+                        if(pending.conflict) Text(stringResource(R.string.motion_restore_conflict))
+                        if(state.active!=null) Text(stringResource(R.string.motion_finish_before_restore))
+                        Button(onClick=model::restore,enabled=!state.busy && !pending.conflict && state.active==null,
+                            modifier=Modifier.semantics {testTag="motion_restore"}) {Text(stringResource(R.string.motion_restore))}
+                    }
+                    TextButton(onClick={discard=true},enabled=!state.busy) {Text(stringResource(R.string.motion_discard))}
+                }
+            }
             item {Text(stringResource(R.string.capture_limits),style=MaterialTheme.typography.bodySmall)}
         }
     }
+    if(discard) AlertDialog(onDismissRequest={discard=false},title={Text(stringResource(R.string.motion_discard))},
+        text={Text(stringResource(R.string.motion_discard_hint))},
+        confirmButton={TextButton(onClick={discard=false;model.discardPending()}) {Text(stringResource(R.string.motion_discard))}},
+        dismissButton={TextButton(onClick={discard=false}) {Text(stringResource(R.string.cancel))}})
     if(consent) AlertDialog(onDismissRequest={consent=false},title={Text(stringResource(R.string.capture_start))},
         text={Text(stringResource(R.string.capture_consent),Modifier.heightIn(max=420.dp).verticalScroll(rememberScrollState()))},
         confirmButton={TextButton(onClick={consent=false;model.start()}) {Text(stringResource(R.string.capture_begin))}},
@@ -113,7 +151,7 @@ import java.time.format.DateTimeFormatter
 }
 
 @Composable private fun CaptureCard(session: CaptureSession,formatter: DateTimeFormatter,enabled: Boolean,
-    onResume: ()->Unit,onPause: ()->Unit,onStop: ()->Unit,onInspect: ()->Unit,onDelete: ()->Unit) {
+    onResume: ()->Unit,onPause: ()->Unit,onStop: ()->Unit,onInspect: ()->Unit,onDelete: ()->Unit,onExport: ()->Unit) {
     Card(Modifier.fillMaxWidth().semantics {testTag="capture_${session.id}"}) {
         Column(Modifier.padding(20.dp),verticalArrangement=Arrangement.spacedBy(10.dp)) {
             Text(formatter.format(session.startedAt.atZone(ZoneId.systemDefault())),style=MaterialTheme.typography.titleMedium)
@@ -132,6 +170,8 @@ import java.time.format.DateTimeFormatter
                 if(session.state in setOf(CaptureState.PAUSED,CaptureState.INTERRUPTED)) TextButton(onClick=onResume,enabled=enabled) {Text(stringResource(R.string.capture_resume))}
                 if(!session.terminal) TextButton(onClick=onStop,enabled=enabled) {Text(stringResource(R.string.capture_stop))}
                 if(session.state !in setOf(CaptureState.PREPARING,CaptureState.RECORDING,CaptureState.DELETING)) TextButton(onClick=onInspect,enabled=enabled) {Text(stringResource(R.string.capture_details))}
+                if(session.state in setOf(CaptureState.COMPLETED,CaptureState.FAILED)) TextButton(onClick=onExport,enabled=enabled,
+                    modifier=Modifier.semantics {testTag="motion_export_${session.id}"}) {Text(stringResource(R.string.motion_export))}
                 if(session.terminal) TextButton(onClick=onDelete,enabled=enabled) {Text(stringResource(R.string.delete))}
             }
         }

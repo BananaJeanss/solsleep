@@ -1598,3 +1598,34 @@ sleep tracker or a separately trusted wake-up alarm. Missing observations remain
 missing; this work establishes neither physiological accuracy nor production
 readiness. Physical gates require hardware, while independent software backlog
 remains authorized above.
+
+### Recording portability continuation — 18 October 2026
+
+Deliver a separate **single finished phone recording** archive before combined
+all-app/encrypted archives. Do not relabel Journal JSON as a raw backup. The
+execution design and complete binary specification are in docs/MOTION_ARCHIVE.md.
+
+- [x] Define SOLR v1: bounded sequential metadata + exact SOLM chunks + complete SHA-256 footer/EOF; no paths/compression. Preserve source clocks/counters and original ordered events without fabricated samples.
+- [x] Freeze/validate private spool before chosen-provider writes; independently close/reopen/validate/fingerprint-compare destination. Expose written-unverified separately from write failure.
+- [x] Stage/validate/sync a single durable recovery slot before preview. Retain partial/corrupt input visibly; recover a complete interrupted preparing copy.
+- [x] Restore only finished states with no active acquisition. Check local session/request/source/deletion identities, require exact-subset raw retry files, publish identical chunks before one metadata transaction, retain staging across failure and retry after reopen.
+- [x] Add non-destructive capture schema 1→2 migration for local deletion markers and imported original event sequences; retain source event ordering even when destination SQLite row IDs collide.
+- [x] Wire native export, preview/explicit restore, meaningful conflict/failure/recovery controls and unencrypted-data disclosure; no automatic recording/alarm arming.
+- [x] Author independent Python struct fixture and standalone stdlib inspector, plus core/native fault/provider/migration and 200% UI regression cases.
+- [ ] Qualify exact final source on API 29 and 37, inspect actual XML reports and native capture, zero lint and shrunk release; record CI/source below before claiming this milestone qualified.
+- [ ] Persist raw-export attempt/verified receipts and provider identity/availability; journal receipts still cover only Journal JSON.
+- [ ] Combine all records/portable capture deletion markers, encrypted streaming/key recovery, orphan/staging retention management and broader pagination.
+- [ ] Physical phone power-loss/full-disk/overnight energy/thermal/OEM/acoustic qualification remains hardware dependent.
+
+Restore is intentionally file-first with invisible orphan files on interrupted
+publication, not a fictional cross-filesystem/SQLite transaction. A durable full
+recovery file supports explicit idempotent retry. Discard never deletes source
+documents/live records; partial raw files remain conservatively retained. Older
+clean-install copies cannot know subsequent deletions; pre-migration deletions
+cannot be reconstructed. These limits remain explicit in the UI/specification.
+
+Primary guidance reviewed: Android Storage Access Framework/ContentResolver,
+SQLiteOpenHelper transactional migrations and SQLite WAL/atomic-commit scope,
+Java 17 digest streams. See the linked primary URLs in docs/MOTION_ARCHIVE.md.
+No image generation, new sensitive permissions, proprietary SDK or cryptographic
+claim is introduced. Independent fixture data is labeled synthetic test data.

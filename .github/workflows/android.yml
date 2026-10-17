@@ -34,6 +34,8 @@ jobs:
         run: |
           python3 tools/generate_brand.py
           python3 tools/generate_tone.py
+          python3 tools/generate_motion_fixture.py --check
+          python3 tools/inspect_motion_archive.py core/src/test/resources/motion-archive-v1.solmotion
           git diff --exit-code -- app/src/main/res
       - name: Test, lint, and build both variants
         run: |

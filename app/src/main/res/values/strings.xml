@@ -206,7 +206,7 @@
 
 Keep the phone on a firm, ventilated surface, away from pillows and bedding. Recording uses a visible notification and keeps the CPU awake. It does not use the microphone, watch, network or location.
 
-Raw recordings are not included in Journal exports yet. They stay on this installation until you delete them; uninstalling removes them. Device storage protection applies, but there is no portable encrypted backup. Continue only if these limits are acceptable.</string>
+Raw recordings are separate from Journal exports. Finish a recording and use Export recording to save a portable, unencrypted copy. Uninstalling removes data without an external copy. Device storage protection applies; portable encryption is not implemented. Continue only if these limits are acceptable.</string>
     <string name="capture_limits">Requests about 10 samples per second; actual delivery varies. Saves bounded batches about every 4 seconds. A segment stops after 12 hours, 15 seconds without fresh samples, a clock jump or low storage. A session is bounded to about 64 MiB; a 64 MiB free-space threshold is checked before writing. These are software policies, not measured battery or power-loss guarantees.</string>
     <string name="capture_details">Check saved observations</string>
     <string name="capture_file_count">Validated files: %1$d</string>
@@ -229,4 +229,20 @@ Units: m/s² (including gravity) · Requested interval: 100 ms</string>
     <string name="capture_process_loss">The service or process ended. Missing time was not recorded.</string>
     <string name="capture_stale">Stopped because the accelerometer was unavailable or stopped supplying fresh samples.</string>
     <string name="capture_storage_error">Stopped after a storage error. Previously published observations are retained.</string>
+    <string name="motion_archive_title">Recording backups</string>
+    <string name="motion_archive_hint">Export a finished recording to save its exact motion data, sources and events. These .solmotion files are unencrypted and may contain sensitive timing and movement data. They are separate from journal and alarm exports. Restore keeps existing and locally deleted recordings; nothing starts recording or arms an alarm.</string>
+    <string name="motion_export">Export recording</string>
+    <string name="motion_import">Choose a recording to restore</string>
+    <string name="motion_restore">Restore this recording</string>
+    <string name="motion_recovery_hint">A checked recovery copy is kept on this phone until restore succeeds or you discard it. Interrupted restores can be retried after reopening the app.</string>
+    <string name="motion_recovery_error">The recovery copy could not be checked. Existing recordings are retained. You can discard this copy and choose the original document again.</string>
+    <string name="motion_export_verified">Recording exported and its destination readback verified. This checks the returned bytes, not future cloud retention.</string>
+    <string name="motion_export_unverified">The recording was written, but destination readback did not verify. Keep the original recording and try another document.</string>
+    <string name="motion_export_failed">Export did not finish. The chosen document may be incomplete. The original recording is retained.</string>
+    <string name="motion_restore_success">Recording restored. Original samples, sources and events are retained; no recording was started.</string>
+    <string name="motion_restore_conflict">An existing or locally deleted identity takes priority. This copy will not replace it.</string>
+    <string name="motion_restore_failed">Restore did not finish cleanly. Saved data is retained. Recheck the recording list and retry the recovery copy; already published data is never overwritten.</string>
+    <string name="motion_finish_before_restore">Finish the current recording before restoring a backup.</string>
+    <string name="motion_discard">Discard recovery copy</string>
+    <string name="motion_discard_hint">Remove the private staging copy from this phone? The chosen document and saved recordings remain. Files already published by an interrupted restore are retained for an identical retry.</string>
 </resources>

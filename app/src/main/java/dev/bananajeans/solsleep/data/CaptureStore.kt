@@ -11,11 +11,6 @@ import dev.bananajeans.solsleep.core.*
 import java.time.Instant
 import java.util.UUID
 
-data class CaptureEvent(val sequence: Long,val sessionId: UUID,val reason: CaptureReason,val wall: Instant,
-    val elapsedNanos: Long,val bootId: UUID,val detail: Long?)
-data class CaptureStream(val id: UUID,val sessionId: UUID,val bootId: UUID,val wall: Instant,val elapsedNanos: Long,
-    val source: CaptureSource,val committedSamples: Long,val rejectedSamples: Long,val gaps: Long)
-
 /** Session ownership and a rebuildable progress index. Raw checksummed files remain authoritative.
  * Credential protected, independent of alarm and manual journal startup. No destructive recovery.
  */
@@ -23,7 +18,7 @@ class CaptureStore(context: Context,name: String="motion-capture.db"): AutoClose
     companion object {private val locks=Array(32) {Any()}}
     private val credential=context.applicationContext.also {check(!it.isDeviceProtectedStorage)}
     private val openLock=locks[(credential.getDatabasePath(name).absolutePath.hashCode() and Int.MAX_VALUE)%locks.size]
-    private val helper=object: SQLiteOpenHelper(credential,name,null,1,DatabaseErrorHandler {
+    private val helper=object: SQLiteOpenHelper(credential,name,null,2,DatabaseErrorHandler {
         android.util.Log.e("SolSleepCapture","Capture database damaged; original files retained")
     }) {
         override fun onConfigure(db: SQLiteDatabase) {
@@ -38,6 +33,7 @@ class CaptureStore(context: Context,name: String="motion-capture.db"): AutoClose
             db.execSQL("""CREATE TABLE events(sequence INTEGER PRIMARY KEY AUTOINCREMENT,
                 session_id TEXT NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,reason TEXT NOT NULL,
                 wall_ms INTEGER NOT NULL,elapsed_ns INTEGER NOT NULL CHECK(elapsed_ns>=0),boot_id TEXT NOT NULL,detail INTEGER)""")
+            createArchiveSchema(db)
             db.execSQL("""CREATE TABLE streams(id TEXT PRIMARY KEY NOT NULL,
                 session_id TEXT NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,boot_id TEXT NOT NULL,
                 anchor_ms INTEGER NOT NULL,anchor_ns INTEGER NOT NULL CHECK(anchor_ns>=0),
@@ -46,9 +42,17 @@ class CaptureStore(context: Context,name: String="motion-capture.db"): AutoClose
                 committed_samples INTEGER NOT NULL DEFAULT 0 CHECK(committed_samples>=0),
                 rejected_samples INTEGER NOT NULL DEFAULT 0 CHECK(rejected_samples>=0),gaps INTEGER NOT NULL DEFAULT 0 CHECK(gaps>=0))""")
         }
-        override fun onUpgrade(db: SQLiteDatabase,oldVersion: Int,newVersion: Int) {throw SQLiteException("No validated capture migration")}
+        override fun onUpgrade(db: SQLiteDatabase,oldVersion: Int,newVersion: Int) {
+            check(oldVersion==1 && newVersion==2) {"No validated capture migration"}
+            createArchiveSchema(db)
+        }
         override fun onDowngrade(db: SQLiteDatabase,oldVersion: Int,newVersion: Int) {throw SQLiteException("Capture downgrade not supported")}
     }.apply {setWriteAheadLoggingEnabled(true)}
+    private fun createArchiveSchema(db: SQLiteDatabase) {
+        db.execSQL("ALTER TABLE events ADD COLUMN original_sequence INTEGER CHECK(original_sequence>0)")
+        db.execSQL("CREATE UNIQUE INDEX imported_event_order ON events(session_id,original_sequence) WHERE original_sequence IS NOT NULL")
+        db.execSQL("CREATE TABLE deleted_sessions(id TEXT PRIMARY KEY NOT NULL,request_id TEXT NOT NULL UNIQUE)")
+    }
     private fun database()=synchronized(openLock) {helper.writableDatabase}
     private fun <T> transaction(block: (SQLiteDatabase)->T): T {
         val db=database();db.beginTransactionNonExclusive()
@@ -64,6 +68,7 @@ class CaptureStore(context: Context,name: String="motion-capture.db"): AutoClose
         db.query("sessions",null,"request_id=?",arrayOf(requestId.toString()),null,null,null).use {c->
             if(c.moveToFirst()) return@transaction session(c)
         }
+        check(!db.query("deleted_sessions",arrayOf("id"),"request_id=?",arrayOf(requestId.toString()),null,null,null).use {it.moveToFirst()}) {"Request was deleted"}
         // The unique partial index also enforces this across helpers, not just this object.
         val value=CaptureSession(UUID.randomUUID(),requestId,ownerId,CaptureState.PREPARING,wall,wall,1)
         db.insertOrThrow("sessions",null,values(value));event(db,value.id,CaptureReason.START,wall,elapsed,boot,null);value
@@ -106,8 +111,8 @@ class CaptureStore(context: Context,name: String="motion-capture.db"): AutoClose
     @Synchronized fun note(id: UUID,reason: CaptureReason,wall: Instant,elapsed: Long,boot: UUID,detail: Long?=null)=transaction {db->
         check(read(db,id)?.terminal==false);event(db,id,reason,wall,elapsed,boot,detail)
     }
-    @Synchronized fun events(id: UUID): List<CaptureEvent> =database().query("events",null,"session_id=?",arrayOf(id.toString()),null,null,"sequence").use {c->
-        buildList {while(c.moveToNext()) add(CaptureEvent(c.long("sequence"),id,CaptureReason.valueOf(c.string("reason")),
+    @Synchronized fun events(id: UUID): List<CaptureEvent> =database().query("events",null,"session_id=?",arrayOf(id.toString()),null,null,"COALESCE(original_sequence,sequence)").use {c->
+        buildList {while(c.moveToNext()) add(CaptureEvent(c.getColumnIndexOrThrow("original_sequence").let {if(c.isNull(it)) c.long("sequence") else c.getLong(it)},id,CaptureReason.valueOf(c.string("reason")),
             Instant.ofEpochMilli(c.long("wall_ms")),c.long("elapsed_ns"),UUID.fromString(c.string("boot_id")),c.getColumnIndexOrThrow("detail").let {if(c.isNull(it)) null else c.getLong(it)}))}
     }
     @Synchronized fun streams(id: UUID): List<CaptureStream> =database().query("streams",null,"session_id=?",arrayOf(id.toString()),null,null,"rowid").use {c->
@@ -118,7 +123,53 @@ class CaptureStore(context: Context,name: String="motion-capture.db"): AutoClose
     }
     /** Call only AFTER deleting owned raw files. A crash leaves the DELETING intent retryable. */
     @Synchronized fun finishDelete(id: UUID)=transaction {db->
+        val old=requireNotNull(read(db,id));check(old.state==CaptureState.DELETING)
+        db.insertOrThrow("deleted_sessions",null,ContentValues().apply {put("id",old.id.toString());put("request_id",old.requestId.toString())})
         check(db.delete("sessions","id=? AND state='DELETING'",arrayOf(id.toString()))==1)
+    }
+    /** Metadata snapshot is transactional; only terminal records can be portable. */
+    @Synchronized fun recording(id: UUID): CaptureRecording=transaction {db->
+        listOf("streams" to MotionArchive.MAX_STREAMS,"events" to MotionArchive.MAX_EVENTS).forEach {(table,limit)->
+            db.rawQuery("SELECT COUNT(*) FROM $table WHERE session_id=?",arrayOf(id.toString())).use {c->
+                check(c.moveToFirst() && c.getLong(0)<=limit) {"Recording metadata exceeds archive limit; retained"}
+            }
+        }
+        val value=CaptureRecording(requireNotNull(read(db,id)),streams(id),events(id))
+        value.validate();value
+    }
+    @Synchronized fun restoreConflict(value: CaptureRecording): Boolean=conflicts(database(),value)
+    private fun conflicts(db: SQLiteDatabase,value: CaptureRecording): Boolean {
+        val s=value.session
+        fun exists(table: String,where: String,args: Array<String>)=db.query(table,arrayOf("id"),where,args,null,null,null,"1").use {it.moveToFirst()}
+        if(exists("sessions","id=? OR request_id=?",arrayOf(s.id.toString(),s.requestId.toString())) ||
+            exists("deleted_sessions","id=? OR request_id=?",arrayOf(s.id.toString(),s.requestId.toString()))) return true
+        return value.streams.any {exists("streams","id=?",arrayOf(it.id.toString()))}
+    }
+    /** Files are idempotently published before visible metadata. Caller retains a durable recovery
+     * archive until this transaction commits. Never invoke with live capture running.
+     */
+    @Synchronized fun restore(value: CaptureRecording,publish: ()->Unit): Boolean=transaction {db->
+        value.validate()
+        if(conflicts(db,value)) return@transaction false
+        check(db.query("sessions",arrayOf("id"),"state NOT IN ('COMPLETED','FAILED','DELETING')",null,null,null,null,"1").use {!it.moveToFirst()}) {"Finish active recording before restore"}
+        publish()
+        db.insertOrThrow("sessions",null,values(value.session))
+        value.streams.forEach {v->
+            db.insertOrThrow("streams",null,ContentValues().apply {
+                put("id",v.id.toString());put("session_id",v.sessionId.toString());put("boot_id",v.bootId.toString())
+                put("anchor_ms",v.wall.toEpochMilli());put("anchor_ns",v.elapsedNanos)
+                put("sensor_name",v.source.name);put("sensor_vendor",v.source.vendor);put("sensor_version",v.source.version)
+                put("resolution",v.source.resolution);put("maximum_range",v.source.maximumRange);put("wake_up",if(v.source.wakeUp) 1 else 0)
+                put("committed_samples",v.committedSamples);put("rejected_samples",v.rejectedSamples);put("gaps",v.gaps)
+            })
+        }
+        value.events.forEach {v->
+            db.insertOrThrow("events",null,ContentValues().apply {
+                put("session_id",v.sessionId.toString());put("original_sequence",v.sequence);put("reason",v.reason.name)
+                put("wall_ms",v.wall.toEpochMilli());put("elapsed_ns",v.elapsedNanos);put("boot_id",v.bootId.toString());put("detail",v.detail)
+            })
+        }
+        true
     }
     private fun read(db: SQLiteDatabase,id: UUID)=db.query("sessions",null,"id=?",arrayOf(id.toString()),null,null,null).use {c->if(c.moveToFirst()) session(c) else null}
     private fun session(c: Cursor)=CaptureSession(UUID.fromString(c.string("id")),UUID.fromString(c.string("request_id")),UUID.fromString(c.string("owner_id")),

@@ -3,6 +3,8 @@ package dev.bananajeans.solsleep.ui
 
 import android.app.Application
 import android.content.Intent
+import android.net.Uri
+import dev.bananajeans.solsleep.R
 import android.hardware.Sensor
 import android.hardware.SensorManager
 import android.os.SystemClock
@@ -23,12 +25,14 @@ import java.util.UUID
 data class CaptureDetails(val sessionId: UUID,val summary: MotionSummary,val streams: List<CaptureStream>,val events: List<CaptureEvent>)
 data class CaptureUiState(val sessions: List<CaptureSession> = emptyList(),val active: CaptureSession?=null,
     val page: Int=0,val older: Boolean=false,val busy: Boolean=true,val unavailable: Boolean=false,
+    val message: Int?=null,val pending: PendingMotion?=null,val recoveryPresent: Boolean=false,val recoveryError: Boolean=false,
     val error: Boolean=false,val sensorAvailable: Boolean=false,val notifications: Boolean=false,val details: CaptureDetails?=null)
 
 class CaptureViewModel(app: Application): AndroidViewModel(app) {
     private val mutable=MutableStateFlow(CaptureUiState())
     val state=mutable.asStateFlow()
     private val mutex=Mutex()
+    private var recoveryLoaded=false
     private val context get()=getApplication<Application>()
     private fun operation(block: suspend ()->Unit) {viewModelScope.launch {mutex.withLock {
         mutable.update {it.copy(busy=true,error=false)}
@@ -37,6 +41,7 @@ class CaptureViewModel(app: Application): AndroidViewModel(app) {
         finally {mutable.update {it.copy(busy=false)}}
     }}}
     private suspend fun read(page: Int=mutable.value.page)=withContext(Dispatchers.IO) {
+        if(!recoveryLoaded) {loadPending();recoveryLoaded=true}
         val boot=CaptureRuntime.bootId(context)
         CaptureStore(context).use {store->
             store.recoverOrphans(CaptureRuntime.liveOwner ?: CaptureRuntime.ownerId,Instant.ofEpochMilli(System.currentTimeMillis()),SystemClock.elapsedRealtimeNanos(),boot)
@@ -69,6 +74,42 @@ class CaptureViewModel(app: Application): AndroidViewModel(app) {
             CaptureStore(context).use {CaptureDetails(session.id,MotionFiles.inspectSession(context,it,session.id),it.streams(session.id),it.events(session.id))}
         }
         mutable.update {it.copy(details=details)}
+    }
+    private suspend fun loadPending()=withContext(Dispatchers.IO) {
+        val documents=MotionDocuments(context)
+        try {
+            val pending=documents.inspectPending()
+            mutable.update {it.copy(pending=pending,recoveryPresent=pending!=null,recoveryError=false)}
+        } catch(c: CancellationException) {throw c}
+        catch(_: Exception) {mutable.update {it.copy(pending=null,recoveryPresent=true,recoveryError=true)}}
+    }
+    fun export(sessionId: UUID,uri: Uri)=operation {
+        try {
+            withContext(Dispatchers.IO) {MotionDocuments(context).export(sessionId,uri)}
+            mutable.update {it.copy(message=R.string.motion_export_verified)}
+        } catch(c: CancellationException) {throw c}
+        catch(_: MotionVerificationException) {mutable.update {it.copy(message=R.string.motion_export_unverified)}}
+        catch(_: Exception) {mutable.update {it.copy(message=R.string.motion_export_failed)}}
+    }
+    fun stage(uri: Uri)=operation {
+        try {
+            val pending=withContext(Dispatchers.IO) {MotionDocuments(context).stage(uri)}
+            mutable.update {it.copy(pending=pending,recoveryPresent=true,recoveryError=false,message=null)}
+        } finally {loadPending()}
+    }
+    fun restore()=operation {
+        val fingerprint=requireNotNull(mutable.value.pending).preview.fingerprint
+        try {
+            val restored=withContext(Dispatchers.IO) {MotionDocuments(context).restore(fingerprint)}
+            mutable.update {it.copy(message=if(restored) R.string.motion_restore_success else R.string.motion_restore_conflict)}
+            read(0)
+        } catch(c: CancellationException) {throw c}
+        catch(_: Exception) {mutable.update {it.copy(message=R.string.motion_restore_failed)}}
+        finally {loadPending()}
+    }
+    fun discardPending()=operation {
+        withContext(Dispatchers.IO) {MotionDocuments(context).discard()}
+        loadPending()
     }
     fun closeDetails() {mutable.update {it.copy(details=null)}}
     fun delete(session: CaptureSession)=operation {
