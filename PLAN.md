@@ -3,7 +3,7 @@
 **Repository:** [BananaJeanss/solsleep](https://github.com/BananaJeanss/solsleep)  
 **Research date:** 17 October 2026  
 **Reference baseline:** Sleep as Android public documentation and release notes, latest documented release **20261006**. [S01] [S02]  
-**Project state:** planning only. The repository was empty when inspected. No Android application, tested feature, validated algorithm, or release artifact exists yet.  
+**Project state:** implementation started after this research baseline. See [STATUS.md](STATUS.md) for current code, tests, and open gates. The repository was empty during the initial planning pass.
 **Document status:** initial engineering proposal. Implementation choices below are proposed decisions; research findings are identified separately and linked to primary sources.
 
 ## 1. Product contract
@@ -95,7 +95,7 @@ No silent substitution is allowed. If a requirement needs a paid external servic
 
 ## 4. Feature parity ledger
 
-**Every row below is unimplemented.** The code in the last column describes a feasibility classification and target milestone, not completion.
+**This ledger preserves the initial requirements baseline.** Current implementation and evidence are tracked in [STATUS.md](STATUS.md). The code in the last column describes feasibility and a target milestone, not completion.
 
 - **P — planned:** a practical implementation path is identified; it still needs implementation and evidence.
 - **C — conditional:** depends on a vendor, external app, OS capability, account, or tested hardware.

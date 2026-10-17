@@ -1,0 +1,58 @@
+<div align="center">
+  <img src="assets/solsleep.svg" width="160" height="160" alt="An Android robot asleep on a pillow under a blue blanket">
+  <h1>SolSleep</h1>
+  <p>Calmer nights. Kinder mornings. Free software.</p>
+</div>
+
+SolSleep is an independent, free and open-source Android™ sleep app in early development. The goal is the functional breadth of Sleep as Android, with an original Material 3 Expressive interface, durable records, and transparent measurements.
+
+The first implementation is a **local alarm foundation**, not a finished sleep tracker. See [STATUS.md](STATUS.md) for implemented behavior and evidence, and [PLAN.md](PLAN.md) for the full roadmap.
+
+## First alarm workflow
+
+- Create/edit one-time or selected-weekday alarms.
+- Enable/disable, skip the next weekly occurrence, and undo a skip.
+- Receive an exact local alarm, with a gentle sound ramp and optional vibration.
+- Snooze for five minutes up to three times, or dismiss.
+- Check exact-alarm, notification, full-screen, and volume readiness.
+- Recover schedules after a reboot, including before first unlock.
+- Keep alarm data on the device: no account, ads, network permission, or analytics.
+
+The core also defines anchored intervals, alternating ISO weeks, and fixed-zone schedules. These are tested domain capabilities awaiting their UI.
+
+## Build
+
+Requires JDK 17, Android platform `android-37.0` / API 37, and Build Tools 36.0.0. Set `ANDROID_HOME` or `sdk.dir` in an untracked `local.properties`.
+
+```sh
+./gradlew :core:test :app:assembleDebug :app:lintDebug
+./gradlew :app:assembleRelease
+./gradlew :app:connectedDebugAndroidTest
+```
+
+Debug APK: `app/build/outputs/apk/debug/app-debug.apk`. Debug ID: `dev.bananajeans.solsleep.debug`. Release builds are shrunk and unsigned. No production signing key is committed. Instrumentation requires a running emulator/device; see [docs/TESTING.md](docs/TESTING.md).
+
+## Alarm setup
+
+Allow precise alarms and notifications in **Alarm setup**, and full-screen access if desired. Use the sound preview at your intended alarm volume.
+
+A force-stopped application or powered-off phone cannot be made dependable by this app. Physical-device, OEM, and overnight validation remain required. This development build is not production ready.
+
+## Design and privacy
+
+The cute sleeping Android logo is drawn directly as SVG paths. Its Android vectors and monochrome themed launcher icon are reproducible:
+
+```sh
+python3 tools/generate_brand.py
+python3 tools/generate_tone.py
+```
+
+There are **no image-generated assets**. The local chime is synthesized from sine waves without external recordings or a generation service.
+
+Alarm schedules, labels, and necessary output settings use a small device-protected database so they work before first unlock. No health history, recordings, credentials, or location is stored there. See [docs/DECISIONS.md](docs/DECISIONS.md).
+
+## License
+
+Code is [GPL-3.0-or-later](LICENSE). See [NOTICE](NOTICE) for third-party notices.
+
+The Android robot is adapted from Google's artwork under [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/). Changes include its sleeping pose, pillow, blanket, palette, and monochrome silhouette. Android is a trademark of Google LLC. No Google endorsement is implied.
