@@ -25,6 +25,7 @@ jobs:
           distribution: temurin
           java-version: "17"
           cache: gradle
+      - uses: android-actions/setup-android@be39fa834029ff78f1a44aa3bb0819b8fc2bd8fd # v4.0.4
       - name: Install compile SDK
         run: sdkmanager "platforms;android-37.0" "build-tools;36.0.0"
       - name: Verify generated assets
@@ -59,6 +60,7 @@ jobs:
           distribution: temurin
           java-version: "17"
           cache: gradle
+      - uses: android-actions/setup-android@be39fa834029ff78f1a44aa3bb0819b8fc2bd8fd # v4.0.4
       - name: Install API 37 emulator
         run: |
           sdkmanager "platforms;android-37.0" "build-tools;36.0.0" "emulator" "system-images;android-37.0;google_apis;x86_64"
