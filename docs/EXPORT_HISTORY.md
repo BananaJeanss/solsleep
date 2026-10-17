@@ -35,7 +35,10 @@ Metadata includes a UUID, sequence, times, stage, optional bounded document disp
 name, and a full-document SHA-256 only for verified receipts. No authoritative
 journal values, encryption secrets, content URI or provider credentials are stored.
 A user-chosen filename itself can be personal; this database receives the same
-credential storage/backup exclusions as the rest of the app.
+credential storage/backup exclusions as the rest of the app. The current picker
+returns a URI only, so this workflow records a generic chosen-document label
+and makes no additional metadata query that could delay recovery. Destination
+identity, retained access and availability remain separate portability work.
 
 Audit storage is auxiliary. Its open/write/commit/corruption failure must not stop
 a user recovering a valid copy of their journal. The coordinator continues the

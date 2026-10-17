@@ -75,17 +75,10 @@ class JournalViewModel(app: Application): AndroidViewModel(app) {
     fun export(uri: Uri)=launch(R.string.journal_export_error) {
         val result=withContext(Dispatchers.IO) {
             val resolver=getApplication<Application>().contentResolver
-            val name=try {
-                resolver.query(uri,arrayOf(android.provider.OpenableColumns.DISPLAY_NAME),null,null,null)?.use {cursor->
-                    if(!cursor.moveToFirst()) null else cursor.getString(0)?.takeIf {value->
-                        value.length<=256 && hasValidUnicode(value) && value.isNotBlank() && value.none {it<' '}
-                    }
-                }
-            } catch(c: CancellationException) {throw c} catch(_: Exception) {null}
             JournalExportHistory(getApplication()).use {audit->
                 AuditedJournalExport.run({JournalStore(getApplication()).use {it.archiveSnapshot()}},
                     {requireNotNull(resolver.openOutputStream(uri,"wt"))},
-                    {requireNotNull(resolver.openInputStream(uri))},audit,name)
+                    {requireNotNull(resolver.openInputStream(uri))},audit,null)
             }
         }
         refreshExportHistory(!result.auditRecorded)
