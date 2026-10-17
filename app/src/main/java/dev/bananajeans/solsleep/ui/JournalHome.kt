@@ -209,7 +209,7 @@ import java.time.temporal.ChronoUnit
                 onSave(SleepRecord(id=draftId,revision=(base?.revision ?: 0)+1,
                     createdAt=base?.createdAt ?: modified,modifiedAt=modified,start=requireNotNull(startInstant),
                     end=requireNotNull(endInstant),zone=zone.id,note=note,rating=rating.takeIf {it!=0},tags=cleanTags))
-            },enabled=valid && !busy,modifier=Modifier.fillMaxWidth().semantics {testTag="journal_save"}) {Text(stringResource(R.string.save))}
+            },enabled=valid && !busy,modifier=Modifier.fillMaxWidth().semantics {testTag="journal_save"}) {Text(stringResource(R.string.journal_save_label))}
             TextButton(onClick=onClose,enabled=!busy,modifier=Modifier.fillMaxWidth()) {Text(stringResource(R.string.cancel))}
         }
         }
@@ -223,7 +223,7 @@ import java.time.temporal.ChronoUnit
                     val changed=local.with(Instant.ofEpochMilli(millis).atZone(ZoneOffset.UTC).toLocalDate())
                     if(picker==1) {start=changed.toString();startOffset=null} else {end=changed.toString();endOffset=null}
                 };picker=0
-            }) {Text(stringResource(R.string.save))}},dismissButton={TextButton(onClick={picker=0}) {Text(stringResource(R.string.cancel))}}) {
+            }) {Text(stringResource(R.string.choose_date))}},dismissButton={TextButton(onClick={picker=0}) {Text(stringResource(R.string.cancel))}}) {
                 DatePicker(state)
             }
         } else {
@@ -232,7 +232,7 @@ import java.time.temporal.ChronoUnit
                 text={TimeInput(state)},confirmButton={TextButton(onClick={
                     val changed=local.withHour(state.hour).withMinute(state.minute).withSecond(0).withNano(0)
                     if(picker==2) {start=changed.toString();startOffset=null} else {end=changed.toString();endOffset=null};picker=0
-                }) {Text(stringResource(R.string.save))}},dismissButton={TextButton(onClick={picker=0}) {Text(stringResource(R.string.cancel))}})
+                }) {Text(stringResource(R.string.journal_choose_time))}},dismissButton={TextButton(onClick={picker=0}) {Text(stringResource(R.string.cancel))}})
         }
     }
 }

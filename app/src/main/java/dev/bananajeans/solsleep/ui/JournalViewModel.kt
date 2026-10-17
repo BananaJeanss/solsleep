@@ -71,7 +71,7 @@ class JournalViewModel(app: Application): AndroidViewModel(app) {
         val preview=withContext(Dispatchers.IO) {
             requireNotNull(getApplication<Application>().contentResolver.openInputStream(uri)).use(JournalArchive::inspect)
         }
-        val existing=store {it.current().map {r->r.id}.toSet()}
+        val existing=store {it.knownIds()}
         mutable.update {it.copy(preview=preview,existing=preview.records.map {r->r.id}.distinct().count {id->id in existing})}
     }
     fun restore()=launch {

@@ -81,7 +81,7 @@ class JournalStoreTest {
     @Test fun deletedNightCannotReturnFromAnOldArchiveOrStaleDraft() {
         store.save(r,0);val preview=JournalPreview(r.createdAt,listOf(r),"test")
         store.delete(r.id,1);store.close();store=JournalStore(context,name)
-        assertEquals(0,store.restore(preview));assertTrue(store.current().isEmpty());assertTrue(store.snapshot().isEmpty())
+        assertEquals(0,store.restore(preview));assertTrue(r.id in store.knownIds());assertTrue(store.current().isEmpty());assertTrue(store.snapshot().isEmpty())
         try {store.save(r,0);fail("Deleted identity must stay deleted")} catch(_: RevisionConflict) { }
     }
     @Test fun localCorrectionWinsOverAnOlderArchiveAndDeleteChecksRevision() {
@@ -109,6 +109,15 @@ class JournalStoreTest {
                 assertTrue(c.moveToFirst());assertEquals(r,SleepRecordCodec.decode(c.getString(0)))
             }
         }
+    }
+    @Test fun inconsistentCurrentPointerCannotSilentlyHideSavedHistory() {
+        store.save(r,0)
+        SQLiteDatabase.openDatabase(credential.getDatabasePath(name).path,null,SQLiteDatabase.OPEN_READWRITE).use {db->
+            db.execSQL("UPDATE sessions SET current_revision=99 WHERE id=?",arrayOf(r.id))
+        }
+        try {store.current();fail("Missing revision must be visible as an error")} catch(_: IllegalStateException) { }
+        try {store.delete(r.id,1);fail("Stale pointer must not allow deletion")} catch(_: RevisionConflict) { }
+        assertEquals(listOf(r),store.snapshot());assertEquals(listOf(r),store.history(r.id))
     }
     @Test fun unreadableDatabaseIsRetainedByteForByteInsteadOfReset() {
         store.save(r,0);store.close()

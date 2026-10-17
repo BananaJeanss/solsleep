@@ -34,9 +34,18 @@ class JournalStore(context: Context,name: String="journal.db") : AutoCloseable {
         }
     }.apply {setWriteAheadLoggingEnabled(true)}
 
-    @Synchronized fun current(): List<SleepRecord> = helper.readableDatabase.rawQuery("""SELECT r.payload FROM sessions s
-        JOIN revisions r ON r.session_id=s.id AND r.revision=s.current_revision""",null).use {c->
-        buildList {while(c.moveToNext()) add(SleepRecordCodec.decode(c.getString(0)))}.sortedByDescending {it.start}
+    @Synchronized fun current(): List<SleepRecord> = helper.readableDatabase.rawQuery("""SELECT s.id,s.current_revision,r.payload FROM sessions s
+        LEFT JOIN revisions r ON r.session_id=s.id AND r.revision=s.current_revision""",null).use {c->
+        buildList {while(c.moveToNext()) {
+            check(!c.isNull(2)) {"Missing current revision; original data retained"}
+            val record=SleepRecordCodec.decode(c.getString(2))
+            check(record.id==c.getString(0) && record.revision==c.getLong(1)) {"Revision identity mismatch; original data retained"}
+            add(record)
+        }}.sortedByDescending {it.start}
+    }
+    @Synchronized fun knownIds(): Set<String> = helper.readableDatabase.rawQuery(
+        "SELECT id FROM sessions UNION SELECT id FROM tombstones",null).use {c->
+        buildSet {while(c.moveToNext()) add(c.getString(0))}
     }
     @Synchronized fun history(id: String): List<SleepRecord> = readHistory(helper.readableDatabase,id)
     @Synchronized fun snapshot(): List<SleepRecord> = transaction {db->
@@ -74,7 +83,7 @@ class JournalStore(context: Context,name: String="journal.db") : AutoCloseable {
     @Synchronized fun delete(id: String,expectedRevision: Long) = transaction {db->
         if(readHistory(db,id).lastOrNull()?.revision!=expectedRevision) throw RevisionConflict()
         db.delete("revisions","session_id=?",arrayOf(id))
-        db.delete("sessions","id=?",arrayOf(id))
+        if(db.delete("sessions","id=? AND current_revision=?",arrayOf(id,expectedRevision.toString()))!=1) throw RevisionConflict()
         db.insertOrThrow("tombstones",null,ContentValues().apply {put("id",id)})
     }
     private fun readHistory(db: SQLiteDatabase,id: String): List<SleepRecord> =
