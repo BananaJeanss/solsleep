@@ -174,4 +174,56 @@
     <string name="journal_export_no_verified">No verified export recorded on this device.</string>
     <string name="journal_export_history_unavailable">Export history is unavailable. You can still export and verify your journal.</string>
     <string name="journal_export_history_warning">The latest export result could not be fully recorded. Check its result before relying on the copy.</string>
+    <string name="capture_title">Phone motion</string>
+    <string name="capture_heading">Record the movement your phone observes</string>
+    <string name="capture_explanation">Experimental raw accelerometer recording. This does not measure sleep, stages, breathing or snoring. Keep your usual alarm as backup while physical reliability testing is unfinished.</string>
+    <string name="capture_channel">Phone motion recording</string>
+    <string name="capture_notification_body">Phone movement only · Tap to see controls</string>
+    <string name="capture_start">Set up a motion recording</string>
+    <string name="capture_begin">Start recording</string>
+    <string name="capture_stop">Finish recording</string>
+    <string name="capture_pause">Pause recording</string>
+    <string name="capture_resume">Resume recording</string>
+    <string name="capture_preparing">Waiting for the first saved samples</string>
+    <string name="capture_recording">Recording phone movement</string>
+    <string name="capture_paused">Paused · No data is being captured</string>
+    <string name="capture_interrupted">Interrupted · Recording has stopped</string>
+    <string name="capture_completed">Finished · Saved observations retained</string>
+    <string name="capture_failed">Could not acquire motion data</string>
+    <string name="capture_deleting">Deletion unfinished · Retry to remove remaining files</string>
+    <string name="capture_gap_explanation">Missing time stays missing. Resuming creates a new segment; no sleep is inferred between segments.</string>
+    <string name="capture_saved">Saved recordings</string>
+    <string name="capture_newer">Newer recordings</string>
+    <string name="capture_older">Older recordings</string>
+    <string name="capture_reload">Reload recordings</string>
+    <string name="capture_no_sensor">No phone accelerometer is available.</string>
+    <string name="capture_notifications_needed">Allow notifications and this recording channel so the ongoing Stop control stays visible.</string>
+    <string name="capture_allow_notifications">Allow notifications</string>
+    <string name="capture_notification_settings">Recording notification settings</string>
+    <string name="capture_unavailable">Recording storage is unavailable. Existing files are retained; recording is disabled.</string>
+    <string name="capture_error">The recording command could not finish. Check the saved state below. Existing observations are retained.</string>
+    <string name="capture_consent">This experimental feature saves your phone’s accelerometer readings locally. Movement is not a measurement of sleep, and battery use and overnight reliability are not yet qualified.
+
+Keep the phone on a firm, ventilated surface, away from pillows and bedding. Recording uses a visible notification and keeps the CPU awake. It does not use the microphone, watch, network or location.
+
+Raw recordings are not included in Journal exports yet. They stay on this installation until you delete them; uninstalling removes them. Device storage protection applies, but there is no portable encrypted backup. Continue only if these limits are acceptable.</string>
+    <string name="capture_limits">Requests about 10 samples per second; actual delivery varies. Saves bounded batches about every 4 seconds. A segment stops after 12 hours, 15 seconds without fresh samples, a clock jump or low storage. A session is bounded to about 64 MiB; at least 64 MiB is reserved. These are software policies, not measured battery or power-loss guarantees.</string>
+    <string name="capture_details">Check saved observations</string>
+    <string name="capture_verified_values">Validated files: %1$d
+Saved samples: %2$d
+Saved bytes: %3$d
+Detected file issues: %4$d</string>
+    <string name="capture_source">Accelerometer: %1$s · %2$s
+Units: m/s² · Requested interval: 100 ms</string>
+    <string name="capture_source_counts">Progress index: %1$d saved samples, %2$d rejected samples, %3$d detected gaps. A crash can leave the index behind the validated files.</string>
+    <string name="capture_event_count">Session events: %1$d</string>
+    <string name="capture_retained_damage">Some files could not be validated. Original damaged files are retained; valid samples are counted separately.</string>
+    <string name="capture_delete_title">Delete this motion recording?</string>
+    <string name="capture_delete_body">Removes this recording’s raw files and session metadata from this installation. Manual journal entries and alarms stay unchanged. An interrupted deletion can be retried. This is not a secure erase guarantee for flash storage.</string>
+    <string name="capture_low_space">Stopped because the recording storage limit or free-space reserve was reached.</string>
+    <string name="capture_time_limit">Stopped at the 12-hour segment limit.</string>
+    <string name="capture_clock_change">Stopped after a clock change. Resume to create a new clock anchor.</string>
+    <string name="capture_process_loss">The service or process ended. Missing time was not recorded.</string>
+    <string name="capture_stale">Stopped because the accelerometer was unavailable or stopped supplying fresh samples.</string>
+    <string name="capture_storage_error">Stopped after a storage error. Previously published observations are retained.</string>
 </resources>

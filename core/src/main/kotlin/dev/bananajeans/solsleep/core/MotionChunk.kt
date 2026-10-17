@@ -58,6 +58,7 @@ object MotionChunkCodec {
 enum class ChunkCheckpoint { FILE_SYNCED, RENAMED, DIRECTORY_SYNCED }
 data class ChunkIssue(val filename: String,val reason: String)
 data class ChunkRecovery(val chunks: List<MotionChunk>,val issues: List<ChunkIssue>)
+data class MotionSummary(val chunks: Long,val samples: Long,val bytes: Long,val issues: List<ChunkIssue>,val streamSamples: Map<UUID,Long> = emptyMap())
 
 /**
  * Self-describing files are authoritative; a future SQL index must be rebuildable from these files.
@@ -88,9 +89,32 @@ class MotionChunkStore(private val directory: Path,private val sessionId: UUID,
         checkpoint(ChunkCheckpoint.RENAMED)
         syncDirectory(directory);checkpoint(ChunkCheckpoint.DIRECTORY_SYNCED)
     }
-    @Synchronized fun recover(): ChunkRecovery = locked {
-        val issues=mutableListOf<ChunkIssue>()
+    @Synchronized fun recover(): ChunkRecovery {
         val chunks=mutableListOf<MotionChunk>()
+        val issues=scan {chunk,_->chunks+=chunk}
+        return ChunkRecovery(chunks.sortedWith(compareBy<MotionChunk> {it.streamId}.thenBy {it.sequence}),issues)
+    }
+    /** Validates one bounded file at a time; never materializes an entire recorded night. */
+    @Synchronized fun summary(): MotionSummary {
+        var chunks=0L;var samples=0L;var bytes=0L
+        val counts=mutableMapOf<UUID,Long>()
+        val issues=scan {chunk,size->chunks++;samples+=chunk.samples.size;bytes+=size
+            counts[chunk.streamId]=(counts[chunk.streamId] ?: 0)+chunk.samples.size}
+        return MotionSummary(chunks,samples,bytes,issues,counts.toMap())
+    }
+    /** Only after a durable DELETING intent. Keep the lock inode; never unlink a held lock. */
+    @Synchronized fun eraseOwned() = locked {
+        val paths=Files.list(directory).use {it.iterator().asSequence().toList()}
+        require(paths.all {path->
+            (path.fileName.toString()==".writer.lock" || filename.matches(path.fileName.toString())) &&
+                !Files.isSymbolicLink(path) && Files.isRegularFile(path,LinkOption.NOFOLLOW_LINKS)
+        }) {"Unknown files retained; deletion needs review"}
+        try {paths.filter {it.fileName.toString()!=".writer.lock"}.forEach {Files.delete(it)}}
+        finally {syncDirectory(directory)}
+    }
+    private fun scan(visit: (MotionChunk,Int)->Unit): List<ChunkIssue> = locked {
+        val issues=mutableListOf<ChunkIssue>()
+        val sequences=mutableMapOf<UUID,MutableList<Long>>()
         val paths=Files.list(directory).use {s->s.filter {filename.matches(it.fileName.toString())}.sorted().iterator().asSequence().toList()}
         paths.filter {it.fileName.toString().endsWith(".pending")}.forEach {pending->
             try {
@@ -106,18 +130,22 @@ class MotionChunkStore(private val directory: Path,private val sessionId: UUID,
         }
         Files.list(directory).use {stream->stream.filter {filename.matches(it.fileName.toString()) && !it.fileName.toString().endsWith(".pending")}
             .sorted().forEach {path->
-                try {chunks+=verified(path,read(path),false)}
+                try {
+                    val bytes=read(path);val chunk=verified(path,bytes,false)
+                    sequences.getOrPut(chunk.streamId) {mutableListOf()}.add(chunk.sequence)
+                    visit(chunk,bytes.size)
+                }
                 catch(_: Exception) {issues+=ChunkIssue(path.fileName.toString(),"Invalid committed chunk; retained")}
             }}
-        chunks.groupBy {it.streamId}.values.forEach {stream->
+        sequences.forEach {(stream,sequences)->
             var expected=0L
-            stream.sortedBy {it.sequence}.forEach {chunk->
-                if(chunk.sequence!=expected) issues+=ChunkIssue("${chunk.streamId}-${chunk.sequence}.motion","Sequence gap before chunk")
-                expected=if(chunk.sequence==Long.MAX_VALUE) Long.MAX_VALUE else chunk.sequence+1
+            sequences.sorted().forEach {sequence->
+                if(sequence!=expected) issues+=ChunkIssue("$stream-$sequence.motion","Sequence gap before chunk")
+                expected=if(sequence==Long.MAX_VALUE) Long.MAX_VALUE else sequence+1
             }
         }
         syncDirectory(directory)
-        ChunkRecovery(chunks.sortedWith(compareBy<MotionChunk> {it.streamId}.thenBy {it.sequence}),issues)
+        issues
     }
     private fun verified(path: Path,bytes: ByteArray,pending: Boolean): MotionChunk {
         val chunk=MotionChunkCodec.decode(bytes)

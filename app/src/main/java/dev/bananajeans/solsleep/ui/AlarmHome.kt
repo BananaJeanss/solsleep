@@ -85,6 +85,10 @@ import kotlinx.coroutines.delay
                 }}
             } else {
                 if(tab==0) item {TonightCard(next,state.entries.isEmpty(),onAdd={edit(null)})}
+                if(tab==0) item {
+                    FilledTonalButton(onClick={context.startActivity(Intent(context,dev.bananajeans.solsleep.capture.MotionCaptureActivity::class.java))},
+                        modifier=Modifier.fillMaxWidth()) {Text(stringResource(R.string.capture_title))}
+                }
                 if(state.entries.any {it.rule.enabled} && state.readiness?.ready==false) item {
                     Card(onClick={showSetup=true},colors=CardDefaults.cardColors(
                         containerColor=MaterialTheme.colorScheme.secondaryContainer)) {
