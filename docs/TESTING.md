@@ -87,3 +87,24 @@ A temporary resource-addition probe passed with Gradle 9.8.1. Original resources
 were restored and a clean unmodified debug APK rebuilt. This establishes that
 case, not that every previously observed incremental generated-R collision is
 fixed. Final independent reports are linked from STATUS.md.
+
+## Portable deletion markers
+
+The v2 reader has an independent Python-serialized fixture (including its digest)
+and retains the original v1 fixture. JVM tests cover live/deleted disjointness,
+canonical identity and marker type/uniqueness/count limits, checksum coverage of
+markers, deletion-only truncation, deterministic output and mutable-input
+revalidation. Existing writer sorting remains supported for unordered revisions.
+
+Android SQLite tests export a deleted identity, clear the disposable test store,
+restore the newer archive, reopen, and verify an older archive cannot resurrect
+it. Imported markers for existing local corrections are skipped with explicit
+counts. Trigger failures after earlier markers and after a later night roll back
+the entire mixed batch. Two helpers race the same restore without duplicates.
+A broken current pointer fails archive export while retaining the original history.
+
+The UI test passes an actual app-private file URI through the ViewModel reader,
+checks the preview and confirms the real restore via Compose. It verifies actual
+counts and the preserved local entry and captures preview/result screens. This
+is not a system picker, external provider, cross-app permission, actual uninstall
+or cloud-provider qualification. Those remain separate M2 tests.

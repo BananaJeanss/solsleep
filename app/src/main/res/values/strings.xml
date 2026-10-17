@@ -130,18 +130,19 @@
     <string name="journal_conflict">This night changed since you opened it. Close the editor, reload, then try again. Your draft has not been saved.</string>
     <string name="journal_error">The journal operation failed. Existing records have been retained. Try again after checking available storage.</string>
     <string name="journal_portability">Keep a copy of your journal</string>
-    <string name="journal_archive_detail">Plaintext JSON includes notes, tags, ratings and every saved correction. Store it somewhere private. Alarms and sensor data are separate. Older copies can still contain nights you later delete.</string>
+    <string name="journal_archive_detail">Plaintext JSON includes notes, tags, ratings, every saved correction and deleted entry identities. Store it somewhere private. Alarms and sensor data are separate. Older copies can still contain nights you later delete.</string>
+    <string name="journal_archive_limits">Export limit: 8 MiB, 10,000 saved revisions and 10,000 deletion markers. Exceeding a limit fails the export; nothing is silently left out.</string>
     <string name="journal_export">Export journal</string>
     <string name="journal_import">Review journal archive</string>
-    <string name="journal_restore">Restore missing nights</string>
+    <string name="journal_restore">Restore journal</string>
     <string name="journal_exported">Journal export completed.</string>
     <string name="journal_restored">Restore completed. Existing nights were kept.</string>
     <plurals name="journal_nights"><item quantity="one">%d night</item><item quantity="other">%d nights</item></plurals>
     <plurals name="journal_revisions"><item quantity="one">%d saved revision</item><item quantity="other">%d saved revisions</item></plurals>
     <plurals name="journal_existing"><item quantity="one">%d identity already on this device</item><item quantity="other">%d identities already on this device</item></plurals>
-    <string name="journal_restore_rule">Only missing nights are added. Existing entries and locally deleted identities are kept as they are. All corrections for added nights are restored together.</string>
+    <string name="journal_restore_rule">Missing nights and deletion markers are added together. Existing entries and local deletions are kept. Imported markers prevent later old-archive restores; they never delete an entry already on this device. All corrections for added nights are restored together.</string>
     <string name="journal_delete_title">Delete this night?</string>
-    <string name="journal_delete_body">The entry and all its saved corrections will be removed from this device. This device will remember its identity to prevent an old archive from adding it again. Exported copies are separate.</string>
+    <string name="journal_delete_body">The entry and all its saved corrections will be removed from this device. This device will remember its identity to prevent an old archive from adding it again. Future exports include that identity. Previously exported copies are separate.</string>
     <string name="journal_history">Saved corrections</string>
     <string name="journal_history_hint">Using an earlier version saves a new correction. Later versions stay in the history and in exports.</string>
     <string name="journal_use_revision">Use revision %1$d</string>
@@ -151,4 +152,10 @@
     <string name="journal_tag_remove">Remove tag %1$s</string>
     <string name="journal_save_label">Save night</string>
     <string name="journal_choose_time">Use time</string>
+    <plurals name="journal_deletions"><item quantity="one">%d deletion marker</item><item quantity="other">%d deletion markers</item></plurals>
+    <plurals name="journal_added"><item quantity="one">%d night added</item><item quantity="other">%d nights added</item></plurals>
+    <plurals name="journal_skipped"><item quantity="one">%d night skipped because its identity is already on this device</item><item quantity="other">%d nights skipped because their identities are already on this device</item></plurals>
+    <plurals name="journal_markers_added"><item quantity="one">%d deletion marker added</item><item quantity="other">%d deletion markers added</item></plurals>
+    <plurals name="journal_markers_skipped"><item quantity="one">%d deletion marker skipped because its identity is already on this device</item><item quantity="other">%d deletion markers skipped because their identities are already on this device</item></plurals>
+    <plurals name="journal_marker_conflicts"><item quantity="one">%d existing night kept despite an imported deletion marker</item><item quantity="other">%d existing nights kept despite imported deletion markers</item></plurals>
 </resources>

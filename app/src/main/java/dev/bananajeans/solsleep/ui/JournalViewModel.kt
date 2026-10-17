@@ -14,7 +14,8 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
 data class JournalState(val records: List<SleepRecord> = emptyList(),val busy: Boolean=false,
-    val error: Int?=null,val notice: Int?=null,val preview: JournalPreview?=null,val existing: Int=0,val history: List<SleepRecord>?=null)
+    val error: Int?=null,val notice: Int?=null,val preview: JournalPreview?=null,val existing: Int=0,
+    val markerConflicts: Int=0,val restoreResult: JournalRestoreResult?=null,val history: List<SleepRecord>?=null)
 
 class JournalViewModel(app: Application): AndroidViewModel(app) {
     private val mutable=MutableStateFlow(JournalState())
@@ -28,7 +29,7 @@ class JournalViewModel(app: Application): AndroidViewModel(app) {
     private fun launch(errorMessage: Int=R.string.journal_error,block: suspend ()->Unit) {
         viewModelScope.launch {
             mutex.withLock {
-                mutable.update {it.copy(busy=true,error=null,notice=null)}
+                mutable.update {it.copy(busy=true,error=null,notice=null,restoreResult=null)}
                 try {block()}
                 catch(_: RevisionConflict) {mutable.update {it.copy(error=R.string.journal_conflict)}}
                 catch(c: CancellationException) {throw c}
@@ -60,10 +61,10 @@ class JournalViewModel(app: Application): AndroidViewModel(app) {
         mutable.update {it.copy(records=records,history=null)}
     }
     fun export(uri: Uri)=launch(R.string.journal_export_error) {
-        val records=store {it.snapshot()}
+        val snapshot=store {it.archiveSnapshot()}
         withContext(Dispatchers.IO) {
             val resolver=getApplication<Application>().contentResolver
-            requireNotNull(resolver.openOutputStream(uri,"wt")).use {JournalArchive.write(records,it)}
+            requireNotNull(resolver.openOutputStream(uri,"wt")).use {JournalArchive.write(snapshot,it)}
         }
         mutable.update {it.copy(notice=R.string.journal_exported)}
     }
@@ -71,13 +72,16 @@ class JournalViewModel(app: Application): AndroidViewModel(app) {
         val preview=withContext(Dispatchers.IO) {
             requireNotNull(getApplication<Application>().contentResolver.openInputStream(uri)).use(JournalArchive::inspect)
         }
-        val existing=store {it.knownIds()}
-        mutable.update {it.copy(preview=preview,existing=preview.records.map {r->r.id}.distinct().count {id->id in existing})}
+        val local=store {it.archiveSnapshot()}
+        val live=local.records.map {it.id}.toSet()
+        val existing=live+local.deletedIds
+        mutable.update {it.copy(preview=preview,existing=preview.records.map {r->r.id}.distinct().count {id->id in existing},
+            markerConflicts=preview.deletedIds.count {id->id in live})}
     }
     fun restore()=launch {
         val preview=requireNotNull(mutable.value.preview)
-        val records=store {it.restore(preview);it.current()}
-        mutable.update {it.copy(records=records,preview=null,notice=R.string.journal_restored)}
+        val (result,records)=store {it.restore(preview) to it.current()}
+        mutable.update {it.copy(records=records,preview=null,notice=R.string.journal_restored,restoreResult=result)}
     }
     fun closePreview() {if(!mutable.value.busy) mutable.update {it.copy(preview=null)}}
 }

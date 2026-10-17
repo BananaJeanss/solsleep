@@ -28,5 +28,10 @@ contains actual final journal captures in both device-results artifacts, under
 
 Labels and notes are synthetic test data. These are native app captures, not
 image-model output. The earlier inline alarm images above retain their original
-source attribution. Copying the latest journal PNGs into this page is pending
-workspace reconnection; the authoritative captured files are already in CI.
+source attribution. The final qualified captures have now been copied into the repository.
+
+| Screen | API 37 dark/dynamic | API 29 light fallback |
+| --- | --- | --- |
+| Saved report and correction history | ![Journal](screenshots/journal-night-api37.png) | ![Journal light](screenshots/journal-night-api29.png) |
+| Editor and keyboard | ![Editor](screenshots/journal-editor-api37.png) | ![Editor light](screenshots/journal-editor-api29.png) |
+| Saved at 200% system text | ![Large text](screenshots/journal-large-text-api37.png) | ![Large text light](screenshots/journal-large-text-api29.png) |
