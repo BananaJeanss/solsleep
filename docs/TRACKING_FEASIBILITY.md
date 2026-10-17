@@ -71,8 +71,12 @@ actual overnight sensor run are required to close M0/M1/M3 hardware gates. No
 physical phone or Wear device is attached to this workspace. Software builds and
 emulator tests can proceed; they cannot establish speaker onset, wrist delivery,
 real overnight motion continuity, or OEM energy behavior. Full release readiness
-remains blocked on those measurements. The checked-in alarm archive is only the
-first portion of M2; health schema/chunk recovery must precede collecting nights.
+remains blocked on those measurements. The manual journal, chunk-publication foundation, portable deletion/readback and
+local export history are now implemented subsets of M2. Complete raw/audio
+ownership, archives/encryption, retention, low-space/streaming and a lawful
+recorder still precede collecting irreplaceable nights. See
+[the physical qualification protocol](device-lab/README.md) for exact build
+identification and NOT RUN evidence records.
 
 ## Primary references
 

@@ -54,3 +54,13 @@ Both device artifacts include `journal-export-unverified.png` and
 `journal-export-verified.png`, exercising the actual provider and visible outcome.
 The same original night remains in storage. These captures show readback states,
 not future cloud upload or retention guarantees.
+
+## Persistent export history
+
+Source `ddce75987f87bfbe1d5ce0647efc42ba111d1bf5`,
+[CI30](https://github.com/BananaJeanss/solsleep/actions/runs/39043526164).
+Both device artifacts contain `journal-export-history.png`; the actual light and
+dark captures were reviewed. Last attempt and last verified receipt are distinct,
+and the controlled provider copy contains the unchanged original journal. The
+suite also asserts unavailable history is not rendered as known absence and
+cannot block a verified recovery. No physical/remote-cloud guarantee is implied.

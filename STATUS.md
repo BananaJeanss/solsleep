@@ -4,7 +4,8 @@
 manual journal and persistence foundation merged in [PR #2](https://github.com/BananaJeanss/solsleep/pull/2);
 portable deletions and first-open/large-text fixes merged in [PR #3](https://github.com/BananaJeanss/solsleep/pull/3);
 destination readback merged in [PR #4](https://github.com/BananaJeanss/solsleep/pull/4);
-bounded construction/Unicode byte limits merged in [PR #5](https://github.com/BananaJeanss/solsleep/pull/5).
+bounded construction/Unicode byte limits merged in [PR #5](https://github.com/BananaJeanss/solsleep/pull/5);
+local export history merged in [PR #6](https://github.com/BananaJeanss/solsleep/pull/6).
 
 This is a development build. M0, M1 and M2 remain **partial**. Full reference
 parity and production readiness are not claimed.
@@ -62,9 +63,9 @@ publication/recovery contracts and limits.
 
 ## Verified evidence
 
-Tested source: `17565eaa6da82af06f8cbab2885b830c4d16e75b`.
-Merge: `4eb0a870d46382278fbed476da9d1439c1ea209d`.
-[Passing CI run, reports, captured screens, logs and debug APK](https://github.com/BananaJeanss/solsleep/actions/runs/39041857476).
+Tested source: `ddce75987f87bfbe1d5ce0647efc42ba111d1bf5`.
+Merge: `91925a8f84c292bc302c085381f4e150f100d9f4`.
+[Passing CI run, reports, captured screens, logs and debug APK](https://github.com/BananaJeanss/solsleep/actions/runs/39043526164).
 Documentation updates after this run do not change app source.
 
 | Check | Actual result |
@@ -75,18 +76,20 @@ Documentation updates after this run do not change app source.
 | JVM journal/archive/Unicode/DST/deletion markers/construction | 17 passed |
 | JVM motion codec/publication/recovery | 12 passed |
 | JVM destination transfer/failure ordering | 8 passed |
-| API 29 Google APIs x86_64 emulator | All 51 passed |
-| API 37 Google APIs x86_64 emulator | All 51 passed |
+| JVM export audit/failure/cancellation ordering | 9 passed |
+| API 29 Google APIs x86_64 emulator | All 61 passed |
+| API 37 Google APIs x86_64 emulator | All 61 passed |
 | Lint, debug and test APKs | Pass locally and in CI |
 | Shrunk unsigned release APK / vital checks | Pass locally and in CI |
 | Artwork/chime | CI reproducibility check passes |
 | Final release manifest | Diagnostic components/special-use permission absent; no network/microphone/health access |
 | Incremental resource probe | Temporary resource addition built under 9.8.1; original restored and clean debug rebuilt |
 
-That is **98 JVM tests plus 102 device test executions**. Each 51-test device suite
+That is **107 JVM tests plus 122 device test executions**. Each 61-test device suite
 contains ten alarm-store tests, two delivery/component tests, four alarm UI tests,
-two diagnostic tests, twenty journal-store tests, two motion-file tests, six
-journal UI tests and five separate-package provider tests.
+two diagnostic tests, twenty journal-store tests, two motion-file tests, seven
+journal UI tests, six separate-package provider tests and eight export-history
+SQLite tests.
 
 Evidence includes actual AlarmManager → private receiver → playback service →
 durable snooze; SQLite reopen/two-helper races/transaction rollback; checked-in
@@ -123,7 +126,7 @@ passes with 9.8.1. Broader incremental qualification remains open; the clean-bui
 recovery is documented in docs/TESTING.md. Gradle reports deprecations relevant
 to a future Gradle 10 migration; the qualified wrapper remains 9.8.1.
 
-## Latest M2 milestone
+## Portable deletion milestone (verified)
 
 The workspace is reconnected and synchronized. Final CI18 journal PNGs are now
 checked in with their original provenance. CI21 adds captured portable-restore
@@ -155,7 +158,7 @@ ContentResolver talking to a separate test-APK provider, provider denial/truncat
 valid replacement, semantic clean-store restore, and visible unverified/verified
 UI outcomes. The complete suites and shrunk release pass at the source above.
 The Java-only provider fixture does not depend on the target Kotlin runtime and
-is absent from debug/release app manifests. Durable attempt/success audit and
+is absent from debug/release app manifests. Durable audit is covered below;
 provider-specific cloud upload guarantees remain separate work.
 
 ## Bounded archive milestone (verified)
@@ -169,7 +172,7 @@ The 98-core/51-per-API complete suites, lint and shrunk release pass in CI26.
 Independent v2 fixture bytes remain identical. Large-history streaming/pagination
 remains open.
 
-## Export-history continuation (not yet qualified)
+## Export-history milestone (verified)
 
 A separate credential-protected metadata database records attempt, written,
 verified, failed-write and unverified states, optional document display names,
@@ -181,9 +184,13 @@ file/database transaction or a promise of cloud upload/retention.
 The Journal screen shows last attempt and last verified copy; unavailable history
 is distinct from known absence. History failures are reported but do not block a
 verified journal recovery. Alarm initialization and authoritative journal state
-remain independent. New domain, actual SQLite/reopen/race/rollback/schema/corruption,
-provider-recovery and UI tests are being qualified. No new audit results are
-claimed yet; the verified counts above refer to the prior merged source.
+remain independent. Domain and actual SQLite/reopen/race/rollback/schema/
+corruption, provider-recovery and UI tests pass at the source above. The exact CI30 source has 107 JVM tests
+and all 61 device tests on each API; zero failures/errors/skips. Lint/debug/test
+APKs, generated assets and shrunk unsigned release pass. Debug/release manifest
+checks exclude the test provider; release also excludes diagnostic components
+and special-use/network/microphone permissions. History screens were reviewed in
+API 29 light and API 37 dark themes. See docs/EXPORT_HISTORY.md.
 
 ## Remaining production and parity gates
 
@@ -194,7 +201,8 @@ screens and broader physical accessibility/contrast coverage remain open.
 
 M2 still needs complete combined/raw/audio archives, encryption and portable key
 recovery, automatic deletion synchronization, raw/derived/audio ownership and retention,
-low-space policy, large-history streaming and durable export audit.
+low-space policy, large-history streaming/pagination, retained destination identity
+and actual provider quota/revocation/remote-completion qualification.
 Current exports are bounded plaintext documents. The researched
 [encrypted archive plan](docs/ENCRYPTED_ARCHIVE_DESIGN.md) defines qualification,
 secret lifecycle, authenticated staging and interop/fault tests; encryption is not
@@ -207,8 +215,25 @@ Measured statistics/stages, sound analysis, watch/Health Connect acquisition,
 challenges, wake checks/escalation, smart wake-up and most integrations remain
 unfinished. [Traceability](docs/TRACEABILITY.md) identifies implemented subsets.
 
-Next: provider readback verification and audit, then M2 archive/ownership work and the real capture
-workflow alongside physical alarm/probe qualification. Stable production signing,
-full dependency notices/SBOM and release qualification remain open. No production
+Next software work: complete native/raw/audio archives, encryption/recovery and
+ownership/retention, then the real capture workflow. Physical alarm/probe and
+minimum-phone KDF qualification need a reference device; no phone or watch is
+connected at this checkpoint. A consented real reference export is also missing
+for CSV compatibility. These prevent the corresponding accuracy/release gates
+from closing; independent software tasks remain in PLAN.md. Stable production
+signing, full dependency notices/SBOM and release qualification remain open. No production
 signing key is committed. Instrumentation uses disposable debug installs and can
 clear/uninstall their data; it must not target personal debug records.
+
+## Physical qualification handoff
+
+`adb devices -l` returned an empty device list in this workspace on 17 October.
+The reproducible protocol, blank NOT RUN result sheet and read-only build/APK
+collector are in [docs/device-lab](docs/device-lab/README.md). The collector does
+not install, reboot, change settings or read private records. Its Bash syntax,
+help/invalid-argument handling and no-device rejection were checked; rejection
+created no report and no physical qualification result. A connected authorized
+reference phone and actual measurements are required to continue that lab gate.
+No emulator result is presented as acoustic, physiological, overnight-energy or
+hardware power-loss evidence. M0/M1/M2 remain partial, and substantial feature
+implementation beyond this manual journal/alarm foundation remains.

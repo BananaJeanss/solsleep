@@ -1502,3 +1502,35 @@ real schema fixture/reopen, clock rollback, cold-helper race, competing terminal
 writes, injected publication abort and byte-for-byte corruption retention; actual
 provider recovery with an unavailable history store; visible success/history and
 unavailable-versus-empty UI behavior. Instrumentation uses disposable debug data.
+
+### Verified export-history checkpoint — 17 October 2026
+
+PR #6 source `ddce75987f87bfbe1d5ce0647efc42ba111d1bf5`, merge
+`91925a8f84c292bc302c085381f4e150f100d9f4`.
+[CI30](https://github.com/BananaJeanss/solsleep/actions/runs/39043526164):
+107 JVM tests, all 61 instrumentation tests on each of API 29/37, zero failures,
+errors or skips, lint and shrunk unsigned release. Local debug/test APKs, lint and
+release pass; final app manifests exclude the fixture and release diagnostics.
+Real provider, metadata failure/recovery and visible unavailable-versus-empty
+history paths pass. Metadata failure cannot fabricate a recorded success or block
+a verified journal copy. No optional provider-name query delays this workflow;
+current receipts use a generic selected-document label. Destination identity and
+availability remain unimplemented, explicit M2 work. No crypto library was added.
+
+- [x] Portable deletion markers with backward-compatible v1 reading and atomic additive restore.
+- [x] Independent exact-byte destination readback and distinct unverified outcomes.
+- [x] Bounded construction and store-byte/count preflight without silently dropping data.
+- [x] Durable local attempt/verified history, retained corrupt metadata, and nonblocking recovery.
+- [x] Complete software qualification for these implemented subsets on API 29 and 37.
+- [x] Physical lab protocol, exact installed-APK collector and blank NOT RUN result sheet.
+- [ ] Obtain a connected reference phone for physical onset/locked-boot/OEM/storage/energy and KDF measurements.
+- [ ] Obtain a consented, sanitized real reference export before claiming CSV compatibility.
+- [ ] Complete combined/raw/audio archives, encryption/recovery, ownership/retention, low-space and streaming/pagination.
+- [ ] Implement and validate actual recording, watch/health acquisition, analytics and remaining reference families.
+
+No physical phone/watch is connected (`adb devices -l` is empty). The corresponding
+lab qualification is a concrete external dependency, not a reason to relabel
+software or virtual-device results as physical evidence. The repeatable next lab
+steps and collector are in `docs/device-lab/README.md`; information collection
+alone passes no gate. Independent software work remains authorized in this plan.
+M0/M1/M2 remain partial; the full production/readiness and parity scope is open.

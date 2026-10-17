@@ -31,6 +31,8 @@ times require choosing the intended offset. Reported duration is not measured
 sleep. You can export every revision, inspect a journal file and restore missing
 nights. Journal exports are read back from the selected destination before being
 reported as verified. Failed and unverified copies have distinct messages.
+The last attempt and last verified export are recorded separately on this device;
+unavailable export history does not block journal recovery.
 Journal data is credential protected and independent of alarm delivery.
 Deletion removes all local revisions. New journal exports carry deletion identities,
 so restoring the newer copy first prevents an older backup from bringing those
@@ -46,8 +48,8 @@ See [journal/storage limits](docs/JOURNAL_STORAGE.md).
 </p>
 
 [All captured screens, including large text](docs/SCREENSHOTS.md). The tested
-milestone passes 98 JVM tests and all 51 device tests on both API 29 and API 37.
-[Checks and development APK artifact](https://github.com/BananaJeanss/solsleep/actions/runs/39041857476).
+milestone passes 107 JVM tests and all 61 device tests on both API 29 and API 37.
+[Checks and development APK artifact](https://github.com/BananaJeanss/solsleep/actions/runs/39043526164).
 
 ## Build
 

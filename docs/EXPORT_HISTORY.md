@@ -1,6 +1,6 @@
 # Local journal export history
 
-Implementation continuation; actual results belong in STATUS.md.
+Qualified source and complete results are recorded in STATUS.md.
 
 The journal keeps a local receipt history, independent of its authoritative
 records and the direct-boot alarm store. `journal-exports.db` uses credential

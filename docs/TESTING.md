@@ -142,3 +142,21 @@ silently dropping one to fit the format. The writer test uses a valid oversize
 snapshot and verifies zero writes to the destination. Independent v1/v2 fixtures
 must retain their exact bytes after bounded construction changes. These guards
 are not a claim that large-history streaming or current-list pagination is done.
+
+## Durable export history
+
+JournalExportAuditTest adds nine transfer/audit ordering and failure tests,
+including cancellation and preserving the original transfer error when audit
+recording also fails. JournalExportHistoryTest adds eight native SQLite cases:
+full values/reopen, unverified pending attempts, backward clocks, two cold helpers,
+verified-publication rollback, competing terminal writes, independent schema
+fixture/newer-schema retention, and byte-for-byte retained corruption. A real
+provider test verifies journal recovery despite an unopenable history schema.
+The UI tests check last-attempt/verified history and unavailable versus empty
+history with actual successful recovery. They scroll the real lazy list before
+querying offscreen history. Disposable test cleanup also clears export metadata.
+
+[Physical lab protocol and read-only collector](device-lab/README.md) provide the
+next hardware qualification workflow. The helper passes Bash syntax/help/invalid
+argument checks; without a connected device it exits 3 before creating a report.
+No acoustic/overnight/energy/power-loss pass is inferred from these helper checks.
