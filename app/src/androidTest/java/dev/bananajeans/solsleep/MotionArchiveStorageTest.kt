@@ -28,7 +28,7 @@ class MotionArchiveStorageTest {
     private val chunks=(0L..1L).map {MotionChunk(id,stream,boot,it,wall,100,listOf(MotionSample(101+it,-0.0f,1f,9.81f)))}
     private val uris=mutableListOf<Uri>()
     private fun archive()=ByteArrayOutputStream().also {out->MotionArchive.write(recording,out) {write->chunks.forEach {write(MotionChunkCodec.encode(it))}}}.toByteArray()
-    private fun documents(checkpoint: ()->Unit={})=MotionDocuments(context,name,directory,checkpoint)
+    private fun documents(checkpoint: ()->Unit={})=MotionDocuments(context,name,directory,checkpoint=checkpoint)
     private fun uri(mode: String)=Uri.parse("content://dev.bananajeans.solsleep.debug.test.journal/$mode/${UUID.randomUUID()}").also {uris+=it}
     @After fun cleanup() {
         MotionFiles.forSession(context,id).eraseOwned();context.deleteDatabase(name);directory.deleteRecursively()
@@ -117,6 +117,21 @@ class MotionArchiveStorageTest {
         documents().discard();assertFalse(documents().hasPending())
         try {documents().stage {ByteArrayInputStream(archive().copyOf(20))};fail("Truncated")} catch(_: EOFException) { }
         documents().discard();assertFalse(documents().hasPending())
+    }
+    @Test fun lowSpaceFailsBeforeReadingProviderOrOpeningDestinationAndRetainsRecoveryCopy() {
+        val low=MotionDocuments(context,name,directory,availableBytes={0})
+        var opened=false
+        try {low.stage {opened=true;ByteArrayInputStream(archive())};fail("Low space")}
+        catch(_: MotionSpaceException) { }
+        assertFalse(opened);assertFalse(documents().hasPending())
+        val pending=documents().stage {ByteArrayInputStream(archive())}
+        try {low.restore(pending.preview.fingerprint);fail("Restore needs space")}
+        catch(_: MotionSpaceException) { }
+        assertEquals(pending,documents().inspectPending());assertEquals(0L,MotionFiles.forSession(context,id).summary().chunks)
+        assertTrue(documents().restore(pending.preview.fingerprint))
+        try {low.export(id,{opened=true;ByteArrayOutputStream()},{throw AssertionError()});fail("Export needs staging space")}
+        catch(_: MotionSpaceException) { }
+        assertFalse(opened);CaptureStore(context,name).use {assertEquals(recording,it.recording(id))}
     }
     @Test fun interruptedCompleteStagingIsValidatedAndRecoveredWithoutProviderAccess() {
         assertFalse(documents().hasPending());directory.resolve("preparing.solmotion").writeBytes(archive())

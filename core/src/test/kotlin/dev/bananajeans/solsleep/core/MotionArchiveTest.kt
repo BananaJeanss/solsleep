@@ -40,6 +40,22 @@ class MotionArchiveTest {
         assertEquals(-1,preview.recording.events.single().detail!!.toInt())
         assertEquals(java.lang.Float.floatToRawIntBits(-0.0f),java.lang.Float.floatToRawIntBits(values.single().samples.single().x))
         assertEquals(1L,preview.samples)
+        val rewritten=ByteArrayOutputStream()
+        MotionArchive.write(preview.recording,rewritten) {write->values.forEach {write(MotionChunkCodec.encode(it))}}
+        assertArrayEquals(bytes,rewritten.toByteArray())
+    }
+    @Test fun validChecksumCannotMakeMalformedMetadataOrNoncanonicalFlagsValid() {
+        val original=archive()
+        fun find(value: ByteArray)=original.indices.first {i->i+value.size<=original.size && value.indices.all {original[i+it]==value[it]}}
+        fun rewritten(index: Int,value: Byte): ByteArray {
+            val bytes=original.copyOf();bytes[index]=value
+            val hash=java.security.MessageDigest.getInstance("SHA-256").digest(bytes.copyOf(bytes.size-32))
+            hash.copyInto(bytes,bytes.size-32);return bytes
+        }
+        rejected {MotionArchive.read(ByteArrayInputStream(rewritten(find("加速度".toByteArray()),0xff.toByte())))}
+        rejected {MotionArchive.read(ByteArrayInputStream(rewritten(find("COMPLETED".toByteArray()),'Z'.code.toByte())))}
+        val flag=12+48+4+"COMPLETED".toByteArray().size+24+4+48+4+source.source.name.toByteArray().size+4+source.source.vendor.toByteArray().size+12
+        rejected {MotionArchive.read(ByteArrayInputStream(rewritten(flag,2)))}
     }
     @Test fun truncationTamperingTrailingDataAndUnsupportedVersionsAreRejected() {
         val bytes=archive()

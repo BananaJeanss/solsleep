@@ -167,3 +167,12 @@ loss tests and injected exceptions do not prove hardware power-loss behavior.
 - Atomic commit scope/hardware assumptions: https://sqlite.org/atomiccommit.html
 - Java 17 digest stream semantics:
   https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/security/DigestInputStream.html
+
+Space-floor follow-up: use StatFs.availableBytes for currently available bytes,
+not a promise that reclaimable caches have been allocated. AllocatableBytes may
+include caches and allocateBytes can clear them; neither is a reserved safety
+margin by itself. A distinct low-space UI result retains original/recovery data.
+The policy is fault-injected in native tests without filling the CI device disk;
+actual full-disk behavior remains a physical qualification gate.
+https://developer.android.com/reference/android/os/StatFs
+https://developer.android.com/reference/android/os/storage/StorageManager

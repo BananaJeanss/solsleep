@@ -37,7 +37,7 @@ class CaptureViewModel(app: Application): AndroidViewModel(app) {
     private fun operation(block: suspend ()->Unit) {viewModelScope.launch {mutex.withLock {
         mutable.update {it.copy(busy=true,error=false)}
         try {block()} catch(c: CancellationException) {throw c}
-        catch(_: Exception) {mutable.update {it.copy(error=true)}}
+        catch(e: Exception) {mutable.update {it.copy(error=true,message=if(e is MotionSpaceException) R.string.motion_archive_space else it.message)}}
         finally {mutable.update {it.copy(busy=false)}}
     }}}
     private suspend fun read(page: Int=mutable.value.page)=withContext(Dispatchers.IO) {
@@ -88,6 +88,7 @@ class CaptureViewModel(app: Application): AndroidViewModel(app) {
             withContext(Dispatchers.IO) {MotionDocuments(context).export(sessionId,uri)}
             mutable.update {it.copy(message=R.string.motion_export_verified)}
         } catch(c: CancellationException) {throw c}
+        catch(_: MotionSpaceException) {mutable.update {it.copy(message=R.string.motion_archive_space)}}
         catch(_: MotionVerificationException) {mutable.update {it.copy(message=R.string.motion_export_unverified)}}
         catch(_: Exception) {mutable.update {it.copy(message=R.string.motion_export_failed)}}
     }
@@ -104,6 +105,7 @@ class CaptureViewModel(app: Application): AndroidViewModel(app) {
             mutable.update {it.copy(message=if(restored) R.string.motion_restore_success else R.string.motion_restore_conflict)}
             read(0)
         } catch(c: CancellationException) {throw c}
+        catch(_: MotionSpaceException) {mutable.update {it.copy(message=R.string.motion_archive_space)}}
         catch(_: Exception) {mutable.update {it.copy(message=R.string.motion_restore_failed)}}
         finally {loadPending()}
     }

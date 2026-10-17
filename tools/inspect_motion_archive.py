@@ -86,7 +86,7 @@ def inspect(source):
                     resolution=metadata.number('f'), maximum_range=metadata.number('f'), wake_up=metadata.flag(),
                     committed=metadata.nonnegative(), rejected=metadata.nonnegative(), gaps=metadata.nonnegative())
         require(item['id'] not in streams)
-        require(1 <= len(item['name']) <= 512 and len(item['vendor']) <= 512 and '\0' not in item['name'] + item['vendor'])
+        require(1 <= len(item['name'].encode('utf-16-le')) // 2 <= 512 and len(item['vendor'].encode('utf-16-le')) // 2 <= 512 and '\0' not in item['name'] + item['vendor'])
         require(math.isfinite(item['resolution']) and item['resolution'] >= 0 and
                 math.isfinite(item['maximum_range']) and item['maximum_range'] > 0)
         streams[item['id']] = item

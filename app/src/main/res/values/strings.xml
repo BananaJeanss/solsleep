@@ -245,4 +245,5 @@ Units: m/s² (including gravity) · Requested interval: 100 ms</string>
     <string name="motion_finish_before_restore">Finish the current recording before restoring a backup.</string>
     <string name="motion_discard">Discard recovery copy</string>
     <string name="motion_discard_hint">Remove the private staging copy from this phone? The chosen document and saved recordings remain. Files already published by an interrupted restore are retained for an identical retry.</string>
+    <string name="motion_archive_space">There is not enough free space to keep a safe recovery copy. Free some space without deleting your original recording, then try again.</string>
 </resources>

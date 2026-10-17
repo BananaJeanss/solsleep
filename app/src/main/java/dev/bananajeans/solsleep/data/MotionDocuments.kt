@@ -4,6 +4,7 @@ package dev.bananajeans.solsleep.data
 import android.content.Context
 import android.net.Uri
 import android.os.UserManager
+import android.os.StatFs
 import android.system.Os
 import android.system.OsConstants
 import dev.bananajeans.solsleep.core.*
@@ -13,6 +14,8 @@ import java.nio.file.*
 import java.util.UUID
 import java.security.MessageDigest
 
+class MotionSpaceException: IOException("Insufficient free storage for a recording recovery copy")
+
 data class PendingMotion(val preview: MotionArchivePreview,val conflict: Boolean)
 
 /** One durable recovery slot. Provider streams never enter live storage before full validation.
@@ -20,9 +23,13 @@ data class PendingMotion(val preview: MotionArchivePreview,val conflict: Boolean
  */
 class MotionDocuments(context: Context,private val databaseName: String="motion-capture.db",
     private val directory: File=context.noBackupFilesDir.resolve("motion-import"),
+    // Enforce an actual available-space floor; reclaimable cache is not a reserved safety margin.
+    private val availableBytes: (File)->Long={StatFs(it.path).availableBytes},
     private val checkpoint: ()->Unit={}) {
     private val context=context.applicationContext
     companion object {private val lock=Any()}
+    private fun exists(file: File)=Files.exists(file.toPath(),LinkOption.NOFOLLOW_LINKS)
+    private fun space(file: File,required: Long) {if(availableBytes(file)<required) throw MotionSpaceException()}
     private val pending get()=directory.resolve("pending.solmotion")
     private val preparing get()=directory.resolve("preparing.solmotion")
     private fun sync(path: Path) {
@@ -42,28 +49,28 @@ class MotionDocuments(context: Context,private val databaseName: String="motion-
         return file.inputStream().buffered().use {MotionArchive.read(it)}
     }
     private fun pendingPreview(): PendingMotion? {
-        if(!pending.exists() && preparing.exists()) {
+        if(!exists(pending) && exists(preparing)) {
             read(preparing) // A complete interrupted copy can be recovered; partial bytes stay retained.
             FileChannel.open(preparing.toPath(),StandardOpenOption.WRITE).use {it.force(true)}
             Files.move(preparing.toPath(),pending.toPath(),StandardCopyOption.ATOMIC_MOVE);sync(directory.toPath())
         }
-        if(!pending.exists()) return null
+        if(!exists(pending)) return null
         val preview=read(pending)
         return CaptureStore(context,databaseName).use {PendingMotion(preview,it.restoreConflict(preview.recording))}
     }
     fun inspectPending(): PendingMotion?=locked {pendingPreview()}
-    fun hasPending(): Boolean=locked {pending.exists() || preparing.exists()}
+    fun hasPending(): Boolean=locked {exists(pending) || exists(preparing)}
     fun stage(uri: Uri): PendingMotion=stage {requireNotNull(context.contentResolver.openInputStream(uri))}
     fun stage(open: ()->InputStream): PendingMotion=locked {
-        check(!pending.exists() && !preparing.exists()) {"Review or discard the pending recovery copy first"}
-        check(directory.usableSpace>=MotionArchive.MAX_BYTES+MotionCapturePolicy.RESERVE_BYTES) {"Not enough staging space"}
+        check(!exists(pending) && !exists(preparing)) {"Review or discard the pending recovery copy first"}
+        space(directory,MotionArchive.MAX_BYTES+MotionCapturePolicy.RESERVE_BYTES)
         open().use {input->FileOutputStream(preparing).use {out->
             var total=0L;val block=ByteArray(8192)
             while(true) {
                 val n=input.read(block,0,minOf(block.size.toLong(),MotionArchive.MAX_BYTES+1-total).toInt())
                 if(n<0) break
                 require(n>0);total+=n;require(total<=MotionArchive.MAX_BYTES) {"Recording archive too large"}
-                check(directory.usableSpace>=MotionCapturePolicy.RESERVE_BYTES) {"Staging space exhausted"}
+                space(directory,MotionCapturePolicy.RESERVE_BYTES)
                 out.write(block,0,n)
             }
             out.flush();out.fd.sync()
@@ -80,7 +87,7 @@ class MotionDocuments(context: Context,private val databaseName: String="motion-
     fun restore(expectedFingerprint: String): Boolean=locked {
         val preview=requireNotNull(pendingPreview()).preview
         check(preview.fingerprint==expectedFingerprint) {"Recovery copy changed"}
-        check(directory.usableSpace>=preview.rawBytes+MotionCapturePolicy.RESERVE_BYTES) {"Not enough restore space"}
+        space(directory,preview.rawBytes+MotionCapturePolicy.RESERVE_BYTES)
         val restored=CaptureStore(context,databaseName).use {store->
             store.restore(preview.recording) {
                 val target=MotionFiles.forSession(context,preview.recording.session.id)
@@ -97,7 +104,7 @@ class MotionDocuments(context: Context,private val databaseName: String="motion-
                     }
                 }
                 val published=pending.inputStream().buffered().use {input->MotionArchive.read(input) {chunk,_->
-                    check(directory.usableSpace>=MotionCapturePolicy.RESERVE_BYTES)
+                    space(directory,MotionCapturePolicy.RESERVE_BYTES)
                     target.publish(chunk);checkpoint()
                 }}
                 check(published==preview) {"Recovery copy changed during publication"}
@@ -114,7 +121,7 @@ class MotionDocuments(context: Context,private val databaseName: String="motion-
         val spool=File.createTempFile("motion-export-",".solmotion",context.cacheDir)
         try {
             val recording=CaptureStore(context,databaseName).use {it.recording(id)}
-            check(spool.parentFile!!.usableSpace>=MotionArchive.MAX_BYTES+MotionCapturePolicy.RESERVE_BYTES)
+            space(spool.parentFile!!,MotionArchive.MAX_BYTES+MotionCapturePolicy.RESERVE_BYTES)
             FileOutputStream(spool).use {out->
                 MotionArchive.write(recording,out) {visit->MotionFiles.forSession(context,id).exportBytes(visit)}
                 out.flush();out.fd.sync()
