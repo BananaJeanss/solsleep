@@ -92,6 +92,31 @@ import java.time.temporal.ChronoUnit
                 modifier=Modifier.fillMaxWidth()) {Text(stringResource(R.string.journal_export))}
             OutlinedButton(onClick={open.launch(arrayOf("application/json","application/octet-stream"))},enabled=!state.busy,
                 modifier=Modifier.fillMaxWidth()) {Text(stringResource(R.string.journal_import))}
+            Spacer(Modifier.height(12.dp))
+            Column(Modifier.semantics {testTag="journal_export_history"},verticalArrangement=Arrangement.spacedBy(8.dp)) {
+                Text(stringResource(R.string.journal_export_history),style=MaterialTheme.typography.titleMedium)
+                Text(stringResource(R.string.journal_export_history_hint),style=MaterialTheme.typography.bodySmall)
+                val summary=state.exportSummary
+                summary?.lastAttempt?.let {attempt->
+                    Text(stringResource(R.string.journal_export_last_attempt,formatter.format(attempt.startedAt.atZone(ZoneId.systemDefault()))))
+                    Text(attempt.displayName ?: stringResource(R.string.journal_export_chosen_document))
+                    Text(stringResource(when(attempt.stage) {
+                        JournalExportStage.STARTED,JournalExportStage.WRITTEN->R.string.journal_export_incomplete
+                        JournalExportStage.VERIFIED->R.string.journal_export_status_verified
+                        JournalExportStage.FAILED_WRITE->R.string.journal_export_status_failed
+                        JournalExportStage.UNVERIFIED->R.string.journal_export_status_unverified
+                    }))
+                }
+                val verified=summary?.lastVerified
+                if(summary==null) {
+                    if(!state.busy) Text(stringResource(R.string.journal_export_history_unavailable),color=MaterialTheme.colorScheme.error)
+                } else if(verified==null) Text(stringResource(R.string.journal_export_no_verified))
+                else {
+                    Text(stringResource(R.string.journal_export_last_verified,formatter.format(verified.updatedAt.atZone(ZoneId.systemDefault()))))
+                    Text(verified.displayName ?: stringResource(R.string.journal_export_chosen_document))
+                }
+                if(state.exportHistoryWarning && summary!=null) Text(stringResource(R.string.journal_export_history_warning),color=MaterialTheme.colorScheme.error)
+            }
         }
     }
     if(editor) {

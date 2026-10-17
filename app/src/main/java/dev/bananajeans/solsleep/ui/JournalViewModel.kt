@@ -8,6 +8,7 @@ import androidx.lifecycle.viewModelScope
 import dev.bananajeans.solsleep.R
 import dev.bananajeans.solsleep.core.*
 import dev.bananajeans.solsleep.data.JournalStore
+import dev.bananajeans.solsleep.data.JournalExportHistory
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.sync.Mutex
@@ -15,7 +16,8 @@ import kotlinx.coroutines.sync.withLock
 
 data class JournalState(val records: List<SleepRecord> = emptyList(),val busy: Boolean=false,
     val error: Int?=null,val notice: Int?=null,val preview: JournalPreview?=null,val existing: Int=0,
-    val markerConflicts: Int=0,val restoreResult: JournalRestoreResult?=null,val history: List<SleepRecord>?=null)
+    val markerConflicts: Int=0,val restoreResult: JournalRestoreResult?=null,val history: List<SleepRecord>?=null,
+    val exportSummary: JournalExportSummary?=null,val exportHistoryWarning: Boolean=false)
 
 class JournalViewModel(app: Application): AndroidViewModel(app) {
     private val mutable=MutableStateFlow(JournalState())
@@ -40,7 +42,15 @@ class JournalViewModel(app: Application): AndroidViewModel(app) {
             }
         }
     }
-    fun reload()=launch {val records=store {it.current()};mutable.update {it.copy(records=records)}}
+    private suspend fun refreshExportHistory(recordingFailed: Boolean=false) {
+        val summary=withContext(Dispatchers.IO) {
+            try {JournalExportHistory(getApplication()).use {it.summary()}}
+            catch(c: CancellationException) {throw c}
+            catch(_: Exception) {null}
+        }
+        mutable.update {it.copy(exportSummary=summary,exportHistoryWarning=recordingFailed || summary==null)}
+    }
+    fun reload()=launch {val records=store {it.current()};mutable.update {it.copy(records=records)};refreshExportHistory()}
     fun save(record: SleepRecord,onSaved: ()->Unit)=launch {
         val records=store {it.save(record,record.revision-1);it.current()}
         mutable.update {it.copy(records=records)};onSaved()
@@ -63,14 +73,19 @@ class JournalViewModel(app: Application): AndroidViewModel(app) {
         mutable.update {it.copy(records=records,history=null)}
     }
     fun export(uri: Uri)=launch(R.string.journal_export_error) {
-        val snapshot=store {it.archiveSnapshot()}
-        withContext(Dispatchers.IO) {
+        val result=withContext(Dispatchers.IO) {
             val resolver=getApplication<Application>().contentResolver
-            JournalDocument.exportVerified(snapshot,
-                {requireNotNull(resolver.openOutputStream(uri,"wt"))},
-                {requireNotNull(resolver.openInputStream(uri))})
+            JournalExportHistory(getApplication()).use {audit->
+                AuditedJournalExport.run({JournalStore(getApplication()).use {it.archiveSnapshot()}},
+                    {requireNotNull(resolver.openOutputStream(uri,"wt"))},
+                    {requireNotNull(resolver.openInputStream(uri))},audit,null)
+            }
         }
-        mutable.update {it.copy(notice=R.string.journal_exported)}
+        refreshExportHistory(!result.auditRecorded)
+        when(result) {
+            is AuditedJournalResult.Verified->mutable.update {it.copy(notice=R.string.journal_exported)}
+            is AuditedJournalResult.Failed->throw result.error
+        }
     }
     fun inspect(uri: Uri)=launch(R.string.journal_archive_error) {
         val preview=withContext(Dispatchers.IO) {

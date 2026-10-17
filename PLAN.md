@@ -1472,3 +1472,33 @@ Destination verification is qualified in PR #4 at
 The actual isolated provider fixture uses Java/Android APIs because the test APK
 excludes the target Kotlin runtime. No production manifest exposes the fixture.
 Bounded construction/preflight changes are now being qualified independently.
+
+Bounded archive construction is qualified in PR #5 at
+`17565eaa6da82af06f8cbab2885b830c4d16e75b`, merged as
+`4eb0a870d46382278fbed476da9d1439c1ea209d`.
+[CI26](https://github.com/BananaJeanss/solsleep/actions/runs/39041857476):
+98 JVM tests, all 51 device tests on each API, lint and shrunk unsigned release.
+No large UTF-8 history or deletion marker is silently dropped to fit the format.
+
+### Durable export history (verification pending)
+
+Use an independent credential-protected FULL/WAL SQLite schema for metadata,
+leaving health and direct-boot alarm schemas untouched. Store only ordered attempt
+identity, bounded optional display name, stage/timestamps and a full-document
+fingerprint after verified readback. Do not persist URI credentials, health values
+or encryption secrets. Keep start/written/verified transitions explicit and
+transactional; a process-lost nonterminal attempt must remain unverified. Latest
+attempt and latest verified result are different queries in one snapshot.
+
+History is auxiliary: unavailable/corrupt/unknown history must never prevent
+recovering a verified copy of the journal. Report the history failure separately;
+never invent a recorded success. Preserve failed metadata files. The UI must
+separate unavailable history from known absence and explain that later external
+changes/deletions/cloud uploads are not tracked. Local audit metadata is not
+portable journal content and cannot attest to an external provider's future state.
+
+Tests: exact write/close/read/verification order and nonblocking audit failures;
+real schema fixture/reopen, clock rollback, cold-helper race, competing terminal
+writes, injected publication abort and byte-for-byte corruption retention; actual
+provider recovery with an unavailable history store; visible success/history and
+unavailable-versus-empty UI behavior. Instrumentation uses disposable debug data.

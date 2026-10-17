@@ -18,10 +18,14 @@ class JournalUiTest {
     @get:Rule val compose=createAndroidComposeRule<MainActivity>()
     @Before fun openJournal() {
         JournalStore(compose.activity).use {store->store.current().forEach {store.delete(it.id,it.revision)}}
+        compose.activity.deleteDatabase("journal-exports.db")
         compose.onNodeWithText("Journal").performClick()
         compose.waitUntil(10000) {compose.onAllNodes(hasTestTag("journal_add") and isEnabled()).fetchSemanticsNodes().isNotEmpty()}
     }
-    @After fun cleanup() {JournalStore(compose.activity).use {store->store.current().forEach {store.delete(it.id,it.revision)}}}
+    @After fun cleanup() {
+        JournalStore(compose.activity).use {store->store.current().forEach {store.delete(it.id,it.revision)}}
+        compose.activity.deleteDatabase("journal-exports.db")
+    }
     private fun records()=JournalStore(compose.activity).use {it.current()}
     @Test fun manualEntryCorrectionAndDeletionUseRealDurableStorage() {
         compose.onNodeWithText("Add a night").performClick()
@@ -161,10 +165,45 @@ class JournalUiTest {
             waitFor(compose.activity.getString(R.string.journal_exported))
             compose.onAllNodesWithText(compose.activity.getString(R.string.journal_export_verify_error)).assertCountEquals(0)
             capture("journal-export-verified")
+            compose.onNodeWithTag("journal_home").performScrollToNode(hasTestTag("journal_export_history"))
+            compose.onNodeWithText("Export history").assertExists()
+            compose.onNodeWithText("Verified by readback").assertExists()
+            capture("journal-export-history")
+            dev.bananajeans.solsleep.data.JournalExportHistory(compose.activity).use {audit->
+                assertEquals(dev.bananajeans.solsleep.core.JournalExportStage.VERIFIED,audit.summary().lastAttempt!!.stage)
+                assertEquals(audit.summary().lastAttempt,audit.summary().lastVerified)
+            }
             val preview=requireNotNull(compose.activity.contentResolver.openInputStream(uris[1])).use(dev.bananajeans.solsleep.core.JournalArchive::inspect)
             assertEquals(before.records,preview.records);assertEquals(before.deletedIds,preview.deletedIds)
             assertEquals(before,JournalStore(compose.activity).use {it.archiveSnapshot()})
         } finally {uris.forEach {compose.activity.contentResolver.delete(it,null,null)}}
+    }
+    @Test fun unavailableExportHistoryIsNotShownAsNoVerifiedCopiesAndDoesNotBlockRecovery() {
+        compose.onNodeWithText("Add a night").performClick()
+        compose.onNodeWithTag("journal_note").performScrollTo().performTextInput("Recover without export history")
+        compose.onNodeWithTag("journal_save").assertIsDisplayed().performClick()
+        compose.waitUntil(10000) {records().size==1}
+        compose.waitUntil(10000) {compose.onAllNodesWithTag("journal_save").fetchSemanticsNodes().isEmpty()}
+        val path=compose.activity.getDatabasePath("journal-exports.db")
+        android.database.sqlite.SQLiteDatabase.openDatabase(path.path,null,android.database.sqlite.SQLiteDatabase.OPEN_READWRITE).use {it.version=99}
+        compose.runOnUiThread {
+            androidx.lifecycle.ViewModelProvider(compose.activity)[dev.bananajeans.solsleep.ui.JournalViewModel::class.java].reload()
+        }
+        compose.onNodeWithTag("journal_home").performScrollToNode(hasTestTag("journal_export_history"))
+        waitFor(compose.activity.getString(R.string.journal_export_history_unavailable))
+        compose.onAllNodesWithText(compose.activity.getString(R.string.journal_export_no_verified)).assertCountEquals(0)
+        val uri=android.net.Uri.parse("content://dev.bananajeans.solsleep.debug.test.journal/normal/${java.util.UUID.randomUUID()}")
+        try {
+            compose.runOnUiThread {
+                androidx.lifecycle.ViewModelProvider(compose.activity)[dev.bananajeans.solsleep.ui.JournalViewModel::class.java].export(uri)
+            }
+            compose.onNodeWithTag("journal_home").performScrollToNode(hasTestTag("journal_add"))
+            waitFor(compose.activity.getString(R.string.journal_exported))
+            assertEquals("Recover without export history",records().single().note)
+            requireNotNull(compose.activity.contentResolver.openInputStream(uri)).use {
+                assertEquals(records(),dev.bananajeans.solsleep.core.JournalArchive.inspect(it).records)
+            }
+        } finally {compose.activity.contentResolver.delete(uri,null,null)}
     }
     private fun capture(name: String) {
         compose.waitForIdle()

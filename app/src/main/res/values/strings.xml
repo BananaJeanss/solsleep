@@ -162,4 +162,16 @@
     <plurals name="journal_markers_skipped"><item quantity="one">%d deletion marker skipped because its identity is already on this device</item><item quantity="other">%d deletion markers skipped because their identities are already on this device</item></plurals>
     <plurals name="journal_marker_preview_conflicts"><item quantity="one">%d existing night will be kept despite an imported deletion marker</item><item quantity="other">%d existing nights will be kept despite imported deletion markers</item></plurals>
     <plurals name="journal_marker_conflicts"><item quantity="one">%d existing night kept despite an imported deletion marker</item><item quantity="other">%d existing nights kept despite imported deletion markers</item></plurals>
+    <string name="journal_export_history">Export history</string>
+    <string name="journal_export_history_hint">Readback checks recorded on this device. Later changes, deletion or cloud uploads are not tracked.</string>
+    <string name="journal_export_last_attempt">Last attempt: %1$s</string>
+    <string name="journal_export_last_verified">Last verified: %1$s</string>
+    <string name="journal_export_chosen_document">Chosen document</string>
+    <string name="journal_export_incomplete">Not verified. This attempt did not reach a recorded completion and may have been interrupted.</string>
+    <string name="journal_export_status_verified">Verified by readback</string>
+    <string name="journal_export_status_failed">The journal copy was not written successfully.</string>
+    <string name="journal_export_status_unverified">Written, but not verified.</string>
+    <string name="journal_export_no_verified">No verified export recorded on this device.</string>
+    <string name="journal_export_history_unavailable">Export history is unavailable. You can still export and verify your journal.</string>
+    <string name="journal_export_history_warning">The latest export result could not be fully recorded. Check its result before relying on the copy.</string>
 </resources>
