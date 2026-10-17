@@ -47,6 +47,8 @@ data class JournalPreview(val createdAt: Instant,val records: List<SleepRecord>,
 data class JournalRestoreResult(val nightsAdded: Int,val nightsSkipped: Int,val markersAdded: Int,
     val markersSkipped: Int,val localNightsKept: Int)
 
+class JournalExportLimitException : IllegalArgumentException("Journal exceeds bounded export capacity")
+
 internal fun validateRecords(records: List<SleepRecord>) {
     require(records.size<=JournalArchive.MAX_REVISIONS)
     records.groupBy {it.id}.values.forEach(::validateHistory)
@@ -62,20 +64,42 @@ object JournalArchive {
 
     /** Writers emit v2; readers also accept v1 archives, which contain no deletion markers. */
     fun write(snapshot: JournalSnapshot,out: OutputStream,createdAt: Instant=Instant.now()) {
+        if(snapshot.records.size>MAX_REVISIONS || snapshot.deletedIds.size>MAX_DELETIONS) throw JournalExportLimitException()
         JournalSnapshot(snapshot.records,snapshot.deletedIds)
-        require(snapshot.deletedIds.size<=MAX_DELETIONS)
         val sorted=snapshot.records.sortedWith(compareBy<SleepRecord> {it.id}.thenBy {it.revision})
         validateRecords(sorted)
-        val array=JsonArray(sorted.map(SleepRecordCodec::element))
-        array.forEach {SleepRecordCodec.decode(it.jsonObject)}
-        val bytes=buildJsonObject {
-            val payload=payload(array,JsonArray(snapshot.deletedIds.sorted().map(::JsonPrimitive)))
+        // Encode one bounded record at a time. Never first materialize a potentially huge array/string.
+        val buffer=object: ByteArrayOutputStream() {
+            override fun write(b: Int) {
+                if(count>=MAX_BYTES) throw JournalExportLimitException()
+                super.write(b)
+            }
+            override fun write(b: ByteArray,off: Int,len: Int) {
+                if(len>MAX_BYTES-count) throw JournalExportLimitException()
+                super.write(b,off,len)
+            }
+        }
+        fun append(text: String) {buffer.write(text.toByteArray(Charsets.UTF_8))}
+        append("{\"records\":[")
+        sorted.forEachIndexed {index,record->
+            val encoded=SleepRecordCodec.encode(record)
+            SleepRecordCodec.decode(encoded)
+            if(index>0) append(",")
+            append(encoded)
+        }
+        append("],\"deletedIds\":[")
+        snapshot.deletedIds.sorted().forEachIndexed {index,id->
+            if(index>0) append(",")
+            append(JsonPrimitive(id).toString())
+        }
+        append("]}")
+        val payloadBytes=buffer.toByteArray()
+        val header=buildJsonObject {
             put("format","solsleep-journal");put("version",2);put("createdAt",createdAt.toString())
-            put("sha256",sha256(payload.toString().toByteArray(Charsets.UTF_8)))
-            put("records",array);put("deletedIds",payload.getValue("deletedIds"))
-        }.toString().toByteArray(Charsets.UTF_8)
-        require(bytes.size<=MAX_BYTES)
-        out.write(bytes);out.flush()
+            put("sha256",sha256(payloadBytes))
+        }.toString().dropLast(1).toByteArray(Charsets.UTF_8)
+        if(header.size.toLong()+payloadBytes.size>MAX_BYTES) throw JournalExportLimitException()
+        out.write(header);out.write(','.code);out.write(payloadBytes,1,payloadBytes.size-1);out.flush()
     }
     fun inspect(input: InputStream): JournalPreview {
         val buffer=ByteArrayOutputStream()

@@ -2,7 +2,8 @@
 
 17 October 2026 — alarm milestone merged in [PR #1](https://github.com/BananaJeanss/solsleep/pull/1);
 manual journal and persistence foundation merged in [PR #2](https://github.com/BananaJeanss/solsleep/pull/2);
-portable deletions and first-open/large-text fixes merged in [PR #3](https://github.com/BananaJeanss/solsleep/pull/3).
+portable deletions and first-open/large-text fixes merged in [PR #3](https://github.com/BananaJeanss/solsleep/pull/3);
+destination readback merged in [PR #4](https://github.com/BananaJeanss/solsleep/pull/4).
 
 This is a development build. M0, M1 and M2 remain **partial**. Full reference
 parity and production readiness are not claimed.
@@ -60,9 +61,9 @@ publication/recovery contracts and limits.
 
 ## Verified evidence
 
-Tested source: `e123c46d2b745a016947952eeb152d28ebde9076`.
-Merge: `d0dd19d5d55fd6b39390b189d8916d97b4602c96`.
-[Passing CI run, reports, captured screens, logs and debug APK](https://github.com/BananaJeanss/solsleep/actions/runs/39033124196).
+Tested source: `271bfdb4f19f7e18f4fef6cc8851081a717a77fe`.
+Merge: `7b93f1329527cd0b21c2b97bccf5b1e121f8e54e`.
+[Passing CI run, reports, captured screens, logs and debug APK](https://github.com/BananaJeanss/solsleep/actions/runs/39041179253).
 Documentation updates after this run do not change app source.
 
 | Check | Actual result |
@@ -72,18 +73,19 @@ Documentation updates after this run do not change app source.
 | JVM alarm archive/codec | 15 passed |
 | JVM journal/archive/Unicode/DST/deletion markers | 16 passed |
 | JVM motion codec/publication/recovery | 12 passed |
-| API 29 Google APIs x86_64 emulator | All 43 passed |
-| API 37 Google APIs x86_64 emulator | All 43 passed |
+| JVM destination transfer/failure ordering | 8 passed |
+| API 29 Google APIs x86_64 emulator | All 49 passed |
+| API 37 Google APIs x86_64 emulator | All 49 passed |
 | Lint, debug and test APKs | Pass locally and in CI |
 | Shrunk unsigned release APK / vital checks | Pass locally and in CI |
 | Artwork/chime | CI reproducibility check passes |
 | Final release manifest | Diagnostic components/special-use permission absent; no network/microphone/health access |
 | Incremental resource probe | Temporary resource addition built under 9.8.1; original restored and clean debug rebuilt |
 
-That is **89 JVM tests plus 86 device test executions**. Each 43-test device suite
+That is **97 JVM tests plus 98 device test executions**. Each 49-test device suite
 contains ten alarm-store tests, two delivery/component tests, four alarm UI tests,
-two diagnostic tests, eighteen journal-store tests, two motion-file tests and five
-journal UI tests.
+two diagnostic tests, eighteen journal-store tests, two motion-file tests, six
+journal UI tests and five separate-package provider tests.
 
 Evidence includes actual AlarmManager → private receiver → playback service →
 durable snooze; SQLite reopen/two-helper races/transaction rollback; checked-in
@@ -138,7 +140,7 @@ multi-process schema management. Alarm Save now stays in a fixed footer above
 the keyboard and the draft keeps its identity. Complete build and both 43-test
 suites pass after these fixes. No test was disabled or assertion removed.
 
-## Destination verification continuation (not yet qualified)
+## Destination verification milestone (verified)
 
 Journal export now freezes a validated snapshot before opening the destination,
 writes/flushes/closes it, reopens that chosen URI and parses the returned bytes
@@ -150,9 +152,19 @@ become a success notice. Source records are never mutated by export.
 New tests cover failure ordering and close/cancellation behavior, an actual
 ContentResolver talking to a separate test-APK provider, provider denial/truncation/
 valid replacement, semantic clean-store restore, and visible unverified/verified
-UI outcomes. These changes are under verification; results above identify the
-previous merged source. Durable attempt/success audit and provider-specific cloud
-upload guarantees remain separate work.
+UI outcomes. The complete 97-core/49-per-API suites and shrunk release pass at the source above.
+The Java-only provider fixture does not depend on the target Kotlin runtime and
+is absent from debug/release app manifests. Durable attempt/success audit and
+provider-specific cloud upload guarantees remain separate work.
+
+## Bounded archive continuation (not yet qualified)
+
+A separate continuation caps archive construction before large JSON allocation,
+preflights record/marker counts and actual UTF-8 payload bytes in SQLite, and uses
+identity-only import preview without loading every historical note. The limit
+error explains that all original records remain. Tests add valid CJK-heavy stores,
+reopen equality, marker overflow, and no destination writes on oversized output.
+This work is not yet qualified; large-history streaming/pagination remains open.
 
 ## Remaining production and parity gates
 
@@ -163,7 +175,7 @@ screens and broader physical accessibility/contrast coverage remain open.
 
 M2 still needs complete combined/raw/audio archives, encryption and portable key
 recovery, automatic deletion synchronization, raw/derived/audio ownership and retention,
-low-space policy, large-history streaming and provider round-trip verification.
+low-space policy, large-history streaming and durable export audit.
 Current exports are bounded plaintext documents. The researched
 [encrypted archive plan](docs/ENCRYPTED_ARCHIVE_DESIGN.md) defines qualification,
 secret lifecycle, authenticated staging and interop/fault tests; encryption is not

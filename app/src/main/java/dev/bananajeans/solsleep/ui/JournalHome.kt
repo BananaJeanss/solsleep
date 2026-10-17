@@ -53,7 +53,7 @@ import java.time.temporal.ChronoUnit
         if(state.busy) item {LinearProgressIndicator(Modifier.fillMaxWidth())}
         state.error?.let {message->item {
             Text(stringResource(message),color=MaterialTheme.colorScheme.error)
-            TextButton(onClick=model::reload,enabled=!state.busy) {Text(stringResource(R.string.retry))}
+            TextButton(onClick=model::reload,enabled=!state.busy) {Text(stringResource(R.string.journal_reload))}
         }}
         state.notice?.let {message->item {Text(stringResource(message))}}
         state.restoreResult?.let {result->item {
@@ -131,7 +131,7 @@ import java.time.temporal.ChronoUnit
                 Text(pluralStringResource(R.plurals.journal_revisions,preview.records.size,preview.records.size))
                 Text(pluralStringResource(R.plurals.journal_deletions,preview.deletedIds.size,preview.deletedIds.size))
                 Text(pluralStringResource(R.plurals.journal_existing,state.existing,state.existing))
-                if(state.markerConflicts>0) Text(pluralStringResource(R.plurals.journal_marker_conflicts,state.markerConflicts,state.markerConflicts))
+                if(state.markerConflicts>0) Text(pluralStringResource(R.plurals.journal_marker_preview_conflicts,state.markerConflicts,state.markerConflicts))
                 Text(stringResource(R.string.journal_restore_rule))
                 state.error?.let {Text(stringResource(it),color=MaterialTheme.colorScheme.error)}
             }},

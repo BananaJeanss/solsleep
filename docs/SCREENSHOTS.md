@@ -45,3 +45,12 @@ Both device-results artifacts contain `journal-restore-preview.png` and
 local-entry conflicts, real committed counts and the retained local night.
 The source also moves alarm Save to a fixed footer; its captured alarm editor and
 large-text workflow supersede the old alarm source for current layout evidence.
+
+## Verified export outcomes
+
+Source `271bfdb4f19f7e18f4fef6cc8851081a717a77fe`,
+[CI24](https://github.com/BananaJeanss/solsleep/actions/runs/39041179253).
+Both device artifacts include `journal-export-unverified.png` and
+`journal-export-verified.png`, exercising the actual provider and visible outcome.
+The same original night remains in storage. These captures show readback states,
+not future cloud upload or retention guarantees.

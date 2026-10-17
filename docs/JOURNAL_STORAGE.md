@@ -84,6 +84,17 @@ revision chains, checksum, UTF-8 validity, maximum nesting eight, 8 MiB input an
 10,000 revisions and 10,000 deletion markers. Limits fail explicitly; no marker is silently dropped. SHA-256 detects accidental corruption; it provides neither
 confidentiality nor authenticity. This format is explicitly plaintext in the UI.
 
+Export preflights the revision/marker count and stored UTF-8 payload byte total
+inside its transaction before decoding every historical payload. Character count
+is insufficient for Unicode. App-created stores use the qualified UTF-8 encoding;
+SQLite measures `length(CAST(payload AS BLOB))`.
+The writer independently checks its actual UTF-8 output, encoding one bounded record at a time into a capped buffer and checks
+envelope overhead before writing any destination bytes. A typed limit failure
+never truncates the journal or silently omits records/markers. A consistent
+identity-only snapshot supplies import-preview conflicts independently of full
+export capacity. These guards are not a streaming or partitioned large-history
+archive implementation.
+
 Export takes one transactional logical snapshot of revisions, current pointers and markers, rejects inconsistent state, writes through SAF, closes the
 provider stream, reopens the selected URI and verifies its bounded full-document
 fingerprint before reporting verified completion. The expected bytes are frozen
@@ -192,3 +203,8 @@ names and explicit fault scenarios; it has no access to the application's privat
 journal. Neither debug nor release application manifests include it. Real cloud
 quota/revocation, system-picker interaction, remote completion and actual reinstall
 must still be qualified separately.
+
+- SQLite text/BLOB length and database encoding:
+  https://www.sqlite.org/lang_corefunc.html#length
+  https://www.sqlite.org/lang_expr.html#castexpr
+  https://www.sqlite.org/pragma.html#pragma_encoding

@@ -8,6 +8,8 @@ import android.database.sqlite.*
 import android.os.UserManager
 import dev.bananajeans.solsleep.core.*
 
+data class JournalIdentities(val live: Set<String>,val deleted: Set<String>)
+
 /** Independent credential-protected journal. Alarm initialization never opens this database. */
 class JournalStore(context: Context,name: String="journal.db") : AutoCloseable {
     companion object {
@@ -55,11 +57,34 @@ class JournalStore(context: Context,name: String="journal.db") : AutoCloseable {
         buildSet {while(c.moveToNext()) add(c.getString(0))}
     }
     @Synchronized fun history(id: String): List<SleepRecord> = readHistory(database(),id)
+    /** Preview needs identities, not a complete copy of every note and historical revision. */
+    @Synchronized fun identities(): JournalIdentities = transaction {db->
+        check(!db.rawQuery("""SELECT 1 FROM sessions s LEFT JOIN revisions r
+            ON r.session_id=s.id AND r.revision=s.current_revision WHERE r.session_id IS NULL LIMIT 1""",null).use {it.moveToFirst()}) {
+            "Missing current revision; original data retained"
+        }
+        fun ids(table: String)=db.rawQuery("SELECT id FROM $table",null).use {c->
+            buildSet {while(c.moveToNext()) {
+                val id=c.getString(0);check(java.util.UUID.fromString(id).toString()==id);add(id)
+            }}
+        }
+        val live=ids("sessions");val deleted=ids("tombstones")
+        check(live.intersect(deleted).isEmpty()) {"Contradictory journal identities; original data retained"}
+        JournalIdentities(live,deleted)
+    }
     @Synchronized fun snapshot(): List<SleepRecord> = transaction {db->
         readRecords(db)
     }
     /** Read histories and deletion markers in the same WAL transaction, never separate snapshots. */
     @Synchronized fun archiveSnapshot(): JournalSnapshot = transaction {db->
+        // SQLite measures stored UTF-8 bytes before Java allocates any potentially large payload.
+        db.rawQuery("SELECT COUNT(*),COALESCE(SUM(length(CAST(payload AS BLOB))),0) FROM revisions",null).use {c->
+            check(c.moveToFirst())
+            if(c.getLong(0)>JournalArchive.MAX_REVISIONS || c.getLong(1)>JournalArchive.MAX_BYTES) throw JournalExportLimitException()
+        }
+        db.rawQuery("SELECT COUNT(*) FROM tombstones",null).use {c->
+            check(c.moveToFirst());if(c.getLong(0)>JournalArchive.MAX_DELETIONS) throw JournalExportLimitException()
+        }
         val records=readRecords(db)
         check(records.groupBy {it.id}.values.map {it.last()}.toSet()==current().toSet()) {
             "Inconsistent journal; original data retained"
