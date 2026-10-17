@@ -4,6 +4,9 @@ package dev.bananajeans.solsleep.core
 import java.time.Instant
 import java.util.UUID
 
+private val captureEarliest=Instant.parse("1900-01-01T00:00:00Z")
+private val captureLatest=Instant.parse("+10000-01-01T00:00:00Z")
+
 enum class CaptureState { PREPARING, RECORDING, PAUSED, INTERRUPTED, COMPLETED, FAILED, DELETING }
 enum class CaptureReason { START, RESUME, PAUSE, STOP, PROCESS_LOSS, SERVICE_STOP, NO_SENSOR, STORAGE,
     LOW_SPACE, MAX_DURATION, SENSOR_STALE, INVALID_SAMPLE, CLOCK_CHANGE, SENSOR_GAP, ACCURACY, DELETE, SETUP }
@@ -12,7 +15,7 @@ data class CaptureSession(val id: UUID,val requestId: UUID,val ownerId: UUID,val
     val startedAt: Instant,val updatedAt: Instant,val revision: Long) {
     init {
         require(revision>=1)
-        listOf(startedAt,updatedAt).forEach {require(it.nano%1_000_000==0 && it>=Instant.parse("1900-01-01T00:00:00Z") && it<Instant.parse("10000-01-01T00:00:00Z"))}
+        listOf(startedAt,updatedAt).forEach {require(it.nano%1_000_000==0 && it>=captureEarliest && it<captureLatest)}
     }
     val terminal get()=state in setOf(CaptureState.COMPLETED,CaptureState.FAILED,CaptureState.DELETING)
 }

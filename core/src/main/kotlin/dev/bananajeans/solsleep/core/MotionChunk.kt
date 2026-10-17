@@ -58,7 +58,9 @@ object MotionChunkCodec {
 enum class ChunkCheckpoint { FILE_SYNCED, RENAMED, DIRECTORY_SYNCED }
 data class ChunkIssue(val filename: String,val reason: String)
 data class ChunkRecovery(val chunks: List<MotionChunk>,val issues: List<ChunkIssue>)
-data class MotionSummary(val chunks: Long,val samples: Long,val bytes: Long,val issues: List<ChunkIssue>,val streamSamples: Map<UUID,Long> = emptyMap())
+data class MotionStreamAnchor(val bootId: UUID,val wall: Instant,val elapsedNanos: Long)
+data class MotionSummary(val chunks: Long,val samples: Long,val bytes: Long,val issues: List<ChunkIssue>,
+    val streamSamples: Map<UUID,Long> = emptyMap(),val streamAnchors: Map<UUID,MotionStreamAnchor> = emptyMap())
 
 /**
  * Self-describing files are authoritative; a future SQL index must be rebuildable from these files.
@@ -98,9 +100,15 @@ class MotionChunkStore(private val directory: Path,private val sessionId: UUID,
     @Synchronized fun summary(): MotionSummary {
         var chunks=0L;var samples=0L;var bytes=0L
         val counts=mutableMapOf<UUID,Long>()
+        val anchors=mutableMapOf<UUID,MotionStreamAnchor>()
+        val anchorIssues=mutableListOf<ChunkIssue>()
         val issues=scan {chunk,size->chunks++;samples+=chunk.samples.size;bytes+=size
-            counts[chunk.streamId]=(counts[chunk.streamId] ?: 0)+chunk.samples.size}
-        return MotionSummary(chunks,samples,bytes,issues,counts.toMap())
+            counts[chunk.streamId]=(counts[chunk.streamId] ?: 0)+chunk.samples.size
+            val anchor=MotionStreamAnchor(chunk.bootId,chunk.anchorWall,chunk.anchorElapsedNanos)
+            if(anchors.putIfAbsent(chunk.streamId,anchor)?.let {it!=anchor}==true)
+                anchorIssues+=ChunkIssue("${chunk.streamId}-${chunk.sequence}.motion","Stream clock anchor changed")
+        }
+        return MotionSummary(chunks,samples,bytes,issues+anchorIssues,counts.toMap(),anchors.toMap())
     }
     /** Only after a durable DELETING intent. Keep the lock inode; never unlink a held lock. */
     @Synchronized fun eraseOwned() = locked {
@@ -114,7 +122,7 @@ class MotionChunkStore(private val directory: Path,private val sessionId: UUID,
     }
     private fun scan(visit: (MotionChunk,Int)->Unit): List<ChunkIssue> = locked {
         val issues=mutableListOf<ChunkIssue>()
-        val sequences=mutableMapOf<UUID,MutableList<Long>>()
+        val sequences=mutableMapOf<UUID,MutableList<Triple<Long,Long,Long>>>()
         val paths=Files.list(directory).use {s->s.filter {filename.matches(it.fileName.toString())}.sorted().iterator().asSequence().toList()}
         paths.filter {it.fileName.toString().endsWith(".pending")}.forEach {pending->
             try {
@@ -132,16 +140,19 @@ class MotionChunkStore(private val directory: Path,private val sessionId: UUID,
             .sorted().forEach {path->
                 try {
                     val bytes=read(path);val chunk=verified(path,bytes,false)
-                    sequences.getOrPut(chunk.streamId) {mutableListOf()}.add(chunk.sequence)
+                    sequences.getOrPut(chunk.streamId) {mutableListOf()}.add(Triple(chunk.sequence,chunk.samples.first().elapsedNanos,chunk.samples.last().elapsedNanos))
                     visit(chunk,bytes.size)
                 }
                 catch(_: Exception) {issues+=ChunkIssue(path.fileName.toString(),"Invalid committed chunk; retained")}
             }}
         sequences.forEach {(stream,sequences)->
             var expected=0L
-            sequences.sorted().forEach {sequence->
+            var previousTime=-1L
+            sequences.sortedBy {it.first}.forEach {(sequence,first,last)->
                 if(sequence!=expected) issues+=ChunkIssue("$stream-$sequence.motion","Sequence gap before chunk")
+                if(first<=previousTime) issues+=ChunkIssue("$stream-$sequence.motion","Overlapping or regressed sensor timestamps")
                 expected=if(sequence==Long.MAX_VALUE) Long.MAX_VALUE else sequence+1
+                previousTime=last
             }
         }
         syncDirectory(directory)

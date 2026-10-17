@@ -131,4 +131,14 @@ class CaptureStoreTest {
             assertEquals(1L,store.streams(first.id).single().committedSamples)
         } finally {files.eraseOwned()}
     }
+    @Test fun sourceClockMismatchIsReportedAndOriginalObservationsRemain() {
+        val first=start();val source=stream(first);store.openStream(source,owner)
+        val files=MotionFiles.forSession(context,first.id)
+        try {
+            val chunk=MotionChunk(first.id,source.id,UUID.randomUUID(),0,wall,1,listOf(MotionSample(2,0f,0f,9.81f)))
+            files.publish(chunk)
+            assertTrue(MotionFiles.inspectSession(context,store,first.id).issues.any {it.reason.contains("anchor")})
+            assertEquals(listOf(chunk),files.recover().chunks)
+        } finally {files.eraseOwned()}
+    }
 }

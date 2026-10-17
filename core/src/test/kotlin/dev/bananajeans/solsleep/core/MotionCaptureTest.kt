@@ -118,4 +118,24 @@ class MotionCaptureTest {
         assertFalse(CaptureTransitions.acceptsControl(preparing.copy(state=CaptureState.RECORDING,revision=5),2))
         assertTrue(CaptureTransitions.acceptsControl(preparing.copy(state=CaptureState.RECORDING,revision=5),4))
     }
+    @Test fun sessionTimeBoundsRejectOutOfRangeAndSubmillisecondValuesButAllowClockRollback() {
+        val original=CaptureSession(session,UUID.randomUUID(),UUID.randomUUID(),CaptureState.PREPARING,wall,wall,1)
+        assertEquals(wall.minusSeconds(60),original.copy(updatedAt=wall.minusSeconds(60)).updatedAt)
+        assertThrows(IllegalArgumentException::class.java) {original.copy(startedAt=Instant.parse("1899-12-31T23:59:59Z"))}
+        assertThrows(IllegalArgumentException::class.java) {original.copy(updatedAt=Instant.parse("+10000-01-01T00:00:00Z"))}
+        assertThrows(IllegalArgumentException::class.java) {original.copy(updatedAt=wall.plusNanos(1))}
+    }
+    @Test fun savedSummaryDetectsOverlappingChunksAndChangingAnchorsWithoutDroppingRawBytes() {
+        val directory=Files.createTempDirectory("capture-anchors")
+        try {
+            val files=MotionChunkStore(directory,session)
+            files.publish(MotionChunk(session,stream,boot,0,wall,anchor,listOf(sample(100))))
+            files.publish(MotionChunk(session,stream,UUID.randomUUID(),1,wall.plusSeconds(1),anchor,listOf(sample(50))))
+            val summary=files.summary()
+            assertEquals(2L,summary.samples);assertEquals(2L,summary.chunks)
+            assertTrue(summary.issues.any {it.reason.contains("anchor")})
+            assertTrue(summary.issues.any {it.reason.contains("Overlapping")})
+            assertEquals(2,files.recover().chunks.size)
+        } finally {Files.walk(directory).use {it.sorted(Comparator.reverseOrder()).forEach(Files::delete)}}
+    }
 }

@@ -18,6 +18,12 @@ object MotionFiles {
         streams.filter {(summary.streamSamples[it.id] ?: 0)<it.committedSamples}.forEach {
             issues+=ChunkIssue(it.id.toString(),"Saved progress has missing or invalid observations")
         }
+        streams.forEach {stream->
+            summary.streamAnchors[stream.id]?.let {anchor->
+                if(anchor!=MotionStreamAnchor(stream.bootId,stream.wall,stream.elapsedNanos))
+                    issues+=ChunkIssue(stream.id.toString(),"Source clock anchor does not match observations")
+            }
+        }
         if(summary.streamSamples.keys.any {id->streams.none {it.id==id}})
             issues+=ChunkIssue("source-metadata","Observations have no retained source metadata")
         return summary.copy(issues=issues)
