@@ -11,6 +11,9 @@ import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.platform.io.PlatformTestStorageRegistry
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.ViewModelProvider
+import dev.bananajeans.solsleep.ui.CaptureViewModel
 import dev.bananajeans.solsleep.alarm.AlarmGraph
 import dev.bananajeans.solsleep.capture.*
 import dev.bananajeans.solsleep.core.*
@@ -38,6 +41,7 @@ class MotionCaptureTest {
         assertTrue("Capture did not reach the expected durable state",condition())
     }
     @Before fun setup() {
+        quiesceScreen()
         context.stopService(Intent(context,MotionCaptureService::class.java));await {CaptureRuntime.liveOwner==null}
         clearRecords()
         if(Build.VERSION.SDK_INT>=33) shell("pm grant ${context.packageName} android.permission.POST_NOTIFICATIONS")
@@ -45,13 +49,22 @@ class MotionCaptureTest {
         shell("appops set ${context.packageName} SCHEDULE_EXACT_ALARM allow")
         shell("input keyevent KEYCODE_WAKEUP")
         CaptureRuntime.clearError()
+        compose.activityRule.scenario.moveToState(Lifecycle.State.RESUMED)
         compose.activityRule.scenario.recreate()
     }
     @After fun cleanup() {
+        quiesceScreen()
         shell("input keyevent KEYCODE_WAKEUP");shell("settings put system font_scale 1.0")
         shell("appops set ${context.packageName} POST_NOTIFICATION allow")
         context.stopService(Intent(context,MotionCaptureService::class.java));await {CaptureRuntime.liveOwner==null}
         clearRecords();AlarmGraph.engine(context).delete(alarmId)
+    }
+    private fun quiesceScreen() {
+        compose.waitForIdle()
+        compose.activityRule.scenario.moveToState(Lifecycle.State.CREATED)
+        val model=java.util.concurrent.atomic.AtomicReference<CaptureViewModel>()
+        compose.activityRule.scenario.onActivity {model.set(ViewModelProvider(it)[CaptureViewModel::class.java])}
+        await {!model.get().state.value.busy}
     }
     private fun clearRecords() {
         // Disposable test installation only. Tests never target a personal installation.
@@ -59,9 +72,12 @@ class MotionCaptureTest {
         context.deleteDatabase("motion-capture.db")
     }
     private fun click(text: String) {
-        compose.onNodeWithTag("capture_home").performScrollToNode(hasText(text))
-        compose.waitUntil(15000) {runCatching {compose.onNodeWithText(text).assertIsEnabled();true}.getOrDefault(false)}
-        compose.onNodeWithText(text).performClick()
+        // The durable service acknowledgement can precede the next screen projection/frame.
+        compose.waitUntil(15000) {runCatching {
+            compose.onNodeWithTag("capture_home").performScrollToNode(hasText(text))
+            compose.onNodeWithText(text).assertIsDisplayed().assertIsEnabled();true
+        }.getOrDefault(false)}
+        compose.onNodeWithText(text).assertIsDisplayed().assertIsEnabled().performClick()
     }
     private fun start() {
         click("Set up a motion recording")
@@ -130,7 +146,8 @@ class MotionCaptureTest {
     @Test fun aPriorProcessPreparingSessionIsInterruptedWithoutStartingSensors() {
         val old=CaptureStore(context).use {it.start(UUID.randomUUID(),UUID.randomUUID(),Instant.now().truncatedTo(java.time.temporal.ChronoUnit.MILLIS),1,UUID.randomUUID())}
         compose.activityRule.scenario.recreate()
-        await {CaptureStore(context).use {it.get(old.id)?.state==CaptureState.INTERRUPTED}}
+        compose.waitForIdle()
+        compose.waitUntil(25000) {CaptureStore(context).use {it.get(old.id)?.state==CaptureState.INTERRUPTED}}
         assertNull(CaptureRuntime.liveOwner);assertEquals(0L,summary(old.id).samples)
         compose.onNodeWithTag("capture_home").performScrollToNode(hasTestTag("capture_state_${old.id}"))
         compose.onNodeWithTag("capture_state_${old.id}").assertTextEquals("Interrupted · Recording has stopped")

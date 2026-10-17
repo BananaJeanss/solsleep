@@ -207,15 +207,18 @@
 Keep the phone on a firm, ventilated surface, away from pillows and bedding. Recording uses a visible notification and keeps the CPU awake. It does not use the microphone, watch, network or location.
 
 Raw recordings are not included in Journal exports yet. They stay on this installation until you delete them; uninstalling removes them. Device storage protection applies, but there is no portable encrypted backup. Continue only if these limits are acceptable.</string>
-    <string name="capture_limits">Requests about 10 samples per second; actual delivery varies. Saves bounded batches about every 4 seconds. A segment stops after 12 hours, 15 seconds without fresh samples, a clock jump or low storage. A session is bounded to about 64 MiB; at least 64 MiB is reserved. These are software policies, not measured battery or power-loss guarantees.</string>
+    <string name="capture_limits">Requests about 10 samples per second; actual delivery varies. Saves bounded batches about every 4 seconds. A segment stops after 12 hours, 15 seconds without fresh samples, a clock jump or low storage. A session is bounded to about 64 MiB; a 64 MiB free-space threshold is checked before writing. These are software policies, not measured battery or power-loss guarantees.</string>
     <string name="capture_details">Check saved observations</string>
-    <string name="capture_verified_values">Validated files: %1$d
-Saved samples: %2$d
-Saved bytes: %3$d
-Detected file issues: %4$d</string>
+    <string name="capture_file_count">Validated files: %1$d</string>
+    <string name="capture_sample_count">Saved samples: %1$d</string>
+    <string name="capture_byte_count">Saved bytes: %1$d</string>
+    <string name="capture_issue_count">Detected file issues: %1$d</string>
     <string name="capture_source">Accelerometer: %1$s · %2$s
-Units: m/s² · Requested interval: 100 ms</string>
-    <string name="capture_source_counts">Progress index: %1$d saved samples, %2$d rejected samples, %3$d detected gaps. A crash can leave the index behind the validated files.</string>
+Units: m/s² (including gravity) · Requested interval: 100 ms</string>
+    <string name="capture_index_samples">Progress index — saved samples: %1$d</string>
+    <string name="capture_index_rejected">Rejected samples: %1$d</string>
+    <string name="capture_index_gaps">Detected gaps over two seconds: %1$d</string>
+    <string name="capture_index_explanation">A crash can leave progress behind the validated files.</string>
     <string name="capture_event_count">Session events: %1$d</string>
     <string name="capture_retained_damage">Some files could not be validated. Original damaged files are retained; valid samples are counted separately.</string>
     <string name="capture_delete_title">Delete this motion recording?</string>

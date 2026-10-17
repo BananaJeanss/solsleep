@@ -2,6 +2,7 @@
 package dev.bananajeans.solsleep.capture
 
 import android.content.Context
+import android.annotation.SuppressLint
 import android.provider.Settings
 import android.os.Handler
 import android.os.HandlerThread
@@ -29,7 +30,10 @@ object CaptureRuntime {
         val saved=preferences.getString("id",null)
         if(preferences.getInt("count",-1)==count && saved!=null) return UUID.fromString(saved)
         val id=UUID.randomUUID()
-        check(preferences.edit().putInt("count",count).putString("id",id.toString()).commit())
+        // KTX edit(commit=true) discards commit's Boolean; provenance must not acknowledge failure.
+        @SuppressLint("UseKtx")
+        val committed=preferences.edit().putInt("count",count).putString("id",id.toString()).commit()
+        check(committed)
         return id
     }
 }

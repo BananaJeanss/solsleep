@@ -8,6 +8,7 @@ import android.hardware.*
 import android.os.*
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
+import androidx.core.net.toUri
 import dev.bananajeans.solsleep.R
 import dev.bananajeans.solsleep.core.*
 import dev.bananajeans.solsleep.data.*
@@ -128,6 +129,7 @@ class MotionCaptureService: Service(),SensorEventListener {
         accepting=sensors.registerListener(this,sensor,MotionCaptureBuffer.PERIOD_MICROS,handler)
         if(!accepting) throw CaptureStopped(CaptureReason.NO_SENSOR)
         wakeLock=getSystemService(PowerManager::class.java).newWakeLock(PowerManager.PARTIAL_WAKE_LOCK,"solsleep:phone-motion").apply {
+            setReferenceCounted(false)
             acquire(MotionCapturePolicy.MAX_NANOS/1_000_000+60_000)
         }
         CaptureRuntime.clearError();handler.postDelayed(tick,1000)
@@ -205,7 +207,7 @@ class MotionCaptureService: Service(),SensorEventListener {
             .setOngoing(true).setVisibility(NotificationCompat.VISIBILITY_PRIVATE).setOnlyAlertOnce(true)
         if(session!=null) {
             val stop=PendingIntent.getService(this,0,Intent(this,MotionCaptureService::class.java).setAction(STOP)
-                .setData(android.net.Uri.parse("solsleep://capture/${session.id}/${session.revision}/stop"))
+                .setData("solsleep://capture/${session.id}/${session.revision}/stop".toUri())
                 .putExtra(ID,session.id.toString()).putExtra(REVISION,session.revision),PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
             builder.addAction(0,getString(R.string.capture_stop),stop)
         }

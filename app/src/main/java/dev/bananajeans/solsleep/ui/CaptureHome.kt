@@ -94,10 +94,16 @@ import java.time.format.DateTimeFormatter
     state.details?.let {details->
         AlertDialog(onDismissRequest=model::closeDetails,title={Text(stringResource(R.string.capture_details))},
             text={Column(Modifier.heightIn(max=420.dp).verticalScroll(rememberScrollState()),verticalArrangement=Arrangement.spacedBy(12.dp)) {
-                Text(stringResource(R.string.capture_verified_values,details.summary.chunks,details.summary.samples,details.summary.bytes,details.summary.issues.size))
+                Text(stringResource(R.string.capture_file_count,details.summary.chunks))
+                Text(stringResource(R.string.capture_sample_count,details.summary.samples))
+                Text(stringResource(R.string.capture_byte_count,details.summary.bytes))
+                Text(stringResource(R.string.capture_issue_count,details.summary.issues.size))
                 details.streams.forEach {stream->
                     Text(stringResource(R.string.capture_source,stream.source.name,stream.source.vendor))
-                    Text(stringResource(R.string.capture_source_counts,stream.committedSamples,stream.rejectedSamples,stream.gaps))
+                    Text(stringResource(R.string.capture_index_samples,stream.committedSamples))
+                    Text(stringResource(R.string.capture_index_rejected,stream.rejectedSamples))
+                    Text(stringResource(R.string.capture_index_gaps,stream.gaps))
+                    Text(stringResource(R.string.capture_index_explanation))
                 }
                 Text(stringResource(R.string.capture_event_count,details.events.size))
                 details.events.lastOrNull()?.let {Text(stringResource(reasonString(it.reason)))}
