@@ -237,6 +237,7 @@ import kotlinx.coroutines.delay
 @Composable private fun AlarmEditor(rule: AlarmRule?,busy: Boolean,onDismiss: ()->Unit,onSave: (AlarmRule)->Unit) {
     val context=LocalContext.current
     val keyboard=LocalSoftwareKeyboardController.current
+    val focus=LocalFocusManager.current
     val locale=LocalConfiguration.current.locales[0]
     val time=rememberTimePickerState(initialHour=rule?.time?.hour ?: 7,initialMinute=rule?.time?.minute ?: 0,
         is24Hour=DateFormat.is24HourFormat(context))
@@ -288,7 +289,7 @@ import kotlinx.coroutines.delay
             TimeInput(time,modifier=Modifier.align(Alignment.CenterHorizontally))
             OutlinedTextField(label,{if(it.length<=120) label=it},modifier=Modifier.fillMaxWidth().testTag("alarm_label"),singleLine=true,
                 keyboardOptions=androidx.compose.foundation.text.KeyboardOptions(imeAction=androidx.compose.ui.text.input.ImeAction.Done),
-                keyboardActions=androidx.compose.foundation.text.KeyboardActions(onDone={keyboard?.hide()}),
+                keyboardActions=androidx.compose.foundation.text.KeyboardActions(onDone={focus.clearFocus();keyboard?.hide()}),
                 label={Text(stringResource(R.string.label))},placeholder={Text(stringResource(R.string.label_placeholder))})
             Text(stringResource(R.string.repeat),style=MaterialTheme.typography.titleMedium)
             FlowRow(horizontalArrangement=Arrangement.spacedBy(8.dp)) {
