@@ -165,7 +165,7 @@ class JournalUiTest {
             waitFor(compose.activity.getString(R.string.journal_exported))
             compose.onAllNodesWithText(compose.activity.getString(R.string.journal_export_verify_error)).assertCountEquals(0)
             capture("journal-export-verified")
-            compose.onNodeWithTag("journal_export_history").performScrollTo()
+            compose.onNodeWithTag("journal_home").performScrollToNode(hasTestTag("journal_export_history"))
             compose.onNodeWithText("Export history").assertExists()
             compose.onNodeWithText("Verified by readback").assertExists()
             capture("journal-export-history")
@@ -189,7 +189,7 @@ class JournalUiTest {
         compose.runOnUiThread {
             androidx.lifecycle.ViewModelProvider(compose.activity)[dev.bananajeans.solsleep.ui.JournalViewModel::class.java].reload()
         }
-        compose.onNodeWithTag("journal_export_history").performScrollTo()
+        compose.onNodeWithTag("journal_home").performScrollToNode(hasTestTag("journal_export_history"))
         waitFor(compose.activity.getString(R.string.journal_export_history_unavailable))
         compose.onAllNodesWithText(compose.activity.getString(R.string.journal_export_no_verified)).assertCountEquals(0)
         val uri=android.net.Uri.parse("content://dev.bananajeans.solsleep.debug.test.journal/normal/${java.util.UUID.randomUUID()}")
@@ -197,7 +197,7 @@ class JournalUiTest {
             compose.runOnUiThread {
                 androidx.lifecycle.ViewModelProvider(compose.activity)[dev.bananajeans.solsleep.ui.JournalViewModel::class.java].export(uri)
             }
-            compose.onNodeWithTag("journal_add").performScrollTo()
+            compose.onNodeWithTag("journal_home").performScrollToNode(hasTestTag("journal_add"))
             waitFor(compose.activity.getString(R.string.journal_exported))
             assertEquals("Recover without export history",records().single().note)
             requireNotNull(compose.activity.contentResolver.openInputStream(uri)).use {
