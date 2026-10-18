@@ -10,8 +10,10 @@ import hashlib
 import io
 import json
 import math
+import re
 import struct
 import uuid
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 MAX_METADATA = 2 * 1024 * 1024
 MAX_CHUNKS = 32768
@@ -22,6 +24,39 @@ REASONS = set('START RESUME PAUSE STOP PROCESS_LOSS SERVICE_STOP NO_SENSOR STORA
 def require(condition, message='Invalid recording archive'):
     if not condition:
         raise ValueError(message)
+
+
+def provenance(text):
+    require(len(text.encode('utf-8')) <= 1024)
+    def pairs(items):
+        result = {}
+        for key, value in items:
+            require(key not in result, 'Duplicate provenance field')
+            result[key] = value
+        return result
+    value = json.loads(text, object_pairs_hook=pairs)
+    require(isinstance(value, dict) and set(value) == {'version', 'baseApkSha256', 'zoneId', 'requestedPeriodMicros'})
+    require(type(value['version']) is int and value['version'] == 1)
+    require(isinstance(value['baseApkSha256'], str) and re.fullmatch('[0-9a-f]{64}', value['baseApkSha256']))
+    require(type(value['requestedPeriodMicros']) is int and 1 <= value['requestedPeriodMicros'] <= 60000000)
+    zone = value['zoneId']
+    require(isinstance(zone, str) and 1 <= len(zone) <= 128 and not any(ord(c) < 32 or 127 <= ord(c) <= 159 for c in zone))
+    offset = re.fullmatch(r'(?:UTC|GMT|UT)?([+-])([0-9]{1,2}|[0-9]{4}|[0-9]{6}|[0-9]{2}:[0-9]{2}(?::[0-9]{2})?)', zone)
+    if zone in ('Z', 'UTC', 'GMT', 'UT'):
+        pass
+    elif offset:
+        digits = offset[2].replace(':', '')
+        require(len(digits) in (1, 2, 4, 6))
+        hour = int(digits[:2]) if len(digits) > 1 else int(digits)
+        minute = int(digits[2:4]) if len(digits) >= 4 else 0
+        second = int(digits[4:6]) if len(digits) == 6 else 0
+        require(hour <= 18 and minute < 60 and second < 60 and (hour < 18 or minute == second == 0))
+    else:
+        try:
+            ZoneInfo(zone)
+        except (ZoneInfoNotFoundError, ValueError):
+            raise ValueError('Unknown original zone') from None
+    return value
 
 
 class Reader:
@@ -70,7 +105,9 @@ class Reader:
 def inspect(source):
     digest = hashlib.sha256()
     reader = Reader(source, digest)
-    require(reader.number('i') == 0x534f4c52 and reader.number('i') == 1, 'Unsupported SOLR version')
+    require(reader.number('i') == 0x534f4c52, 'Unsupported SOLR format')
+    version = reader.number('i')
+    require(version in (1, 2), 'Unsupported SOLR version')
     size = reader.number('i')
     require(1 <= size <= MAX_METADATA)
     metadata = Reader(io.BytesIO(reader.read(size)))
@@ -89,6 +126,7 @@ def inspect(source):
         require(1 <= len(item['name'].encode('utf-16-le')) // 2 <= 512 and len(item['vendor'].encode('utf-16-le')) // 2 <= 512 and '\0' not in item['name'] + item['vendor'])
         require(math.isfinite(item['resolution']) and item['resolution'] >= 0 and
                 math.isfinite(item['maximum_range']) and item['maximum_range'] > 0)
+        item['provenance'] = provenance(metadata.text()) if version >= 2 and metadata.flag() else None
         streams[item['id']] = item
     count = metadata.number('i')
     require(1 <= count <= 10000)
@@ -135,7 +173,7 @@ def inspect(source):
     actual = digest.digest()
     reader.digest = None
     require(reader.read(32) == actual and source.read(1) == b'', 'Archive checksum or trailing data')
-    return dict(format='SOLR', version=1, session=session, streams=list(streams.values()), events=events,
+    return dict(format='SOLR', version=version, session=session, streams=list(streams.values()), events=events,
                 chunks=chunks, samples=sum(samples.values()), raw_bytes=raw_bytes, fingerprint=actual.hex())
 
 

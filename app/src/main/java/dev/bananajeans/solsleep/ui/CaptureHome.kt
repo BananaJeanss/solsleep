@@ -42,6 +42,7 @@ import java.time.format.DateTimeFormatter
     var deleting by remember {mutableStateOf<CaptureSession?>(null)}
     var exportId by rememberSaveable {mutableStateOf<String?>(null)}
     var discard by rememberSaveable {mutableStateOf(false)}
+    var showCoverage by rememberSaveable {mutableStateOf(false)}
     val create=rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/octet-stream")) {uri->
         val id=exportId;exportId=null
         if(uri!=null && id!=null) model.export(UUID.fromString(id),uri)
@@ -52,6 +53,10 @@ import java.time.format.DateTimeFormatter
     val locale=LocalConfiguration.current.locales[0]
     val use24=android.text.format.DateFormat.is24HourFormat(context)
     val formatter=remember(locale,use24) {DateTimeFormatter.ofPattern(android.text.format.DateFormat.getBestDateTimePattern(locale,if(use24) "yMMMdHm" else "yMMMdhm"),locale)}
+    if(showCoverage && state.details!=null) {
+        CaptureCoverageScreen(requireNotNull(state.details)) {showCoverage=false;model.closeDetails()}
+        return
+    }
     Scaffold(topBar={TopAppBar(title={Text(stringResource(R.string.capture_title))},navigationIcon={
         IconButton(onClick=onBack) {AppIcon(R.drawable.ic_close,stringResource(R.string.close))}
     })}) {padding->
@@ -136,6 +141,8 @@ import java.time.format.DateTimeFormatter
                 Text(stringResource(R.string.capture_sample_count,details.summary.samples))
                 Text(stringResource(R.string.capture_byte_count,details.summary.bytes))
                 Text(stringResource(R.string.capture_issue_count,details.summary.issues.size))
+                if(details.coverage!=null || details.coverageUnavailable) Button(onClick={showCoverage=true},
+                    modifier=Modifier.semantics {testTag="coverage_open"}) {Text(stringResource(R.string.coverage_open))}
                 details.streams.forEach {stream->
                     Text(stringResource(R.string.capture_source,stream.source.name,stream.source.vendor))
                     Text(stringResource(R.string.capture_index_samples,stream.committedSamples))

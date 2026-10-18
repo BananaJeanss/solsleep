@@ -118,8 +118,9 @@ class MotionCaptureService: Service(),SensorEventListener {
         val files=MotionFiles.forSession(this,session.id)
         val summary=MotionFiles.inspectSession(this,store,session.id);check(summary.issues.isEmpty()) {"Damaged observations retained"};rawBytes=summary.bytes
         checkSpace()
+        val provenance=CaptureAcquisition.snapshot(this)
         val source=CaptureStream(UUID.randomUUID(),session.id,boot(),wall(),elapsed(),
-            CaptureSource(sensor.name,sensor.vendor,sensor.version,sensor.resolution,sensor.maximumRange,sensor.isWakeUpSensor),0,0,0)
+            CaptureSource(sensor.name,sensor.vendor,sensor.version,sensor.resolution,sensor.maximumRange,sensor.isWakeUpSensor),0,0,0,provenance)
         store.openStream(source,ownerId);stream=source
         buffer=MotionCaptureBuffer(session.id,source.id,source.bootId,source.wall,source.elapsedNanos) {chunk->
             val size=MotionChunkCodec.encode(chunk).size

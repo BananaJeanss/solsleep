@@ -202,7 +202,7 @@
     <string name="capture_notification_settings">Recording notification settings</string>
     <string name="capture_unavailable">Cannot load recording storage. Existing files are retained. If recording is active, use its notification to finish.</string>
     <string name="capture_error">The recording command could not finish. Check the saved state below. Existing observations are retained.</string>
-    <string name="capture_consent">This experimental feature saves your phone’s accelerometer readings locally. Movement is not a measurement of sleep, and battery use and overnight reliability are not yet qualified.
+    <string name="capture_consent">This experimental feature saves your phone’s accelerometer readings locally, with the time zone, requested interval and app build identity. Movement is not a measurement of sleep, and battery use and overnight reliability are not yet qualified.
 
 Keep the phone on a firm, ventilated surface, away from pillows and bedding. Recording uses a visible notification and keeps the CPU awake. It does not use the microphone, watch, network or location.
 

@@ -77,6 +77,12 @@ events are retained; nothing automatically records or arms an alarm. See
 without verified external copies of irreplaceable records. Sonar, sleep/stage
 inference and watch acquisition remain unimplemented.
 
+Finished recordings also have a **View recording coverage** screen with validated
+readings, time between nearby readings, explicit gaps and original acquisition
+metadata. Legacy cadence/zone stays unknown; nothing is filled from today's
+settings. This is data continuity, not measured sleep. See
+[the coverage contract](docs/RECORDING_COVERAGE.md) and STATUS.md for qualification.
+
 ## App screens
 
 <p>

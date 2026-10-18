@@ -1,8 +1,10 @@
-# Recording archive v1
+# Recording archives v1 and v2
 
 18 October 2026. Implemented and software-qualified in PR #8; see STATUS.md for exact
 source and executed results. This is a separate plaintext, single-recording
 format, not a combined app backup, encryption or physiological analysis.
+Version 2 adds original acquisition provenance and is under separate qualification;
+see [RECORDING_COVERAGE](RECORDING_COVERAGE.md) and current STATUS.md evidence.
 
 ## Human workflow and scope
 
@@ -43,14 +45,14 @@ wall timestamps by themselves.
 
 | Order | Fields |
 | --- | --- |
-| Header | int32 `0x534f4c52` (SOLR), int32 version `1`, int32 metadata byte length |
+| Header | int32 `0x534f4c52` (SOLR), int32 version `1` or `2`, int32 metadata byte length |
 | Metadata | Exactly that many bytes, described below |
 | Repeated chunk | int32 byte length then exact checksummed SOLM v1 bytes |
 | End | int32 `0` instead of another length |
 | Footer | 32 raw SHA-256 bytes of everything through the zero terminator |
 | EOF | Required; trailing bytes reject |
 
-Metadata is sequential, with no padding or optional extensions:
+Version 1 metadata is sequential, with no padding or optional extensions:
 
 1. Session: UUID id, UUID request, UUID owner, string state, int64 started-ms,
    int64 updated-ms, int64 revision.
@@ -62,6 +64,15 @@ Metadata is sequential, with no padding or optional extensions:
    CaptureReason enum name, int64 wall-ms, int64 elapsed-ns, UUID boot,
    flag has-detail, int64 detail only when has-detail is 1.
 4. Exact metadata EOF. Session identity is inherited by each stream/event.
+
+Version 2 appends, after each stream's `gaps`, a canonical flag `has-provenance`.
+Only when 1, a `string` contains at most 1,024 UTF-8 bytes of acquisition JSON:
+exact fields `version: 1`, `baseApkSha256` (64 lowercase hex), `zoneId` (valid Java
+ZoneId, max 128 characters) and `requestedPeriodMicros` (integer 1–60,000,000).
+Duplicate/unknown fields, unknown versions and malformed values reject. Null
+legacy streams remain null. Other metadata, framing, bounds and raw bytes do not
+change. Writers select v2 when any stream has provenance; an all-legacy record
+retains exact v1 output. Older applications refuse v2 instead of dropping fields.
 
 Each SOLM chunk has the existing self-describing codec in MotionChunk.kt:
 magic/version, session/stream/boot UUIDs, sequence, wall/elapsed anchors, count,
@@ -177,6 +188,9 @@ actual full-disk behavior remains a physical qualification gate.
 https://developer.android.com/reference/android/os/StatFs
 https://developer.android.com/reference/android/os/storage/StorageManager
 
-Provenance limit: capture schema 2 does not store an original IANA time zone, producing build ID or per-stream requested interval. UTC and monotonic instants remain exact; restore does not invent absent provenance. Versioned acquisition provenance remains follow-up work.
+Historical capture schema 1/2 has no original zone, producing build or requested
+cadence. Schema 3 adds a nullable, bounded acquisition payload and validates 1→3
+and 2→3 migration. Legacy nulls are retained; new segments store actual acquisition
+metadata. Restoring on another phone/build does not substitute its settings.
 
 Qualified source `36ca8777a4f9b696af4f9cd632f2c99bb5b0e188`, [CI39](https://github.com/BananaJeanss/solsleep/actions/runs/39076468922): 132 JVM, four Python and all 93 native tests on each of API 29/37, zero failures/errors/skips, zero lint issues and shrunk unsigned release. Native UI captures were reviewed; physical gates remain open.

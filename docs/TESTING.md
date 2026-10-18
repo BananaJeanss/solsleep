@@ -307,3 +307,27 @@ release incremental caches produced duplicate generated/top-level symbols during
 development; a separate `:app:clean` followed by the full debug/test/lint check
 resolved them. No source workaround or lint suppression was added. Final CI uses
 clean checkout builds and independently passed both variants.
+
+## Recording provenance and observed-coverage regression contract
+
+`CaptureProvenanceTest` keeps the independent v1 fixture byte-identical and tests
+v2 cross-language rewrite, mixed known/unknown segments, strict future/duplicate/
+malformed provenance and checksum-recomputed attacks. The Python producer and
+inspector retain v1 and add an independent v2 fixture, exhaustive truncation/bit
+faults and schema/field validation. These are synthetic interchange fixtures.
+
+`MotionCoverageTest` tests exact nearby-reading intervals, inclusive cadence/hard
+cap boundaries, original unknown cadence, empty/single/sparse input, missing
+chunks/indexed samples, across-chunk continuity, per-stream/boot separation,
+clock rollback, same-boot overlap, interruption events, malformed source/checksum/
+ordering and deterministic metadata/sample-bound fingerprints. It does not test
+sleep recognition. Original raw bits remain retained.
+
+`CaptureProvenanceStorageTest` exercises actual SQLite 1/2→3 migration, independent
+schema 3, unknown payload retention, failed migration rollback, frozen metadata
+through reopen/counter updates, actual provider v2 export/readback/restore,
+rebuild identity and corrupt/missing raw handling. `MotionCaptureTest` checks the
+actual installed APK hash/cadence/zone on real framework acquisition, plus native
+known/legacy/unavailable coverage screens and a retained 200% recreation capture.
+Final full-suite results and source/ZIP/capture provenance belong in STATUS.md;
+implementation or an initial passing subset is not a complete qualification.

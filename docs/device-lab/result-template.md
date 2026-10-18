@@ -22,6 +22,7 @@ Status: NOT RUN
 | Microphone permission/privacy/Stop and ordinary-call audio observations | Not recorded |
 | Lock-screen dialer/emergency navigation, without placing an emergency call | Not recorded |
 | Recording requested/observed rate, samples, gaps and file issues | Not recorded |
+| Coverage policy/input SHA-256, source provenance, intervals and retained unknowns/deficits | Not recorded |
 | Overnight battery/temperature method and actual start/end observations | Not recorded |
 | Raw evidence locations and analysis method | Not recorded |
 | Expected criterion and observed comparison | Not recorded |

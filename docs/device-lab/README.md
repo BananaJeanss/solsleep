@@ -109,6 +109,15 @@ copy, test its explicit restore on a disposable installation and compare exact
 files/source/event metadata before trusting portability or changing signers.
 Physical power-loss, full-disk and commercial-provider behavior remain NOT RUN.
 
+For the coverage follow-up, finish the recording and open **Check saved
+observations → View recording coverage**. Compare validated counts and per-segment
+first/last times with independently inspected raw files; note explicit missing
+intervals and original acquisition metadata. Test pauses, a controlled clock
+change and provider restore on the dedicated install. Legacy cadence/zone must
+stay unknown. Do not interpret nearby-reading time as sleep or aggregate separate
+boots/overlapping segments into a night percentage. Record the coverage policy
+and input fingerprint with the result.
+
 The encrypted-archive design has maintained implementation candidates and test
 requirements, but encryption is not implemented. Finish the selected-library
 vector/interop/envelope/secret-lifecycle work, then measure the actual Argon2

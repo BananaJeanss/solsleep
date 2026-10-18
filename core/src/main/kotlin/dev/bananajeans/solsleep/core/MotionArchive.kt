@@ -14,7 +14,8 @@ import java.util.concurrent.CancellationException
 data class CaptureEvent(val sequence: Long,val sessionId: UUID,val reason: CaptureReason,val wall: Instant,
     val elapsedNanos: Long,val bootId: UUID,val detail: Long?)
 data class CaptureStream(val id: UUID,val sessionId: UUID,val bootId: UUID,val wall: Instant,val elapsedNanos: Long,
-    val source: CaptureSource,val committedSamples: Long,val rejectedSamples: Long,val gaps: Long)
+    val source: CaptureSource,val committedSamples: Long,val rejectedSamples: Long,val gaps: Long,
+    val provenance: CaptureProvenance?=null)
 
 data class CaptureRecording(val session: CaptureSession,val streams: List<CaptureStream>,val events: List<CaptureEvent>) {
     fun validate() {
@@ -39,7 +40,7 @@ data class CaptureRecording(val session: CaptureSession,val streams: List<Captur
 data class MotionArchivePreview(val recording: CaptureRecording,val chunks: Long,val samples: Long,val rawBytes: Long,val fingerprint: String)
 class MotionVerificationException(cause: Exception): IOException("Recording was written but readback did not verify",cause)
 
-/** Plaintext SOLR v1. No paths, compression or arbitrary file entries. One bounded chunk in memory.
+/** Plaintext SOLR v1/v2. No paths, compression or arbitrary file entries. One bounded chunk in memory.
  * Callbacks during read are provisional until the footer AND strict EOF have been validated.
  */
 object MotionArchive {
@@ -55,7 +56,7 @@ object MotionArchive {
         val metadata=encodeMetadata(recording)
         val digest=MessageDigest.getInstance("SHA-256")
         val hashing=DigestOutputStream(output,digest);val out=DataOutputStream(hashing)
-        out.writeInt(MAGIC);out.writeInt(1);out.writeInt(metadata.size);out.write(metadata)
+        out.writeInt(MAGIC);out.writeInt(formatVersion(recording));out.writeInt(metadata.size);out.write(metadata)
         val validator=Validator(recording)
         chunks {bytes->validator.accept(bytes);out.writeInt(bytes.size);out.write(bytes)}
         validator.finish();out.writeInt(0);out.flush()
@@ -65,10 +66,11 @@ object MotionArchive {
     fun read(input: InputStream,visit: (MotionChunk,ByteArray)->Unit={_,_->}): MotionArchivePreview {
         val digest=MessageDigest.getInstance("SHA-256")
         val hashing=DigestInputStream(input,digest);val data=DataInputStream(hashing)
-        require(data.readInt()==MAGIC && data.readInt()==1) {"Unsupported recording archive"}
+        require(data.readInt()==MAGIC) {"Unsupported recording archive"}
+        val version=data.readInt();require(version in 1..2) {"Unsupported recording archive"}
         val length=data.readInt();require(length in 1..MAX_METADATA)
         val metadata=ByteArray(length);data.readFully(metadata)
-        val validator=Validator(decodeMetadata(metadata))
+        val validator=Validator(decodeMetadata(metadata,version))
         while(true) {
             val size=data.readInt();if(size==0) break
             require(size in 136..MotionChunkCodec.MAX_BYTES)
@@ -115,8 +117,10 @@ object MotionArchive {
         fun finish() {recording.streams.forEach {require((counts[it.id] ?: 0)>=it.committedSamples) {"Indexed observations missing"}}}
         fun preview(hash: ByteArray)=MotionArchivePreview(recording,chunks,samples,bytes,hash.joinToString("") {"%02x".format(it)})
     }
-    private fun encodeMetadata(value: CaptureRecording): ByteArray {
+    internal fun formatVersion(value: CaptureRecording)=if(value.streams.any {it.provenance!=null}) 2 else 1
+    internal fun encodeMetadata(value: CaptureRecording): ByteArray {
         value.validate()
+        val version=formatVersion(value)
         val bytes=ByteArrayOutputStream()
         DataOutputStream(bytes).use {out->
             val s=value.session
@@ -128,6 +132,7 @@ object MotionArchive {
                 out.text(v.source.name);out.text(v.source.vendor);out.writeInt(v.source.version)
                 out.writeFloat(v.source.resolution);out.writeFloat(v.source.maximumRange);out.writeBoolean(v.source.wakeUp)
                 out.writeLong(v.committedSamples);out.writeLong(v.rejectedSamples);out.writeLong(v.gaps)
+                if(version>=2) {out.writeBoolean(v.provenance!=null);v.provenance?.let {out.text(CaptureProvenanceCodec.encode(it))}}
             }
             out.writeInt(value.events.size)
             value.events.forEach {v->
@@ -138,14 +143,16 @@ object MotionArchive {
         require(bytes.size()<=MAX_METADATA)
         return bytes.toByteArray()
     }
-    private fun decodeMetadata(bytes: ByteArray): CaptureRecording=DataInputStream(ByteArrayInputStream(bytes)).use {data->
+    private fun decodeMetadata(bytes: ByteArray,version: Int): CaptureRecording=DataInputStream(ByteArrayInputStream(bytes)).use {data->
         val id=data.uuid();val request=data.uuid();val owner=data.uuid();val state=CaptureState.valueOf(data.text())
         val session=CaptureSession(id,request,owner,state,Instant.ofEpochMilli(data.readLong()),Instant.ofEpochMilli(data.readLong()),data.readLong())
         val n=data.readInt();require(n in 0..MAX_STREAMS)
         val streams=List(n) {
             val stream=data.uuid();val boot=data.uuid();val wall=Instant.ofEpochMilli(data.readLong());val elapsed=data.readLong()
             val source=CaptureSource(data.text(),data.text(),data.readInt(),data.readFloat(),data.readFloat(),data.flag())
-            CaptureStream(stream,id,boot,wall,elapsed,source,data.readLong(),data.readLong(),data.readLong())
+            val committed=data.readLong();val rejected=data.readLong();val gaps=data.readLong()
+            val provenance=if(version>=2 && data.flag()) CaptureProvenanceCodec.decode(data.text()) else null
+            CaptureStream(stream,id,boot,wall,elapsed,source,committed,rejected,gaps,provenance)
         }
         val count=data.readInt();require(count in 1..MAX_EVENTS)
         val events=List(count) {
