@@ -1,6 +1,7 @@
 # Recording provenance and observed coverage
 
-Software implementation in progress. Exact qualification is recorded in STATUS.md.
+Implemented and software-qualified in PR #10, 18 October 2026. Exact source,
+reports, artifacts and remaining physical gates are recorded in STATUS.md.
 This is data continuity, not sleep duration, wakefulness, stages or a sleep score.
 
 ## Acquisition provenance
@@ -38,8 +39,10 @@ detect accidental changes; they do not authenticate the author of a rewritten fi
 ## Coverage policy 1
 
 Only finished COMPLETED/FAILED recordings have an immutable coverage view. Input
-is a bounded copied metadata snapshot and raw files streamed in UUID/sequence order,
-one checksum-validated chunk at a time. Source/session/boot/anchors must match;
+is a bounded copied metadata snapshot and raw files streamed in canonical source
+UUID order (Java `UUID.compareTo`, signed most/least significant 64-bit parts),
+then numeric chunk sequence order, one checksum-validated chunk at a time.
+Source/session/boot/anchors must match;
 timestamps must strictly increase within each stream. No samples are fabricated,
 filtered out or rewritten by this analysis.
 
@@ -70,8 +73,9 @@ The input SHA-256 includes a domain marker, policy and metadata-format versions,
 length-prefixed exact encoded metadata and length-prefixed original chunk bytes.
 The same immutable input rebuilds the same report. Any provenance/counter/event,
 raw sample bit or order change changes its input identity. Later caller-list
-mutation cannot change the frozen input or remove a stream mid-analysis. Derived reports are
-not stored as authoritative health data and cannot overwrite raw observations.
+mutation cannot change the frozen input or remove a stream mid-analysis. Derived
+reports are not stored as authoritative health data and cannot overwrite raw
+observations.
 
 ## Execution and qualification
 
@@ -79,9 +83,14 @@ Core tests cover original unknowns, exact thresholds, missing sequences/indexed
 samples, stream/boot/interruption boundaries, wall rollback, overlaps, corruption,
 canonical ordering and fingerprint reproducibility. Native cases cover actual
 SQLite fixtures/migration/reopen/rollback, acquisition snapshots, v1/v2 provider
-portability and visible 200% text. Final source must pass both complete API 29/37
-suites with actual reports/captures inspected before merge. No emulator continuity
-result establishes useful mattress signals, overnight energy or sleep accuracy.
+portability and visible 200% text. Qualified source
+`5dc67cdb8a04a89e969635310024353e6d0af14a`,
+[CI48](https://github.com/BananaJeanss/solsleep/actions/runs/39119133196): all
+203 JVM, nine Python and 116 native cases on each API 29/37 pass, with zero
+failures/errors/skips or lint issues. Debug/test APKs and shrunk unsigned release
+pass. Actual XML, artifact digests and both native 200% captures were inspected
+before merging PR #10. No emulator continuity result establishes useful mattress
+signals, overnight energy or sleep accuracy.
 
 Primary references rechecked:
 

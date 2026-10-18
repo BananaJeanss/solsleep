@@ -17,7 +17,8 @@ version, resolution, range and wake-up capability. It requests a 100 ms interval
 this is not a guaranteed observed rate. Actual timestamps remain available.
 New segments also snapshot the original ZoneId, requested period and installed
 base APK SHA-256. Historical null provenance stays unknown. The software change
-and observed coverage are [under qualification](RECORDING_COVERAGE.md).
+and observed coverage are [qualified in PR #10](RECORDING_COVERAGE.md), following
+the historical PR #7 checkpoint above. STATUS.md records the current evidence.
 
 The phone-motion recording workflow has no sleep/stage/heart-rate/breathing/snore estimates or microphone capture,
 watch connection, network upload or automatic start. This does not create a manual

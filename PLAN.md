@@ -1816,7 +1816,7 @@ implementation, hardware/reference evidence and permission/source contracts.
 Combined/encrypted backups, the remaining challenge catalogue and production
 release gates stay open; this checkpoint is not full reference parity.
 
-### Recording provenance and observed coverage — execution in progress
+### Recording provenance and observed coverage — executed plan
 
 This is independent of the remaining physical challenge gates. Implement one
 vertical slice, with original raw files unchanged:
@@ -1854,3 +1854,67 @@ vertical slice, with original raw files unchanged:
    test/release and both full API 29/37 native suites, inspect XML/captures, then
    merge and record exact evidence. Physical sensor usefulness, overnight power,
    sonar, watch and sleep/awake accuracy remain separate unqualified work.
+
+### Verified recording-coverage checkpoint — 18 October 2026
+
+- [x] Nullable versioned original acquisition metadata, actual installed base APK
+  hashing and additive capture schema 1/2→3 migration; old values remain unknown.
+- [x] Byte-stable SOLR v1 and bounded v2, independent Python fixtures/inspector,
+  real provider verification/restore and exact original SOLM bytes retained.
+- [x] Deterministic coverage policy 1, immutable bounded metadata, streamed raw
+  validation, canonical input fingerprint, explicit discontinuities/deficits and
+  overlap warnings. No extrapolated night duration or sleep labels.
+- [x] Native per-segment coverage table, original-zone millisecond timestamps,
+  known/legacy/unavailable states, selectable provenance and 200% text/recreation.
+- [x] Complete local and API 29/37 qualification, actual XML/digest/capture review,
+  authorized merge and published evidence. No test/assertion/platform disabled.
+
+[PR #10](https://github.com/BananaJeanss/solsleep/pull/10) source
+`5dc67cdb8a04a89e969635310024353e6d0af14a`, tree
+`34dac0210693644c8551a16562f84e989f78485b`, merged as
+`dccb8abb4504067fbb666526048fbb7c76c32d47` with the identical tree.
+[CI48](https://github.com/BananaJeanss/solsleep/actions/runs/39119133196) passes
+203 JVM, nine independent Python and all 116 native tests on each API 29/37;
+zero failures/errors/skips and zero lint issues. Clean local debug/test APKs,
+lint and shrunk unsigned release pass; CI independently builds both variants
+and verifies original assets. Final XML, downloaded ZIP SHA-256 digests and both
+200% native light/dark PNGs were inspected. STATUS/TESTING/SCREENSHOTS retain
+provenance. Later evidence Markdown and exact PNG copies change no runtime,
+test, schema, build or tool code.
+
+CI47's automated checks passed, but review caught a pre-existing source caption
+hardcoding a 100 ms request, including for legacy records. The caption now shows
+only retained metadata or explicit unknown, and a legacy UI assertion guards
+against invention. Corrected source completed the full checks again in CI48;
+the earlier screenshots are not claimed as final visual qualification.
+
+The next tracking **accuracy** gate requires an attached reference phone and
+consented labeled reference observations. Neither is available in this environment.
+Run the device-lab protocol for actual placement/cadence, screen-off/OEM/process
+loss, storage faults, clock changes, 12-hour energy/temperature and useful signals;
+record policy version/input SHA-256 with each trial. Agree labels/splits/metrics
+before evaluating inference. A deterministic continuity report cannot validate
+sleep/wake, stages, breathing, sonar or smart wake-up. Physical NFC/microphone/
+voiceover/phone-access gates from PR #9 remain open as well.
+
+Independent software backlog remains substantial and does not require pretending
+these accuracy gates passed. Execute each as a separate qualified vertical slice:
+
+1. Extend recording portability with persistent attempt/verified receipts and
+   destination identity, then all-record manifests and portable deletion markers.
+   Preserve existing journal/recording failure semantics, retained source bytes and
+   explicit conflicts; prove interrupted write/readback and clean-store recovery.
+2. Complete combined/encrypted backup and key-recovery design from the M2 threat
+   model before implementation. Bound allocations/KDF inputs, authenticate the
+   manifest, stream content and reject incomplete archives without mutating live
+   stores. Minimum-phone resource tuning remains a hardware gate.
+3. Add transparent recorded-history/morning views and user corrections that
+   reference raw sources and manual provenance. Any future inference needs its own
+   model/policy version, missingness, ground-truth evaluation and abstention rules.
+4. Implement Wear/Health Connect adapters behind consent/source contracts with
+   device-specific fixtures and tests; obtain real source exports and hardware
+   before claiming importer compatibility or live-watch support. Sonar remains
+   a separate opt-in acoustic research and physical calibration work package.
+
+Full production readiness, reference parity, physical durability and physiological
+accuracy remain open. All unchecked scope-ledger work still applies.

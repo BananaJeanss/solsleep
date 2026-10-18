@@ -1,7 +1,8 @@
 # Implementation status
 
-18 October 2026 — native wake-up challenges, custom packs and offline voiceover
-are merged in [PR #9](https://github.com/BananaJeanss/solsleep/pull/9).
+18 October 2026 — recording provenance and observed coverage are merged in
+[PR #10](https://github.com/BananaJeanss/solsleep/pull/10), following the native
+wake-up challenges, custom packs and offline voiceover in PR #9.
 The exact source passed the complete API 29/37 software qualification below.
 
 This is a **development build**. M0, M1, M2 and M3 remain partial. Full reference
@@ -13,16 +14,15 @@ parity, physiological accuracy and production readiness are not claimed.
 | --- | --- |
 | Phone motion | Actual raw accelerometer observations, controls, interruption recovery, saved checks and separate recording backups |
 | Manual journal | Reported rest intervals, corrections, notes/ratings/tags and verified Journal JSON portability |
-| Sleep analysis | Observed recording coverage implemented under qualification below; morning/sleep/awake/onset/stage analysis remains unimplemented |
+| Sleep analysis | Validated per-segment observation counts, nearby-reading durations, gaps and provenance; morning/sleep/awake/onset/stage analysis remains unimplemented |
 | Sonar | Research only; no overnight/sonar microphone acquisition or calibrated acoustic/DSP workflow |
 | Wake-up challenges | Eight native puzzle types, NFC, relative voice level, experimental offline voiceover and custom JSON packs implemented; software qualified, physical gates below |
 | Wear / Health Connect | Acquisition adapters and physiological validation remain unimplemented |
 
-## Recording provenance and coverage under qualification
+## Qualified recording provenance and coverage software milestone
 
-The next software slice is on `feature/recording-coverage`; it is not yet merged
-or qualified. New acquisition stores the original ZoneId, requested interval and
-installed base APK SHA-256 in versioned stream metadata. Additive capture schema
+New acquisition stores the original ZoneId, requested interval and installed
+base APK SHA-256 in versioned stream metadata. Additive capture schema
 1/2→3 migration leaves legacy provenance null. Separate SOLR v2 backups preserve
 known/unknown mixed segments; old v1 reading and byte-identical writing remain.
 
@@ -31,13 +31,44 @@ durations from validated raw files. Missing chunks and recorded interruptions
 break joins; absent cadence stays unknown. It does not infer sleep or whole-night
 coverage. Fingerprints bind the policy and canonical input. Corruption is distinct
 from a valid empty recording. See [RECORDING_COVERAGE](docs/RECORDING_COVERAGE.md)
-for the exact threshold, migration/format contract and planned qualification.
+for the exact threshold and migration/format contract.
 
-Initial core and independent Python checks pass; full local/native qualification
-is still in progress. Final counts/source/artifacts must replace this statement
-only after the complete API 29/37 runs and actual capture/report review.
+Tested source: `5dc67cdb8a04a89e969635310024353e6d0af14a`.
+Source tree: `34dac0210693644c8551a16562f84e989f78485b`.
+Merge: `dccb8abb4504067fbb666526048fbb7c76c32d47`, with the identical tree.
+[CI48 reports, captures, logs and development APK](https://github.com/BananaJeanss/solsleep/actions/runs/39119133196).
+CI checked out PR merge `0610654ce77f916abe870d182d1c989d13bcc182`, whose
+tree was independently compared with this source and the final merge. Subsequent
+qualification documentation and exact PNG copies change no app, test, schema,
+build or tool code.
 
-## Qualified wake-up challenge software milestone
+| Check | Actual result |
+| --- | --- |
+| JVM domain/storage-protocol/format/DSP cases | All 203 passed; 25 new provenance/coverage cases |
+| Independent Python motion archive / fixtures | All nine passed; v1/v2 fixtures exact |
+| API 29 Google APIs x86_64 emulator | All 116 passed |
+| API 37 Google APIs x86_64 emulator | All 116 passed |
+| Final XML failures / errors / skipped | Zero across JVM and both native suites |
+| Lint / debug and test APKs | Pass; zero lint issues |
+| Shrunk unsigned release | Pass locally and in CI |
+| Original vector/chime/voice asset checks | Pass; no image-generated assets |
+| Native 200% text | Both final light/dark captures reviewed; exact PNG copies retained |
+
+Actual XML reports and downloaded artifact SHA-256 digests were inspected. The
+native additions exercise real SQLite 1/2→3 migrations, independent schema 3,
+unknown/corrupt payload retention, provider v2 readback/restore, actual installed
+APK provenance and known/legacy/corrupt coverage UI with recreation. All previous
+tests remain enabled. See [TESTING](docs/TESTING.md) and
+[SCREENSHOTS](docs/SCREENSHOTS.md) for artifact/capture provenance.
+
+CI47 passed its automated suites, but visual review caught an inherited source
+caption inventing a 100 ms request for legacy records. Raw details now show only
+the retained request or explicit unknown. The legacy UI regression forbids the
+invented caption; corrected source completed all checks again in CI48. No test,
+assertion or supported platform was disabled. Observed continuity is not evidence
+of useful mattress signals, sleep recognition, sonar or watch acquisition.
+
+## Previously qualified wake-up challenge software milestone
 
 Per-alarm opt-in Easy/Normal/Hard, 1–12 rounds, selected task mix, 5–40% initial
 sound and rehearsal are implemented. Both Snooze and Dismiss require a durable
@@ -67,7 +98,8 @@ Merge: `421af1706e5e4e1cd721615f1e490f9772a69d91`, with the identical tree.
 [CI45 reports, captures, logs and development APK](https://github.com/BananaJeanss/solsleep/actions/runs/39098002133).
 CI checked out PR merge `dd91d50a048a0e1f5549d9ccc21bc5aafbbdbdb4`,
 whose tree was independently compared with this source and the final merge.
-Later documentation/capture copies change no app, test, schema, build or tool code.
+PR #9's immediate documentation/capture follow-up changed no app, test, schema,
+build or tool code. PR #10 is qualified separately above.
 
 | Check | Actual result |
 | --- | --- |
@@ -319,9 +351,11 @@ resource probe is not proof every upstream incremental case is fixed.
   and broader pagination. Single finished-recording plaintext portability is now
   qualified; this is not a complete combined backup. Encryption is researched, not
   implemented. Minimum-phone KDF cost also needs physical hardware.
-- **M3/M4:** observed coverage and transparent morning analytics, validated
-  sleep/awake inference, versioned acquisition provenance and further sensor quality
-  policies. The wake-up challenge milestone above supersedes the earlier
+- **M3/M4:** provenance and conservative observed coverage are software-qualified
+  above. Next are transparent morning analytics, source-quality policies and
+  validated sleep/awake inference. Signal usefulness and accuracy require real
+  placement trials and consented labeled reference data; neither is available
+  here. The wake-up challenge milestone above supersedes the earlier
   math-only proposal; remaining task variants are tracked in TRACEABILITY.
   There is no measured
   hypnogram, sleep score, smart wake-up, sound analysis or clinical claim.

@@ -336,5 +336,46 @@ CI47 passed all 203 JVM/nine Python/116-per-API native cases, but capture review
 caught an inherited source-description string hardcoding a 100 ms request for
 legacy recordings. It was removed; raw-file details now use retained provenance
 or an explicit unknown label. The legacy coverage UI regression also refuses any
-invented requested-interval value. CI47 is not the final visual qualification;
-the corrected exact source must complete the full checks again.
+invented requested-interval value. CI47 is not the final visual qualification.
+Corrected source completed all checks again in CI48 below.
+
+### Final PR #10 qualification
+
+Source `5dc67cdb8a04a89e969635310024353e6d0af14a`, tree
+`34dac0210693644c8551a16562f84e989f78485b`,
+[CI48](https://github.com/BananaJeanss/solsleep/actions/runs/39119133196).
+CI's synthetic PR merge `0610654ce77f916abe870d182d1c989d13bcc182` and final
+merge `dccb8abb4504067fbb666526048fbb7c76c32d47` independently have that same
+tree. Final reports contain all 203 JVM, nine Python and 116 native cases on
+each API 29/37, zero failures/errors/skips and zero lint issues. All previous
+cases and both APIs remain enabled. Local clean debug/test/lint and shrunk
+unsigned release pass; clean CI independently passes both variants and original
+vector/chime/voice asset checks.
+
+| Artifact | ID | Verified ZIP SHA-256 |
+| --- | --- | --- |
+| Build/core | 12133184670 | `ee9e625953ff522b3b2205a785274956e6d88e84723cda43d01dfa5b7a65cfa7` |
+| API 29 | 12134205620 | `3fa564b7d5eb9271725f89de8a0133186c21cf20b6e98fbe30f767232336b997` |
+| API 37 | 12133364979 | `84fdb331fdc5966c679ae7c4f7843cbf6b15e28e557a2f1bad0ed4ddb4dc29ad` |
+
+Build job `117650942230` and native jobs `117650942019` / `117650942268`
+completed successfully. Downloaded ZIP digests match the artifact manifests;
+actual nested JUnit testcase results and lint XML were parsed. Both final native
+200% captures were visually reviewed and copied byte-for-byte, with hashes in
+[SCREENSHOTS](SCREENSHOTS.md). They have readable light/dark text, fixed close
+access, localized millisecond timestamps and the corrected source description.
+The known/legacy/corrupt UI assertions pass on both APIs. Screenshot labels and
+coverage fixtures are explicitly synthetic; actual virtual sensor acquisition
+is tested separately. No image generation, editing or UI reconstruction was used.
+
+| Independent identity | SHA-256 |
+| --- | --- |
+| Unchanged SOLR v1 fixture | `82ade8ef0f4a2ce98a0baa4f0819fe31c47c18f33e673ee15a4901b03db2c46d` |
+| Added SOLR v2 fixture | `babdceef51b6609c4d38d0b27c66864e035520ee6da024fbffcb6b428354120f` |
+| Policy 1 / v1 fixture input identity | `9304190021d10f69d0b83e1afb20fd5ceb1af4ffb0854f515de134efc102ba6c` |
+| Policy 1 / v2 fixture input identity | `96e0297e0fe210486efad09742ac5549ddae89bb9009a178ceffca7fbad4bc24` |
+
+The independent Python digest construction is checked against the Kotlin rebuild.
+All identities describe synthetic interchange inputs, not human sleep validation.
+Physical power loss/full disk, overnight usefulness/energy, accessibility and
+clinical/physiological accuracy remain unqualified. No phone/watch was attached.

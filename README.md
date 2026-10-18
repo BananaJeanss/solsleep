@@ -96,9 +96,9 @@ settings. This is data continuity, not measured sleep. See
 </p>
 
 [All captured screens, including large text](docs/SCREENSHOTS.md). The tested
-milestone passes 178 JVM tests, four independent Python tests and all 108 device
+milestone passes 203 JVM tests, nine independent Python tests and all 116 device
 tests on each of API 29 and API 37, with zero lint issues.
-[Checks and development APK artifact](https://github.com/BananaJeanss/solsleep/actions/runs/39098002133).
+[Checks and development APK artifact](https://github.com/BananaJeanss/solsleep/actions/runs/39119133196).
 
 ## Build
 

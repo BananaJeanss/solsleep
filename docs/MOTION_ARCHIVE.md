@@ -1,9 +1,10 @@
 # Recording archives v1 and v2
 
-18 October 2026. Implemented and software-qualified in PR #8; see STATUS.md for exact
-source and executed results. This is a separate plaintext, single-recording
+18 October 2026. Version 1 was software-qualified in PR #8; version 2 is qualified
+in PR #10. See STATUS.md for exact source and executed results.
+This is a separate plaintext, single-recording
 format, not a combined app backup, encryption or physiological analysis.
-Version 2 adds original acquisition provenance and is under separate qualification;
+Version 2 preserves original acquisition provenance through export and restore;
 see [RECORDING_COVERAGE](RECORDING_COVERAGE.md) and current STATUS.md evidence.
 
 ## Human workflow and scope
@@ -193,4 +194,10 @@ cadence. Schema 3 adds a nullable, bounded acquisition payload and validates 1â†
 and 2â†’3 migration. Legacy nulls are retained; new segments store actual acquisition
 metadata. Restoring on another phone/build does not substitute its settings.
 
-Qualified source `36ca8777a4f9b696af4f9cd632f2c99bb5b0e188`, [CI39](https://github.com/BananaJeanss/solsleep/actions/runs/39076468922): 132 JVM, four Python and all 93 native tests on each of API 29/37, zero failures/errors/skips, zero lint issues and shrunk unsigned release. Native UI captures were reviewed; physical gates remain open.
+Historical v1 source `36ca8777a4f9b696af4f9cd632f2c99bb5b0e188`, [CI39](https://github.com/BananaJeanss/solsleep/actions/runs/39076468922): 132 JVM, four Python and all 93 native tests on each of API 29/37, zero failures/errors/skips, zero lint issues and shrunk unsigned release.
+
+Current v1/v2 source `5dc67cdb8a04a89e969635310024353e6d0af14a`,
+[CI48](https://github.com/BananaJeanss/solsleep/actions/runs/39119133196): 203 JVM,
+nine Python and all 116 native tests on each API 29/37, zero failures/errors/skips,
+zero lint issues and shrunk unsigned release. Exact reports/artifact digests and
+actual native captures were reviewed. Physical gates remain open.

@@ -81,9 +81,11 @@ The long screen/dialog scrolls; these captures show its current viewport.
 | Checked files and source counters | ![Saved motion](screenshots/phone-motion-saved-api37.png) | ![Saved motion light](screenshots/phone-motion-saved-api29.png) |
 | Finished at 200% text | ![Motion large text](screenshots/phone-motion-large-text-api37.png) | ![Motion large text light](screenshots/phone-motion-large-text-api29.png) |
 
-Counts differ between runs because samples are actually acquired. Requested
-interval and original vectors/clock metadata are retained; these pictures do not
-establish real mattress signals, sleep/stage accuracy or overnight energy.
+Counts differ between runs because samples are actually acquired. Original
+vectors/clock metadata are retained. This historical UI displayed the recorder's
+100 ms request without persisting original cadence; PR #10 removes that inherited
+default for legacy records and stores actual new provenance. These pictures do
+not establish real mattress signals, sleep/stage accuracy or overnight energy.
 
 ## Finished-recording restore and export controls
 
@@ -124,3 +126,30 @@ audio/NFC. Ringing uses its dark theme on both APIs.
 | --- | --- |
 | API 29 | `56cbe7d5c31147a5aea83fb7cf23ba85ccd54831de5b5b374fa402e5ce85bcf6` |
 | API 37 | `1cc4c61ebb583649e1dc4e9b631413c9ef04642c96694d43b2ecb47cc90e3385` |
+
+## Recording provenance and observed coverage
+
+Source `5dc67cdb8a04a89e969635310024353e6d0af14a`,
+[CI48](https://github.com/BananaJeanss/solsleep/actions/runs/39119133196), PR #10.
+Exact PNG bytes from `recording-coverage-large-text.png` in each final native
+artifact after actual SQLite/raw-file publication, opening the native coverage
+screen and Activity recreation at 200% system text. Both captures were visually
+reviewed. They show a clearly labeled synthetic fixture with four validated
+readings, original Europe/Tallinn timestamps at millisecond precision and time
+between nearby readings. The content scrolls below this viewport; close access
+stays fixed. API 29 uses light fallback and API 37 uses dark theme.
+
+These captures prove rendered UI for a known test input. They are not measured
+human nights, sonar or sleep recognition. Actual virtual SensorManager callbacks
+and legacy/corrupt states have separate native assertions. No image generation,
+image editing or screen reconstruction was used. Earlier CI47 screenshots caught
+an inherited hardcoded interval caption and are not the final visual evidence.
+
+| Screen | API 37 dark | API 29 light fallback |
+| --- | --- | --- |
+| Coverage, 200% text | ![Recording coverage API 37](screenshots/recording-coverage-large-text-api37.png) | ![Recording coverage API 29](screenshots/recording-coverage-large-text-api29.png) |
+
+| Capture | SHA-256 |
+| --- | --- |
+| API 29 | `0da3ba43f21488910f3d44158008acaf975087a2c07b0fa156d198222367fd8b` |
+| API 37 | `45ca812bea6620513cb0564a8fe0f5fc66228f55ce0e0654a90b38f98d134fab` |
