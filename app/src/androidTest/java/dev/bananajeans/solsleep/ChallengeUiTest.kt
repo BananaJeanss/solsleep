@@ -40,21 +40,22 @@ class ChallengeUiTest {
     private fun fixture(p: ChallengePolicy): PendingAlarm {
         val now=Instant.ofEpochMilli(System.currentTimeMillis())
         val pending=PendingAlarm(UUID.randomUUID().toString(),now,LocalDate.now(),DeliveryState.RINGING,startedAt=now)
-        AlarmStore(context).use {it.put(AlarmRule(id,LocalTime.of(7,0),Repeat.Once(LocalDate.now()),label=id,vibrate=false,challenge=p),pending)}
+        AlarmStore(context).use {it.put(AlarmRule(id,LocalTime.of(7,0),Repeat.Once(LocalDate.now()),label="Challenge test",vibrate=false,challenge=p),pending)}
         return pending
     }
     private fun open(p: PendingAlarm,action: String?=null)=ActivityScenario.launch<RingingActivity>(Intent(context,RingingActivity::class.java)
         .putExtra(AlarmIntents.TOKEN,p.token).setAction(action).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
-    private fun waitText(text: String)=compose.waitUntil(15000) {compose.onAllNodesWithText(text).fetchSemanticsNodes().isNotEmpty()}
+    // Manual Activity scenarios can resume before their first Compose hierarchy is registered.
+    private fun waitText(text: String)=compose.waitUntil(15000) {compose.onAllNodesWithText(text).fetchSemanticsNodes(atLeastOneRootRequired=false).isNotEmpty()}
     @Test fun perAlarmChallengeConfigurationSurvivesEditorRecreationAndSave() {
         waitText("Add alarm");compose.onNodeWithText("Add alarm").performClick()
-        compose.waitUntil(10000) {compose.onAllNodesWithTag("alarm_label").fetchSemanticsNodes().isNotEmpty()}
+        compose.waitUntil(10000) {compose.onAllNodesWithTag("alarm_label").fetchSemanticsNodes(atLeastOneRootRequired=false).isNotEmpty()}
         compose.onNodeWithTag("alarm_label").performTextInput(id);compose.onNodeWithTag("alarm_label").performImeAction()
         compose.onNodeWithText("Add a wake-up challenge").performScrollTo().performClick()
         compose.onNodeWithTag("challenge_enabled").performClick();compose.onNodeWithText("Hard").performScrollTo().performClick()
         compose.onNodeWithText("Sleeping sheep").performScrollTo().performClick()
         compose.onNodeWithTag("challenge_save").performClick();main.recreate()
-        compose.waitUntil(10000) {compose.onAllNodesWithTag("save_alarm").fetchSemanticsNodes().isNotEmpty()}
+        compose.waitUntil(10000) {compose.onAllNodesWithTag("save_alarm").fetchSemanticsNodes(atLeastOneRootRequired=false).isNotEmpty()}
         compose.onNodeWithTag("save_alarm").assertIsDisplayed().performClick()
         compose.waitUntil(10000) {engine().entries().any {it.rule.label==id}}
         val saved=engine().entries().single {it.rule.label==id}.rule.challenge!!

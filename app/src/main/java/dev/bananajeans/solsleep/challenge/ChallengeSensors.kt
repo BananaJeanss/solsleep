@@ -24,7 +24,6 @@ import dev.bananajeans.solsleep.R
 import dev.bananajeans.solsleep.alarm.RingingService
 import dev.bananajeans.solsleep.core.*
 import kotlinx.coroutines.*
-import kotlin.math.*
 
 internal tailrec fun Context.activity(): Activity=when(this) {is Activity->this;is ContextWrapper->baseContext.activity();else->error("Activity required")}
 
@@ -88,13 +87,7 @@ internal tailrec fun Context.activity(): Activity=when(this) {is Activity->this;
                     score=value;latest(ChallengeResponse.Voiceover(cleaned.copyOf()))
                 } finally {cleaned.fill(0)}
             } else {
-                val baseline=rmsDb(samples,0,4000)
-                val frames=(4000 until samples.size-800 step 800).map {rmsDb(samples,it,it+800)}
-                val threshold=listOf(-34.0,-30.0,-26.0)[policy.difficulty.ordinal]
-                val delta=listOf(8.0,10.0,12.0)[policy.difficulty.ordinal]
-                var run=0;var best=0
-                frames.forEach {if(it>=threshold && it-baseline>=delta && it< -1) run++ else run=0;best=maxOf(best,run)}
-                latest(ChallengeResponse.Voice(best*100L,baseline,frames.filter {it>=threshold && it-baseline>=delta}.average()))
+                latest(VoiceLevel.evidence(samples,policy.difficulty))
             }
             } finally {samples.fill(0)}
         } catch(e: CancellationException) {throw e} catch(_: Exception) {error=true}
@@ -122,11 +115,6 @@ internal tailrec fun Context.activity(): Activity=when(this) {is Activity->this;
         else permission.launch(Manifest.permission.RECORD_AUDIO)
     },enabled=!busy && !playing) {Text(stringResource(if(recording) R.string.task_recording else R.string.task_record))}
 }
-private fun rmsDb(values: ShortArray,from: Int,to: Int): Double {
-    var sum=0.0;for(i in from until to) {val v=values[i]/32768.0;sum+=v*v}
-    return 10*log10((sum/(to-from)).coerceAtLeast(1e-10))
-}
-
 /** Activity-only, six seconds maximum. Never background capture, never files, never networking. */
 private suspend fun captureVoice(context: Context): ShortArray {
     check(ContextCompat.checkSelfPermission(context,Manifest.permission.RECORD_AUDIO)==PackageManager.PERMISSION_GRANTED)

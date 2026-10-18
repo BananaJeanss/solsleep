@@ -244,6 +244,8 @@ The JSON Schema is editor assistance; Kotlin validation is authoritative.
 process/ringing recovery, completed proof retention on scheduler/publication
 failure, alternate intended action, failed task CAS, original ringing expiry,
 edit protection and a fresh task after snooze. Existing plain-alarm cases remain.
+`VoiceLevelTest` verifies the final complete 100 ms window, exact two-second speech, separated bursts, silence/steady room noise, excess clipping and bounded PCM inputs. The same core producer is used by the microphone adapter; evidence is not just tested with hand-constructed metrics.
+
 `VoiceMatchTest` covers exact reference PCM, amplitude invariance, bounded tempo
 variation, silence/noise/clipping, quiet baseline suppression, strict WAV lengths/
 formats/metadata/downsampling, host scoring, portable references and rejection of

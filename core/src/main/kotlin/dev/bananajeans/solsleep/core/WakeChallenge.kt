@@ -129,8 +129,8 @@ object WakeChallenges {
             ChallengeKind.VOICE->{
                 val required=listOf(1000L,1500L,2000L)[policy.difficulty.ordinal]
                 if(response is ChallengeResponse.Voice && response.sustainedMillis in required..15000 && response.baselineDb.isFinite() &&
-                    response.signalDb.isFinite() && response.signalDb>=listOf(-34.0,-30.0,-26.0)[policy.difficulty.ordinal] &&
-                    response.signalDb-response.baselineDb>=listOf(8.0,10.0,12.0)[policy.difficulty.ordinal] && response.signalDb< -1.0) done() else fail()
+                    response.signalDb.isFinite() && response.signalDb>=VoiceLevel.threshold(policy.difficulty) &&
+                    response.signalDb-response.baselineDb>=VoiceLevel.delta(policy.difficulty) && response.signalDb< -1.0) done() else fail()
             }
             ChallengeKind.VOICEOVER->if(response is ChallengeResponse.Voiceover && response.samples.size in 4000..48000 &&
                 VoiceMatch.score(requireNotNull(policy.voiceClip).samples(),response.samples)>=VoiceMatch.threshold(policy.difficulty)) done() else fail()

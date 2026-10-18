@@ -141,7 +141,7 @@ NFC and microphone are optional hardware features. Microphone permission is aske
 only after an explicit Record action in a visible task/rehearsal. Capture is
 bounded to six seconds, cancelled on Stop/disposal, uses nonblocking reads and
 releases AudioRecord. Attempt samples are not written to disk or uploaded.
-Microphone privacy mute, contention, silence, clipping, denied permission and
+Microphone privacy mute, contention, silence, excessive clipping, denied permission and
 errors cannot complete a task. This does not add overnight microphone capture or
 sonar to phone motion recording.
 
@@ -159,6 +159,8 @@ controls advertise them. Camera models need compatible model/code licensing and
 real low-light/liveness/accessibility evidence. Google image challenges introduce
 network, vendor keys/terms, rate limiting and lockout; they must never be a
 required offline stop path. Native JSON packs cover custom authoring now.
+
+The step-by-step [physical-device protocol](device-lab/challenges.md) records the remaining checks.
 
 Physical gates include locked/reboot recovery, TalkBack, incoming ordinary calls
 and emergency UI navigation (without calling), real NFC tag technologies/absence,
