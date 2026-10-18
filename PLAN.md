@@ -1698,3 +1698,71 @@ of vendor performance/audibility/safety claims. Calibration must measure the rea
 hardware path. Schema 2 also lacks original IANA zone/producing build/per-stream
 requested cadence; preserve actual UTC/monotonic timestamps and implement versioned
 acquisition provenance before treating those missing fields as observed metadata.
+
+
+### Native wake-up challenge implementation — 18 October 2026
+
+This supersedes the earlier math-only next-step proposal. The user requested a
+broader set, adjustable difficulty, snooze-time reduced volume/escalation,
+security-conscious custom authoring and offline voiceover imitation. Implemented
+scope and primary API research are detailed in [WAKE_CHALLENGES](docs/WAKE_CHALLENGES.md)
+and [VOICEOVER](docs/VOICEOVER.md); exact qualification is recorded in STATUS.
+
+Execution sequence and current work:
+
+1. **Durable contract:** optional versioned per-alarm policy; additive DP alarm
+   schema 1→2; one task identity/seed per ringing occurrence; expected-revision
+   answer CAS; fingerprint-bound host validation; no journal dependency. Guard
+   ordinary Dismiss and Snooze, legacy broadcasts and direct storage finish.
+   Recovery retains original occurrence/task deadlines and progress. Snooze still
+   registers and durably publishes before stopping original output. Completed
+   proof survives scheduler/storage failure and switching to Dismiss.
+2. **Variety:** native math, original code-drawn sheep, ordered number taps,
+   digit/sequence memory, generated solvable maze, reverse digits and code copy.
+   Difficulty changes work, not just labels; mixed sequences are stable, replay
+   records misses, fallback retains progress and adds two native rounds.
+3. **Native interface:** per-alarm configuration, explicit enable, rounds/level/
+   quiet-gain settings and rehearsal; private token/action-scoped notification
+   activity; edge-to-edge scrolling body and always-visible phone access;
+   200% text, keyboard and spoken target/passage descriptions. No kiosk/admin/
+   overlay/hidden emergency API. Android system controls remain available.
+4. **Audio/sensors:** nonzero local gain only while the actual task UI is visible,
+   15-point miss escalation and original one-minute quiet deadline; expiring
+   visibility/gain leases; AudioFocus yielding. Optional visible NFC reader with
+   hashed UID and bounded activity-only microphone capture with runtime consent,
+   privacy/silence/error checks and cancellation. Phone motion gains no overnight
+   microphone or sonar acquisition.
+5. **Custom authoring:** strict 48 KiB native JSON TEXT/CHOICE/ORDER banks for all
+   three levels. Unknown/duplicate fields, depth/Unicode/bounds and malformed
+   streams reject without replacing policy. Frozen definitions are portable and
+   offline. No arbitrary JS/HTML/CSS, network, file or Android bridge. This is a
+   deliberate safer capability choice permitted by the user's clarification;
+   future task kinds require host schema/version/validation/tests.
+6. **Voiceover:** original Flite diphone default phrases and own bounded PCM WAV
+   import, frozen offline reference, normal-volume recording and experimental
+   pitch/rhythm DTW score. Gain normalization avoids rewarding yelling; baseline
+   suppression reduces steady alarm/room energy. No claim of word recognition,
+   identity or wakefulness. Host evaluates samples; no supplied numeric score is
+   trusted. Included clips have generation code, hashes and upstream notices.
+7. **Qualification:** core seeded solutions/maze topology, answer replay, failures,
+   quiet deadline, fallback, codec/pack/WAV attacks, score invariants, archive
+   preservation/bounds, persistence/scheduler fault tests. Native schema fixtures,
+   SQL CAS/concurrency/reopen, actual bundled clips, private permissions, saved
+   settings, task recreation, legacy-broadcast gating, stale tokens and actual
+   200% UI captures. Run clean local debug/test/lint/release and exact-source
+   API 29/37 CI; inspect actual reports/images and correct failures before merge.
+8. **Physical gates and next implementation:** qualify microphone false accepts/
+   rejects, baseline/reference bleed, NFC tags, call/audio focus, lock-screen
+   emergency navigation (never dial emergency services), speaker/haptics and OEM
+   recovery on a real phone. No attached phone/emulator exists locally. Camera
+   smile/barcode models remain blocked on compatible code/model licensing and
+   real low-light/uncertainty qualification, rather than dormant controls. Google
+   image reCAPTCHA is not a required stop path because of offline/key/network/
+   rate-limit/lockout risks. Motion/walking/brightness, jumping games, dream-note,
+   profiles and Android third-party app grants remain explicit backlog items.
+
+A device owner can use Android force-stop/power/uninstall controls; defeating
+those is outside the safety contract. The enforceable guarantee is that normal
+SolSleep actions need host-validated completion. Sensor tasks are wake-up aids,
+not proof of consciousness or security authentication. Production readiness and
+reference parity remain open even after this software milestone passes.

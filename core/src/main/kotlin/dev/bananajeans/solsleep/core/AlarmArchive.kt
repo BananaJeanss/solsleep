@@ -14,13 +14,14 @@ import java.time.*
 object AlarmRuleCodec {
     private val common = setOf("version","id","time","label","enabled","zone","skip","vibrate","ramp","snooze","limit","revision","kind")
     fun encode(rule: AlarmRule): String = element(rule).toString()
-    fun decode(value: String): AlarmRule = decode(Json.parseToJsonElement(value).jsonObject)
+    fun decode(value: String): AlarmRule = decode(strictJson(value))
     internal fun element(r: AlarmRule) = buildJsonObject {
-        put("version",1);put("id",r.id);put("time",r.time.toString());put("label",r.label)
+        put("version",if(r.challenge==null) 1 else 2);put("id",r.id);put("time",r.time.toString());put("label",r.label)
         put("enabled",r.enabled);put("zone",r.zoneId?.let(::JsonPrimitive) ?: JsonNull)
         put("skip",r.skipDate?.toString()?.let(::JsonPrimitive) ?: JsonNull)
         put("vibrate",r.vibrate);put("ramp",r.rampSeconds);put("snooze",r.snoozeMinutes)
         put("limit",r.snoozeLimit);put("revision",r.revision)
+        r.challenge?.let {put("challenge",ChallengePolicyCodec.element(it))}
         when(val repeat=r.repeat) {
             is Repeat.Once -> {put("kind","once");put("date",repeat.date.toString())}
             is Repeat.Weekly -> {put("kind","weekly");put("days",mask(repeat.days))}
@@ -29,7 +30,8 @@ object AlarmRuleCodec {
         }
     }
     internal fun decode(j: JsonObject): AlarmRule {
-        require(j.number("version")==1L) {"Unsupported alarm version"}
+        val version=j.number("version");require(version in 1..2)
+        require(version!=2L || "challenge" in j) {"Unsupported alarm version"}
         val kind=j.text("kind")
         val extra=when(kind) {
             "once" -> setOf("date")
@@ -39,7 +41,7 @@ object AlarmRuleCodec {
             else -> error("Unsupported recurrence")
         }
         // Unknown fields cannot be silently discarded during a restore or downgrade.
-        require(j.keys.all {it in common || it in extra}) {"Unsupported alarm fields"}
+        require(j.keys.all {it in common || it in extra || (version==2L && it=="challenge")}) {"Unsupported alarm fields"}
         fun date()=LocalDate.parse(j.text("date")).also {require(it.year in 1900..9999)}
         fun days(): Set<DayOfWeek> {
             val mask=j.number("days");require(mask in 1..127)
@@ -55,7 +57,8 @@ object AlarmRuleCodec {
         val skip=j.nullableText("skip")?.let(LocalDate::parse)?.also {require(it.year in 1900..9999)}
         return AlarmRule(id,LocalTime.parse(j.text("time")),repeat,j.text("label"),j.flag("enabled"),
             j.nullableText("zone"),skip,j.flag("vibrate"),j.integer("ramp"),j.integer("snooze"),
-            j.integer("limit"),j.number("revision"))
+            j.integer("limit"),j.number("revision"),
+            if(version==2L) ChallengePolicyCodec.decode(j.getValue("challenge").jsonObject) else null)
     }
     private fun mask(days: Set<DayOfWeek>)=days.sumOf {1 shl (it.value-1)}
 }
@@ -86,11 +89,14 @@ object AlarmArchive {
     private val fields=setOf("format","version","createdAt","alarmCount","alarmsSha256","alarms")
     fun write(alarms: List<AlarmRule>,output: OutputStream,createdAt: Instant=Instant.now()) {
         require(alarms.size<=MAX_ALARMS && alarms.map {it.id}.distinct().size==alarms.size)
+        // Bound before allocating the combined JSON tree; oversized output never omits definitions.
+        var size=1024L
+        alarms.forEach {size+=AlarmRuleCodec.encode(it).toByteArray(Charsets.UTF_8).size+1;require(size<=MAX_BYTES)}
         val array=JsonArray(alarms.sortedBy {it.id}.map {AlarmRuleCodec.element(it)})
         // Round-trip validation also applies bounds to records constructed outside the UI.
         array.forEach {AlarmRuleCodec.decode(it.jsonObject)}
         val body=buildJsonObject {
-            put("format",FORMAT);put("version",1);put("createdAt",createdAt.toString())
+            put("format",FORMAT);put("version",if(alarms.any {it.challenge!=null}) 2 else 1);put("createdAt",createdAt.toString())
             put("alarmCount",alarms.size);put("alarmsSha256",hash(array.toString().toByteArray(Charsets.UTF_8)))
             put("alarms",array)
         }.toString().toByteArray(Charsets.UTF_8)
@@ -113,8 +119,8 @@ object AlarmArchive {
             .onUnmappableCharacter(CodingErrorAction.REPORT)
         val text=decoder.decode(ByteBuffer.wrap(bytes)).toString()
         boundedStructure(text)
-        val root=Json.parseToJsonElement(text).jsonObject
-        require(root.keys==fields && root.text("format")==FORMAT && root.number("version")==1L) {"Unsupported archive"}
+        val root=strictJson(text,12)
+        require(root.keys==fields && root.text("format")==FORMAT && root.number("version") in 1..2) {"Unsupported archive"}
         val array=root.getValue("alarms").jsonArray
         require(array.size<=MAX_ALARMS && root.integer("alarmCount")==array.size)
         val digest=hash(array.toString().toByteArray(Charsets.UTF_8))
@@ -132,7 +138,7 @@ object AlarmArchive {
                 if(escaped) escaped=false else if(c=='\\') escaped=true else if(c=='"') quoted=false
             } else when(c) {
                 '"' -> quoted=true
-                '{','[' -> {depth++;require(depth<=8) {"Archive nesting is too deep"}}
+                '{','[' -> {depth++;require(depth<=12) {"Archive nesting is too deep"}}
                 '}',']' -> {depth--;require(depth>=0)}
             }
         }

@@ -13,6 +13,7 @@ data class PendingAlarm(
     val snoozes: Int = 0,
     val armed: Boolean = false,
     val startedAt: Instant? = null,
+    val challenge: WakeChallenge? = null,
 )
 data class AlarmEntry(val rule: AlarmRule, val pending: PendingAlarm?)
 data class AlarmRestoreResult(val added: Int,val skippedExisting: Int)
@@ -27,6 +28,7 @@ interface AlarmPersistence {
     fun claim(token: String, now: Instant): AlarmEntry?
     fun finish(token: String, missed: Boolean = false): Boolean
     fun delete(id: String)
+    fun updateChallenge(token: String, expected: WakeChallenge?, next: WakeChallenge): Boolean = error("Challenge persistence unavailable")
     /** Insert every provided disabled definition atomically; fail on any conflict. */
     fun insertDisabled(rules: List<AlarmRule>)
 }
@@ -134,6 +136,7 @@ class AlarmEngine(
     }
 
     @Synchronized fun dismiss(token: String): Boolean {
+        if (!authorize(token, ChallengeAction.DISMISS)) return false
         val done = store.finish(token)
         if (done) { cancel(token); reconcile() }
         return done
@@ -143,10 +146,11 @@ class AlarmEngine(
         val entry = store.entries().find { it.pending?.token == token } ?: return false
         val old = entry.pending!!
         if (old.state != DeliveryState.RINGING || old.snoozes >= entry.rule.snoozeLimit) return false
+        if (!authorize(token, ChallengeAction.SNOOZE)) return false
         val next = old.copy(
             token = UUID.randomUUID().toString(),
             at = clock.instant().plusSeconds(entry.rule.snoozeMinutes * 60L),
-            state = DeliveryState.SNOOZED, snoozes = old.snoozes + 1, armed = false, startedAt = null,
+            state = DeliveryState.SNOOZED, snoozes = old.snoozes + 1, armed = false, startedAt = null, challenge = null,
         )
         // Keep the durable RINGING row until both replacement side effects succeed.
         // A process loss before publication resumes the original alarm; a registered
@@ -163,6 +167,36 @@ class AlarmEngine(
         }
         cancel(old.token)
         return true
+    }
+
+    /** One immutable task identity per ringing token; changing the intended action keeps progress. */
+    @Synchronized fun beginChallenge(token: String, action: ChallengeAction): WakeChallenge? {
+        val entry=ringing().find {it.pending?.token==token} ?: return null
+        val policy=entry.rule.challenge ?: return null
+        if(action==ChallengeAction.SNOOZE && entry.pending!!.snoozes>=entry.rule.snoozeLimit) return null
+        val old=entry.pending!!.challenge
+        val next=if(old==null) WakeChallenge(UUID.randomUUID().toString(),java.security.SecureRandom().nextLong(),
+            policy.fingerprint(),action,Instant.ofEpochMilli(clock.millis()))
+            else if(old.action==action) return old else old.copy(action=action,revision=Math.addExact(old.revision,1))
+        return if(store.updateChallenge(token,old,next)) next else null
+    }
+
+    @Synchronized fun answerChallenge(token: String,id: String,revision: Long,response: ChallengeResponse): WakeChallenge? {
+        val entry=ringing().find {it.pending?.token==token} ?: return null
+        val policy=entry.rule.challenge ?: return null
+        val old=entry.pending!!.challenge ?: return null
+        if(old.id!=id || old.revision!=revision) return null
+        val next=WakeChallenges.respond(policy,old,response)
+        return if(next==old || store.updateChallenge(token,old,next)) next else null
+    }
+
+    private fun authorize(token: String,action: ChallengeAction): Boolean {
+        val entry=ringing().find {it.pending?.token==token} ?: return false
+        val policy=entry.rule.challenge ?: return true
+        val state=entry.pending!!.challenge
+        if(state?.satisfied(policy)==true && state.action==action) return true
+        beginChallenge(token,action)
+        return false
     }
 
     @Synchronized fun reconcile(clockChanged: Boolean = false, recoverRinging: Boolean = false): ArmResult {

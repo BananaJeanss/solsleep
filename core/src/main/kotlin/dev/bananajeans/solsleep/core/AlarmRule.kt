@@ -31,6 +31,7 @@ data class AlarmRule(
     val snoozeMinutes: Int = 5,
     val snoozeLimit: Int = 3,
     val revision: Long = 1,
+    val challenge: ChallengePolicy? = null,
 ) {
     init {
         require(id.isNotBlank())

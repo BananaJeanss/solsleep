@@ -6,7 +6,7 @@
 
 SolSleep is an independent, free and open-source Android™ sleep app in early development. The goal is the functional breadth of Sleep as Android, with an original Material 3 Expressive interface, durable records, and transparent measurements.
 
-The current implementation provides **local alarms, a manual sleep journal and experimental raw phone motion recording**. It is not a finished sleep tracker. See [STATUS.md](STATUS.md) for implemented behavior and evidence, and [PLAN.md](PLAN.md) for the full roadmap.
+The current implementation provides **local alarms, wake-up challenges, a manual sleep journal and experimental raw phone motion recording**. It is not a finished sleep tracker. See [STATUS.md](STATUS.md) for implemented behavior and evidence, and [PLAN.md](PLAN.md) for the full roadmap.
 
 ## First alarm workflow
 
@@ -20,6 +20,22 @@ The current implementation provides **local alarms, a manual sleep journal and e
 - No account, ads, network permission, or analytics; exports go only to a document destination you choose.
 
 Time-zone and DST behavior is defined and tested in the core; physical-device delivery gates are tracked separately.
+
+## Wake-up challenges
+
+Enable a per-alarm task, choose Easy / Normal / Hard and rehearse before saving.
+Both Snooze and Dismiss require completion. Native math, sleeping sheep, number/
+memory games, maze, reverse/copy code, optional NFC/microphone, experimental offline
+voiceover and custom JSON packs are implemented. Progress survives reopening;
+misses raise the sound, and the quiet period is bounded. Public system phone
+access and an accessible alternative task remain available.
+
+Voiceover includes original robot-voice phrases and own PCM WAV import. Its score
+compares rhythm/pitch, not words or wakefulness. Microphone attempts stay in memory;
+reference clips/packs are stored before unlock and included in plaintext alarm
+backups. Camera smile and Google image reCAPTCHA are not implemented. Real sensor,
+call/lock-screen and audible-output qualification remains open. See
+[the challenge contract](docs/WAKE_CHALLENGES.md) and [voiceover details](docs/VOICEOVER.md).
 
 ## Manual journal
 
@@ -59,7 +75,7 @@ events are retained; nothing automatically records or arms an alarm. See
 [the archive/recovery contract](docs/MOTION_ARCHIVE.md) and
 [the capture contract](docs/MOTION_CAPTURE.md). Do not uninstall or switch signers
 without verified external copies of irreplaceable records. Sonar, sleep/stage
-inference, watch acquisition and wake-up CAPTCHAs remain unimplemented.
+inference and watch acquisition remain unimplemented.
 
 ## App screens
 

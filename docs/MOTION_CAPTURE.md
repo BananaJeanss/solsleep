@@ -16,7 +16,7 @@ millisecond wall-clock anchor, stream/boot identities and source name, vendor,
 version, resolution, range and wake-up capability. It requests a 100 ms interval;
 this is not a guaranteed observed rate. Actual timestamps remain available.
 
-There are no sleep/stage/heart-rate/breathing/snore estimates, microphone capture,
+The phone-motion recording workflow has no sleep/stage/heart-rate/breathing/snore estimates or microphone capture,
 watch connection, network upload or automatic start. This does not create a manual
 journal entry or claim a measured night. Do not place a phone under bedding or
 pillows. Physical overnight energy, sensor usefulness and accuracy are unqualified.
@@ -38,7 +38,7 @@ Finish/Pause control for that same acquisition.
 The production manifest now deliberately includes SPECIAL_USE and this recorder.
 The earlier debug-only diagnostic remains separate and absent from release. Alarm
 mediaPlayback/direct-boot behavior remains independent; no capture database or
-sensor initialization is added to the alarm path. No network/microphone/health/
+sensor initialization is added to the alarm path. No network/overnight-microphone/health/
 Bluetooth/location permission is introduced.
 
 A process-wide Handler serializes sensor callbacks, commands and old-service
@@ -176,3 +176,5 @@ JVM / four Python / 93 native cases per API). Requested cadence is currently
 a code policy, not a saved per-stream field; producing build and original IANA
 zone are also absent. UTC/monotonic anchors stay exact and restore invents no
 missing provenance. See MOTION_ARCHIVE.md and STATUS.md for current evidence.
+
+Optional visible, user-started microphone/NFC wake-up tasks are separate from motion recording. They do not add sonar or overnight audio acquisition. See [WAKE_CHALLENGES](WAKE_CHALLENGES.md).

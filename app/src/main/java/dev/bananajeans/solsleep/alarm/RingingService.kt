@@ -16,6 +16,8 @@ class RingingService : Service() {
     companion object {
         const val CHANNEL="wake_alarms_v1"
         private const val NOTIFICATION=101
+        @Volatile private var outputAudio=java.lang.ref.WeakReference<AlarmAudio>(null)
+        fun mayMixReference()=running && outputAudio.get()?.hasFocus==true
         @Volatile var running=false;private set
         fun refresh(context: Context) {
             ContextCompat.startForegroundService(context,Intent(context,RingingService::class.java))
@@ -43,6 +45,7 @@ class RingingService : Service() {
         promote()
         // Observers must not treat a merely constructed service as foreground-ready.
         running=true
+        ChallengeVisibility.changed={handler.post {if(!destroyed) refreshActive()}}
     }
     override fun onStartCommand(intent: Intent?,flags: Int,startId: Int): Int {
         latestStartId=startId
@@ -90,11 +93,13 @@ class RingingService : Service() {
                     elapsedDeadline=SystemClock.elapsedRealtime()+remaining
                     wakeLock=getSystemService(PowerManager::class.java)
                         .newWakeLock(PowerManager.PARTIAL_WAKE_LOCK,"SolSleep:alarm").apply {acquire(remaining+5000)}
-                    audio=AlarmAudio(this,active.rule.rampSeconds).also {it.start()}
+                    audio=AlarmAudio(this,active.rule.rampSeconds).also {outputAudio=java.lang.ref.WeakReference(it);it.start()}
                     if(active.rule.vibrate) vibrate()
                 }
+                val policy=active.rule.challenge;val task=p.challenge
+                audio?.setGainLimit(if(policy!=null && task!=null && ChallengeVisibility.visible(p.token)) task.gain(policy,Instant.now()) else 1f)
                 getSystemService(NotificationManager::class.java).notify(NOTIFICATION,notification(active))
-                handler.postDelayed(poll,5000)
+                handler.postDelayed(poll,1000)
             }
         }
     }
@@ -125,19 +130,19 @@ class RingingService : Service() {
                     .setContentTitle(getString(R.string.alarm)).build())
             if(p.snoozes<entry.rule.snoozeLimit) builder.addAction(0,
                 getString(R.string.snooze_minutes,entry.rule.snoozeMinutes),
-                AlarmIntents.broadcast(this,p.token,AlarmIntents.SNOOZE))
-            builder.addAction(0,getString(R.string.dismiss),AlarmIntents.broadcast(this,p.token,AlarmIntents.DISMISS))
+                if(entry.rule.challenge!=null) AlarmIntents.open(this,p.token,AlarmIntents.SNOOZE) else AlarmIntents.broadcast(this,p.token,AlarmIntents.SNOOZE))
+            builder.addAction(0,getString(R.string.dismiss),if(entry.rule.challenge!=null) AlarmIntents.open(this,p.token,AlarmIntents.DISMISS) else AlarmIntents.broadcast(this,p.token,AlarmIntents.DISMISS))
         }
         return builder.build()
     }
     private fun stopOutput() {
-        audio?.close();audio=null
+        audio?.close();audio=null;outputAudio.clear()
         if(Build.VERSION.SDK_INT>=31) getSystemService(VibratorManager::class.java).cancel()
         else { @Suppress("DEPRECATION") (getSystemService(VIBRATOR_SERVICE) as Vibrator).cancel() }
         wakeLock?.let {if(it.isHeld) it.release()};wakeLock=null
     }
     override fun onDestroy() {
-        destroyed=true;running=false;handler.removeCallbacksAndMessages(null);stopOutput()
+        destroyed=true;running=false;ChallengeVisibility.changed=null;handler.removeCallbacksAndMessages(null);stopOutput()
         super.onDestroy()
     }
     override fun onBind(intent: Intent?) : IBinder?=null

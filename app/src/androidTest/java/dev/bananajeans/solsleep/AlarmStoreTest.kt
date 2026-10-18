@@ -86,13 +86,13 @@ class AlarmStoreTest {
     @Test fun missingDowngradePathRetainsOriginalDatabase() {
         store.put(rule,pending);store.close()
         val path=context.createDeviceProtectedStorageContext().getDatabasePath(name).path
-        SQLiteDatabase.openDatabase(path,null,SQLiteDatabase.OPEN_READWRITE).use {it.version=2}
+        SQLiteDatabase.openDatabase(path,null,SQLiteDatabase.OPEN_READWRITE).use {it.version=99}
         store=AlarmStore(context,name)
         try {store.entries();fail("Must refuse an unknown newer schema")} catch(_: android.database.sqlite.SQLiteException) { }
         assertTrue(java.io.File(path).exists())
         SQLiteDatabase.openDatabase(path,null,SQLiteDatabase.OPEN_READONLY).use {db->
             db.rawQuery("SELECT COUNT(*) FROM alarms",null).use {c->c.moveToFirst();assertEquals(1,c.getInt(0))}
-            assertEquals(2,db.version)
+            assertEquals(99,db.version)
         }
     }
     @Test fun restoreBatchIsAtomicWhenALaterIdentityConflicts() {

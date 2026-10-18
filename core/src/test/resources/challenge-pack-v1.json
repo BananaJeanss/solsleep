@@ -1,0 +1,10 @@
+{
+  "format": "solsleep-challenge-pack",
+  "version": 1,
+  "title": "A small morning pack",
+  "levels": {
+    "EASY": [{"kind":"TEXT","prompt":"Type dawn","answer":"dawn","caseSensitive":false}],
+    "NORMAL": [{"kind":"CHOICE","prompt":"Which is even?","choices":["7","12","19"],"order":[1]}],
+    "HARD": [{"kind":"ORDER","prompt":"Morning to night","choices":["Dusk","Dawn","Noon"],"order":[1,2,0]}]
+  }
+}

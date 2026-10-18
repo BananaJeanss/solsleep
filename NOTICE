@@ -15,3 +15,9 @@ The dawn alarm sound is synthesized from sine waves by tools/generate_tone.py.
 The Apache License 2.0 text for Apache-licensed build/runtime components is
 provided in third_party/Apache-2.0.txt. See docs/DEPENDENCIES.md for the initial
 upstream inventory and remaining release notice audit.
+
+Original voiceover phrases are synthesized with CMU Flite 2.2's cmu_us_kal
+diphone voice (Carnegie Mellon University / Language Technologies Institute,
+Alan W Black, Kevin A. Lenzo and contributors). No engine is bundled.
+Upstream permissive notice: third_party/flite-COPYING.txt.
+Generation source and limitations: docs/VOICEOVER.md, tools/generate_voice_clips.py.
