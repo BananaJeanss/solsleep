@@ -14,6 +14,8 @@ in STATUS.md. These workflows distribute **debug builds**, not production releas
   on PR, main push and manual runs. GitHub requires authentication for Actions
   artifact downloads. PR bundles are previews; their existence does not imply
   the two device jobs have passed. Full reports remain separate artifacts.
+  Fork workflows can package artifacts identifying their own repository; their
+  bundles cannot be substituted for an upstream release.
 - Verify with `sha256sum -c SHA256SUMS` in the downloaded directory. Compare
   source/run/certificate with release notes. The manifest records actual APK
   identity and signature verification, not just intended Gradle settings.
@@ -86,8 +88,12 @@ Source/run/build-attempt fields, exact allowed filenames, sizes, symlinks,
 duplicate JSON fields, debug application configuration, hashes and certificate
 report are checked before publication. This is not a cryptographic attestation.
 
-Tags are `debug-<run>.<build attempt>-<source prefix>`, fixed to the complete
-qualified commit. No moving tag, asset clobber, release deletion or stable Latest
+Tags are `debug-<run>.<build attempt>-<source prefix>`, explicitly created and
+verified as lightweight refs to the complete qualified commit before drafting;
+publication does not depend on GitHub's implicit draft-tag creation timing.
+Authenticated GraphQL resolves draft/public releases by tag; REST's published-only
+tag lookup is deliberately not used for draft recovery.
+No moving tag, asset clobber, release deletion or stable Latest
 promotion is used. A draft is created first; exact assets are uploaded, downloaded
 and compared before publication as a prerelease. A failed upload/readback leaves
 a recoverable draft. A retry may add missing draft assets only when all existing
@@ -106,3 +112,5 @@ a new qualified bundle; never substitute an unverified APK.
 - https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows
 - https://github.com/actions/download-artifact/tree/v7.0.0
 - https://cli.github.com/manual/gh_release_create
+- https://docs.github.com/en/rest/releases/releases#get-a-release-by-tag-name
+- https://github.com/cli/cli/blob/trunk/pkg/cmd/release/shared/fetch.go

@@ -379,3 +379,47 @@ The independent Python digest construction is checked against the Kotlin rebuild
 All identities describe synthetic interchange inputs, not human sleep validation.
 Physical power loss/full disk, overnight usefulness/energy, accessibility and
 clinical/physiological accuracy remain unqualified. No phone/watch was attached.
+
+## Development APK distribution qualification in progress
+
+`test_debug_delivery.py` exercises source/run/counter and file/schema binding,
+checksum/APK/certificate changes, unsafe/extra files, draft upload interruption,
+remote readback failure, exact public retry, changed tag/assets, non-404 API
+errors, bounded exclusive private signing files and fork/upstream separation.
+The combined Python suite has 26 cases; actionlint 1.7.12 passes. Actual CI
+packaging invokes Android `aapt` and `apksigner`, so package/API/debug/version/
+certificate assertions are checked against a real APK, not only test fixtures.
+
+CI50 source `b248c9e0b6dec99d366880a5ab42285ffe95513d`, tree
+`deec5835cdb202428477754faec0f972889714c3`, checked out synthetic merge
+`1c1eaf37ec71fe40e0be9b7c60e08ee9b1e7bcd2`. Its build reports show 203 JVM,
+24 Python, zero lint and passing debug/shrunk unsigned release. API 37's actual
+XML has 116 cases, zero failures/errors/skips. API 29 was cancelled at the 30-minute
+job limit, with no final JUnit XML; it is not a waived pass or a zero-case success.
+Its retained logcat last enters the 200% recording-coverage/recreation test,
+opens its screenshot, restores font scale and recreates the Activity. The following
+cleanup could await Compose idle on a stale root indefinitely. The corrective
+harness stops lifecycle polling first and destroys the real Activity before font
+restoration, keeping every body assertion. Full final reruns remain required.
+
+| CI50 artifact | ID | Verified ZIP SHA-256 |
+| --- | --- | --- |
+| Standalone preview APK | 12152233356 | `fd4e684937221c4cfd8889389295ed6d4277d52364a73115569e0200da4c4f9e` |
+| Build/core | 12152343039 | `ed8346cd82db20d5e61faa74d3f86ff27899973eaea38226e3def8d175c1e1ac` |
+| API 37 | 12152354315 | `53169a0da84d86875666b51bf081a5c98abce5acb016793ce381b4cb732e21e4` |
+| API 29 diagnostics, incomplete | 12153211560 | `cb22a42be449e01b99f4fc0dacfc953e8c2862d219a9fa31050ca1c985c5497f` |
+
+The preview APK SHA-256 is
+`ee43fff37efcfdb9be9d349daae46dc1247c324c36470b794999bd9402544e01`;
+certificate SHA-256 is
+`3aabf00d782c8b8ea727b53f8b8dcc14463906bab12fc6802ca6b3a6258907c6`.
+It is `dev.bananajeans.solsleep.debug`, version code 15001, API 29 minimum/37
+target, runner-ephemeral signing. Independent local `apksigner` verifies it.
+This identifies the preview; it does not close the failed API 29 gate.
+
+Local debug/test/lint and shrunk release pass. One concurrent-worktree release
+attempt hit the shared Gradle cache lock; serialized execution passed. No source
+workaround or test/lint suppression was used. A separate disposable 3072-bit
+private key also signed the real debug APK successfully; its actual certificate
+matched SHA-256 of independently exported keytool DER bytes, then both private
+keystore files were deleted. That local signing-test APK is not distributed.

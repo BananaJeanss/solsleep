@@ -24,18 +24,29 @@ class FakeGitHub:
         self.commit = SHA
         self.damage_download = False
         self.api_failure = None
+        self.tag_exists = True
 
     def __call__(self, *args):
         self.calls.append(args)
         if args[:2] == ("gh", "api"):
+            if args[2].endswith("/git/refs"):
+                assert "--method" in args and "POST" in args
+                assert "sha=" + SHA in args
+                assert not self.tag_exists
+                self.tag_exists = True
+                return "{}"
             if "/git/ref/" in args[2]:
+                if not self.tag_exists:
+                    raise subprocess.CalledProcessError(1, args, "HTTP 404")
                 return json.dumps(dict(object=dict(type="commit", sha=self.commit)))
-            if self.api_failure:
-                raise subprocess.CalledProcessError(1, args, self.api_failure)
-            if self.draft is None:
-                raise subprocess.CalledProcessError(1, args, "HTTP 404")
-            return json.dumps(dict(draft=self.draft, prerelease=True, tag_name="debug-52.1-" + SHA[:12],
-                                   assets=[dict(name=name) for name in self.assets]))
+            if args[2] == "graphql":
+                if self.api_failure:
+                    raise subprocess.CalledProcessError(1, args, self.api_failure)
+                release = None if self.draft is None else dict(isDraft=self.draft, isPrerelease=True,
+                    tagName="debug-52.1-" + SHA[:12], releaseAssets=dict(totalCount=len(self.assets),
+                    nodes=[dict(name=name) for name in self.assets], pageInfo=dict(hasNextPage=False)))
+                return json.dumps(dict(data=dict(repository=dict(release=release))))
+            raise AssertionError("REST tag lookup cannot resolve drafts: " + str(args))
         action = args[2]
         if action == "create":
             assert "--draft" in args and "--prerelease" in args and "--latest=false" in args
@@ -100,6 +111,15 @@ class DebugDeliveryTest(unittest.TestCase):
         for changed in (dict(commit="3" * 40), dict(run_id=1235), dict(run_number=51), dict(attempt=2)):
             with self.subTest(changed=changed), self.assertRaises(ValueError):
                 self.validate(**changed)
+
+    def test_forks_can_validate_their_own_bundle_but_cannot_publish_as_upstream(self):
+        self.info["repository"] = "example-fork/solsleep"
+        self.write_info()
+        self.assertEqual(self.validate(repository="example-fork/solsleep"), self.info)
+        gh = FakeGitHub()
+        with self.assertRaises(ValueError):
+            self.publish(gh)
+        self.assertFalse(gh.calls)
 
     def test_apk_tamper_with_and_without_recomputed_file_checksums(self):
         self.directory.joinpath("solsleep-debug.apk").write_bytes(b"changed")
@@ -196,6 +216,16 @@ class DebugDeliveryTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "qualified commit"):
             self.publish(gh)
         self.assertFalse(gh.assets)
+
+    def test_missing_tag_is_created_at_exact_source_before_draft(self):
+        gh = FakeGitHub()
+        gh.tag_exists = False
+        self.publish(gh)
+        posts = [i for i, call in enumerate(gh.calls) if call[:3] == ("gh", "api", f"repos/{REPO}/git/refs")]
+        creates = [i for i, call in enumerate(gh.calls) if call[:3] == ("gh", "release", "create")]
+        self.assertEqual(len(posts), 1)
+        self.assertLess(posts[0], creates[0])
+        self.assertIn("--verify-tag", gh.calls[creates[0]])
 
     def test_api_failure_is_not_misread_as_missing_release(self):
         gh = FakeGitHub()

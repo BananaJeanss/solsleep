@@ -107,6 +107,8 @@ and the standalone debug APK artifact in [Android checks](https://github.com/Ban
 Read [signing, updates and data recovery](docs/DEVELOPMENT_RELEASES.md) before
 installing: runner-generated certificates can change between builds. This is
 an experimental debug distribution, with production signing still pending.
+The [tonight test checklist](docs/TONIGHT_TEST.md) covers short alarm/challenge,
+motion, journal and recovery checks before an optional overnight motion trial.
 
 Requires JDK 17, Android platform `android-37.0` / API 37, and Build Tools 36.0.0. Set `ANDROID_HOME` or `sdk.dir` in an untracked `local.properties`.
 
