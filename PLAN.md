@@ -1918,3 +1918,26 @@ these accuracy gates passed. Execute each as a separate qualified vertical slice
 
 Full production readiness, reference parity, physical durability and physiological
 accuracy remain open. All unchecked scope-ledger work still applies.
+
+### Development APK distribution — execution in progress, 19 October 2026
+
+1. Keep production signing separate. Give CI debug builds bounded monotonically
+   ordered run/attempt codes and exact source versions. Optionally load a private
+   persistent CI debug keystore only on trusted main; preserve normal local and
+   PR signing. Default runner certificates and update/data limits stay visible.
+2. Verify the actual signed APK/application/API/version using Android build tools.
+   Package a dedicated artifact with APK/certificate SHA-256, exact source/tree/
+   run identity and file checksums. Retain full build/native reports separately.
+3. After the build and both full API suites pass, publish that exact same-run
+   bundle from a job with narrowly scoped write access. Create a versioned draft,
+   verify remote asset readback, then publish a development prerelease. Refuse
+   tag/source mismatches or asset replacement; resume only matching partial drafts.
+4. Test changed artifacts, malformed/duplicate fields, wrong run, unsafe files,
+   draft interruption/readback, public retry and private-key file handling.
+   Run actual CI and inspect a public release download before claiming success.
+5. Continue M2 with recording-export attempt/verified history. Its local metadata
+   must never block verified recovery or touch original recordings/alarms. Retain
+   last verified receipt across later failures, with explicit interrupted/unknown
+   states and actual SQLite/provider/lifecycle regressions.
+
+Contract, configuration and primary research: [DEVELOPMENT_RELEASES](docs/DEVELOPMENT_RELEASES.md).
