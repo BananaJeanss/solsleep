@@ -90,8 +90,9 @@ inference and watch acquisition remain unimplemented.
 </p>
 
 [All captured screens, including large text](docs/SCREENSHOTS.md). The tested
-milestone passes 132 JVM tests, four independent Python tests and all 93 device tests on both API 29 and API 37.
-[Checks and development APK artifact](https://github.com/BananaJeanss/solsleep/actions/runs/39076468922).
+milestone passes 178 JVM tests, four independent Python tests and all 108 device
+tests on each of API 29 and API 37, with zero lint issues.
+[Checks and development APK artifact](https://github.com/BananaJeanss/solsleep/actions/runs/39098002133).
 
 ## Build
 

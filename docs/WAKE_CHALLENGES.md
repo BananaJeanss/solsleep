@@ -111,7 +111,7 @@ of 1–24 tasks. Each task has `kind` and `prompt`, plus:
 
 | Kind | Additional fields | Meaning |
 | --- | --- | --- |
-| `TEXT` | `answer`, `caseSensitive` | Trim/NFC normalization, optional locale-independent case folding |
+| `TEXT` | `answer`, `caseSensitive` | Trim/NFC normalization, optional locale-independent lowercase normalization |
 | `CHOICE` | `choices`, `order` | 2–9 unique choices; `order` contains the one correct zero-based index |
 | `ORDER` | `choices`, `order` | 2–9 unique choices; `order` is an exact permutation of all zero-based indices |
 
@@ -173,6 +173,8 @@ speaker/haptic output/volume ramp. Emulator/pure DSP tests do not establish thes
 - Reference behavior: https://sleep.urbandroid.org/docs/alarms/captcha.html
 - NFC activity reader mode: https://developer.android.com/reference/android/nfc/NfcAdapter
 - AudioRecord reads and lifecycle: https://developer.android.com/reference/android/media/AudioRecord
+- Privacy-sensitive input (API 30+): https://developer.android.com/reference/android/media/AudioRecord.Builder#setPrivacySensitive(boolean)
+- Activity resource lifetime: https://developer.android.com/guide/components/activities/activity-lifecycle
 - Audio input privacy/competition: https://developer.android.com/media/platform/sharing-audio-input
 - Audio focus: https://developer.android.com/media/optimize/audio-focus
 - Public dial intent: https://developer.android.com/guide/components/intents-common#Phone

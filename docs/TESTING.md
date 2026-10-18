@@ -276,3 +276,34 @@ it as permanently paused. The stale-action case observes actual lifecycle
 callbacks, waits for rejection or a later legitimate notification handoff, and
 asserts the entire current pending row/proof is unchanged. It does not require
 Android to suppress a fresh valid notification or bypass lifecycle assertions.
+
+### Final PR #9 qualification
+
+Source `3ac50fd63cee4650dcb6a661482c3ee0c2d8ff46`, tree
+`0efa194f20c238b8b96ef11cf80d107c66a407bb`,
+[CI45](https://github.com/BananaJeanss/solsleep/actions/runs/39098002133).
+Merge `421af1706e5e4e1cd721615f1e490f9772a69d91` has that same tree.
+All 178 JVM tests, four Python tests and 108 native cases on each API passed;
+actual final XML has zero failures/errors/skips and lint XML has zero issues.
+Debug/test APKs and the shrunk unsigned release pass. Both original native PNGs
+were reviewed and copied exactly; [SCREENSHOTS](SCREENSHOTS.md) records hashes.
+
+| Artifact | ID | Verified ZIP SHA-256 |
+| --- | --- | --- |
+| Build/core | 12125322106 | `8c29c708e0924219909fa4847226752ed71a3b83c83acf9ea0b507bd46e7fe00` |
+| API 29 | 12125790961 | `3598c40718f60d5c0c88fc7f58e9e9796987a59a79946c085ac0919c05874747` |
+| API 37 | 12125950575 | `db50b3e715f818cbe6e2617e0199b6c384d40df752e56cd98f59873b40801ba1` |
+
+CI41–44 were unsuccessful qualification attempts, not waived passes. The final
+harness delivers a scheduled occurrence through the receiver/service rather than
+an unowned RINGING fixture that main-screen recovery correctly reschedules.
+Its canonical notification intent also fixes ActivityScenario tracking the wrong
+filter after Android 29 singleTask redelivery. The stale-token test observes the
+delivered request and asserts the complete pending row/proof remains unchanged.
+No test is ignored, no assertion is disabled and both supported API suites run.
+
+Local qualification used JDK 17 and the commands in STATUS.md. Switching debug/
+release incremental caches produced duplicate generated/top-level symbols during
+development; a separate `:app:clean` followed by the full debug/test/lint check
+resolved them. No source workaround or lint suppression was added. Final CI uses
+clean checkout builds and independently passed both variants.

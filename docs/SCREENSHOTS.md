@@ -99,3 +99,28 @@ the current viewport. No image generation or screen reconstruction was used.
 | Screen | API 37 dark | API 29 light fallback |
 | --- | --- | --- |
 | Restored recording, 200% text | ![Restored recording](screenshots/motion-archive-large-text-api37.png) | ![Restored recording light](screenshots/motion-archive-large-text-api29.png) |
+
+## Wake-up challenge and phone access
+
+Source `3ac50fd63cee4650dcb6a661482c3ee0c2d8ff46`,
+[CI45](https://github.com/BananaJeanss/solsleep/actions/runs/39098002133), PR #9.
+Exact PNG bytes from `wake-challenge-large-text.png` in each final native artifact,
+after actual AlarmManager/receiver/service delivery, the visible Snooze action
+and a persisted hard sleeping-sheep task at 200% system text. Labels are synthetic
+test data; the sheep are original Canvas code. No image generation, image editing
+or screen reconstruction was used. Both captures were visually reviewed.
+
+The puzzle body scrolls to the seeded target, so the two viewports differ. Phone
+access remains fixed above it. The test then reaches the accessible fallback,
+checks the added rounds and verifies the occurrence remains RINGING. These
+captures do not qualify actual calls, lock-screen emergency access or hardware
+audio/NFC. Ringing uses its dark theme on both APIs.
+
+| Screen | API 37 | API 29 |
+| --- | --- | --- |
+| Sleeping sheep, 200% text | ![Challenge API 37](screenshots/wake-challenge-large-text-api37.png) | ![Challenge API 29](screenshots/wake-challenge-large-text-api29.png) |
+
+| Capture | SHA-256 |
+| --- | --- |
+| API 29 | `56cbe7d5c31147a5aea83fb7cf23ba85ccd54831de5b5b374fa402e5ce85bcf6` |
+| API 37 | `1cc4c61ebb583649e1dc4e9b631413c9ef04642c96694d43b2ecb47cc90e3385` |

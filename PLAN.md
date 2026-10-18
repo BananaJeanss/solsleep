@@ -1632,6 +1632,9 @@ claim is introduced. Independent fixture data is labeled synthetic test data.
 
 ### Tracking / sonar / CAPTCHA status and next execution gates — 18 October 2026
 
+Historical checkpoint: the wake-up challenge implementation and qualification
+entries below supersede its unimplemented CAPTCHA status and math-only proposal.
+
 A status question does not change completion criteria. Phone accelerometer
 acquisition is implemented and qualified as raw observations (PR #7); manual
 journal intervals are reported rest. Neither is sleep-stage, sleep/awake, onset,
@@ -1766,3 +1769,49 @@ those is outside the safety contract. The enforceable guarantee is that normal
 SolSleep actions need host-validated completion. Sensor tasks are wake-up aids,
 not proof of consciousness or security authentication. Production readiness and
 reference parity remain open even after this software milestone passes.
+
+### Verified wake-up challenge checkpoint — 18 October 2026
+
+[PR #9](https://github.com/BananaJeanss/solsleep/pull/9) source
+`3ac50fd63cee4650dcb6a661482c3ee0c2d8ff46`, tree
+`0efa194f20c238b8b96ef11cf80d107c66a407bb`, merged as
+`421af1706e5e4e1cd721615f1e490f9772a69d91` with the identical tree.
+[CI45](https://github.com/BananaJeanss/solsleep/actions/runs/39098002133)
+passes 178 JVM, four independent Python and all 108 native tests on each API
+29/37, zero failures/errors/skips and zero lint issues. Clean local debug/test
+APKs, lint and shrunk unsigned release pass; CI independently builds both
+variants and verifies original assets. Final report ZIP digests, actual XML and
+both native 200% captures were inspected. Documentation/capture copies after
+this checkpoint change no source/test/schema/build/tool code.
+
+Review corrected the raw voice producer's omitted final 100 ms frame and proved
+exact sustained speech, clipping and relative-baseline behavior with actual PCM.
+Native resource ownership now cancels on actual Pause/Stop without depending on
+a stopped recomposer; an old completion cannot reset its replacement. CI41–44
+exposed UI harness assumptions about a replaced singleTask activity, Compose
+root registration, an unowned RINGING fixture and notification intent filters.
+The final harness uses actual scheduled delivery/playback, canonical notification
+intents, visible action buttons and observed stale-request rejection. Assertions,
+all prior cases and both API platforms remain enabled. Failed attempts are not
+claimed as qualification. STATUS/TESTING contain final evidence and provenance.
+
+The next challenge qualification step is blocked on **physical hardware**:
+`adb devices -l` lists no attached phone. Execute
+[the challenge lab protocol](docs/device-lab/challenges.md) on disposable API 29
+and current-API installs, retain actual acoustic gain/timing, NFC, microphone
+privacy/false-accept, ordinary-call/focus, emergency-navigation and assistive-use
+observations, then tune voice thresholds only with consented labeled trials.
+Never place an emergency-services test call. No simulated or synthetic score
+closes these gates; voiceover remains explicitly experimental.
+
+Independent tracking software remains actionable: implement versioned producing
+build/original zone/requested-cadence provenance without inventing values for old
+segments, preserve it in a backward-readable recording format and migration,
+then derive observed coverage from retained raw chunks, anchors, interruptions
+and gaps. Test clock discontinuities, irregular delivery, missing/corrupt chunks,
+rebuild determinism and exact archive preservation before adding native coverage
+tables/graphs. Unknown coverage stays unknown, with no awake/asleep labels.
+Validated sleep inference, sonar and watch acquisition still require their own
+implementation, hardware/reference evidence and permission/source contracts.
+Combined/encrypted backups, the remaining challenge catalogue and production
+release gates stay open; this checkpoint is not full reference parity.

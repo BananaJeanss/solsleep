@@ -50,6 +50,16 @@ recording and host/device wall clocks need a recorded synchronization method;
 unknown timing uncertainty cannot be treated as zero. Keep source measurements
 separate from the pass/fail interpretation and proposed engineering targets.
 
+## Wake-up challenge cases
+
+Follow [the challenge protocol](challenges.md) for every enabled task and level,
+recovery/proof retention, actual gain escalation, NFC, microphone privacy and
+voiceover false accepts/rejects. The result template includes task identity,
+reference/algorithm and route fields. Opening the dialer or navigating the system
+lock-screen emergency UI is sufficient; never place an emergency-services test
+call. Use the exact current qualified source in STATUS.md, and keep each physical
+case NOT RUN until its observations are recorded.
+
 ## Persistence and portability cases
 
 - Use synthetic fixtures on the dedicated install for controlled interruption,
@@ -73,7 +83,7 @@ separate from the pass/fail interpretation and proposed engineering targets.
 ## Tracking, crypto and watch dependencies
 
 The build now contains **experimental actual phone motion capture**, not a
-production-qualified sleep tracker. Use the exact PR #7 source/build in STATUS.md.
+production-qualified sleep tracker. Use the exact current source/build in STATUS.md.
 The separate debug five-minute probe still stores counters only; never substitute
 it for a 12-hour recording. No sleep/stage inference is implemented. Human reports
 are not physiological ground truth.

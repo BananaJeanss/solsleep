@@ -14,6 +14,13 @@ Status: NOT RUN
 | Original scheduled deadlines / monotonic boot anchor | Not recorded |
 | Observed timings, gaps, failures and repetition count | Not recorded |
 | Sensor/source/placement and segment/boot identity | Not recorded |
+| Challenge kind/level, occurrence/task ID, revision and original start | Not recorded |
+| Restored task stages/misses/fallback and stale-action observations | Not recorded |
+| Challenge gain/time/route observations and measurement uncertainty | Not recorded |
+| NFC tag technology/UID stability and foreground/locked outcomes | Not recorded |
+| Voice reference/algorithm IDs, room/route and labeled accept/reject counts | Not recorded |
+| Microphone permission/privacy/Stop and ordinary-call audio observations | Not recorded |
+| Lock-screen dialer/emergency navigation, without placing an emergency call | Not recorded |
 | Recording requested/observed rate, samples, gaps and file issues | Not recorded |
 | Overnight battery/temperature method and actual start/end observations | Not recorded |
 | Raw evidence locations and analysis method | Not recorded |

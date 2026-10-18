@@ -1,6 +1,8 @@
 # Implementation status
 
-18 October 2026 — native wake-up challenges and offline voiceover are under qualification on `feature/wake-challenges`. The previous qualified checkpoint is [PR #8](https://github.com/BananaJeanss/solsleep/pull/8).
+18 October 2026 — native wake-up challenges, custom packs and offline voiceover
+are merged in [PR #9](https://github.com/BananaJeanss/solsleep/pull/9).
+The exact source passed the complete API 29/37 software qualification below.
 
 This is a **development build**. M0, M1, M2 and M3 remain partial. Full reference
 parity, physiological accuracy and production readiness are not claimed.
@@ -12,12 +14,12 @@ parity, physiological accuracy and production readiness are not claimed.
 | Phone motion | Actual raw accelerometer observations, controls, interruption recovery, saved checks and separate recording backups |
 | Manual journal | Reported rest intervals, corrections, notes/ratings/tags and verified Journal JSON portability |
 | Sleep analysis | Observed-coverage/morning analytics, sleep/awake/onset/stages remain unimplemented |
-| Sonar | Research only; no microphone acquisition or calibrated acoustic/DSP workflow |
-| Wake-up challenges | Eight native puzzle types, NFC, relative voice level, experimental offline voiceover and custom JSON packs implemented; current qualification and physical gates below |
+| Sonar | Research only; no overnight/sonar microphone acquisition or calibrated acoustic/DSP workflow |
+| Wake-up challenges | Eight native puzzle types, NFC, relative voice level, experimental offline voiceover and custom JSON packs implemented; software qualified, physical gates below |
 | Wear / Health Connect | Acquisition adapters and physiological validation remain unimplemented |
 
 
-## Wake-up challenge milestone under qualification
+## Qualified wake-up challenge software milestone
 
 Per-alarm opt-in Easy/Normal/Hard, 1–12 rounds, selected task mix, 5–40% initial
 sound and rehearsal are implemented. Both Snooze and Dismiss require a durable
@@ -31,7 +33,8 @@ The DP alarm database migrates 1→2 additively. Configured logical rules/archiv
 are v2; old v1 definitions remain readable and byte-stable. Frozen packs and voice
 references are included within the same bounded 512 KiB alarm archive; excess
 fails before writing, never silently omits content. Task definitions/references
-are before-unlock data and plaintext in exports. Attempts are memory-only.
+are before-unlock data and plaintext in exports. Attempt audio is memory-only;
+task progress and misses are durable.
 
 No JavaScript, WebView, network, camera, call-placement, overlay, device-admin or
 accessibility-service permission is added. NFC and microphone are optional; Record
@@ -40,8 +43,41 @@ system dialer; it does not place a call or guarantee keyguard bypass. System
 emergency/phone controls remain available. Normal app actions are protected;
 Android force-stop/power/uninstall remain under owner control.
 
-Local and exact-source CI evidence will be added after the complete checks finish.
-Do not treat compilation or a synthetic similarity test as physical qualification.
+Tested source: `3ac50fd63cee4650dcb6a661482c3ee0c2d8ff46`.
+Source tree: `0efa194f20c238b8b96ef11cf80d107c66a407bb`.
+Merge: `421af1706e5e4e1cd721615f1e490f9772a69d91`, with the identical tree.
+[CI45 reports, captures, logs and development APK](https://github.com/BananaJeanss/solsleep/actions/runs/39098002133).
+CI checked out PR merge `dd91d50a048a0e1f5549d9ccc21bc5aafbbdbdb4`,
+whose tree was independently compared with this source and the final merge.
+Later documentation/capture copies change no app, test, schema, build or tool code.
+
+| Check | Actual result |
+| --- | --- |
+| JVM domain/storage-protocol/format/DSP cases | All 178 passed, including 46 new challenge/voice cases |
+| Independent Python motion archive / fixtures | All four passed; independent fixture exact |
+| API 29 Google APIs x86_64 emulator | All 108 passed |
+| API 37 Google APIs x86_64 emulator | All 108 passed |
+| Final XML failures / errors / skipped | Zero across JVM and both native suites |
+| Lint / debug and test APKs | Pass; zero lint issues |
+| Shrunk unsigned release | Pass locally and in CI |
+| Original vector/chime/voice asset checks | Pass; no image-generated assets |
+| Native 200% text and fixed phone access | Actual captures from both final artifacts reviewed |
+
+The final native suite retains all previous 93 cases and adds seven SQLite/
+permissions/reference cases, three actual Activity lifecycle job-ownership cases
+and five real alarm/settings/challenge UI cases per API. Reports and ZIP digests
+were inspected, not inferred from a green job badge. See [TESTING](docs/TESTING.md)
+and [SCREENSHOTS](docs/SCREENSHOTS.md) for provenance and retained captures.
+
+Review caught a raw microphone producer dropping the final complete 100 ms frame;
+the shared producer now counts it, with exact sustained-speech/clipping cases.
+Pause/Stop cancels owned audio jobs directly, and stale completion cannot clear a
+replacement job. Earlier CI41–44 UI harness failures were corrected by using real
+AlarmManager/service ownership, bounded Compose-root waits, the notification's
+canonical singleTask intent and actual stale-intent lifecycle observation. No
+assertion, test or platform was disabled; both full final suites passed.
+
+Do not treat compilation or synthetic similarity tests as physical qualification.
 Real NFC, room/alarm bleed, voice score accuracy, input privacy/route contention,
 incoming call/audio focus, locked emergency UI, speaker/haptic gain and OEM/device
 recovery remain open with no attached hardware. Camera smile/barcode, movement,
@@ -191,7 +227,7 @@ implemented. See [MOTION_ARCHIVE.md](docs/MOTION_ARCHIVE.md), the independent
 Python fixture and `tools/inspect_motion_archive.py` for an Android-independent
 reader. The user chooses document access through SAF without broad storage access.
 
-## Verified evidence
+## Previous recording-portability evidence
 
 Tested source: `36ca8777a4f9b696af4f9cd632f2c99bb5b0e188`.
 Merge: `8597a92b75a0ae54243926b3b881f02cb54deaf4`.
@@ -266,8 +302,9 @@ resource probe is not proof every upstream incremental case is fixed.
   implemented. Minimum-phone KDF cost also needs physical hardware.
 - **M3/M4:** observed coverage and transparent morning analytics, validated
   sleep/awake inference, versioned acquisition provenance and further sensor quality
-  policies. Optional durable math is the first planned CAPTCHA slice; all task
-  families remain unimplemented. There is no measured
+  policies. The wake-up challenge milestone above supersedes the earlier
+  math-only proposal; remaining task variants are tracked in TRACEABILITY.
+  There is no measured
   hypnogram, sleep score, smart wake-up, sound analysis or clinical claim.
 - **M5 and parity:** implement watch/Health Connect acquisition and remaining
   reference families. A real consented sanitized reference CSV is still missing
