@@ -8,6 +8,10 @@ import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.v2.createEmptyComposeRule
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.runner.lifecycle.ActivityLifecycleCallback
+import androidx.test.runner.lifecycle.ActivityLifecycleMonitorRegistry
+import androidx.test.runner.lifecycle.Stage
+import java.util.concurrent.atomic.AtomicReference
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.platform.io.PlatformTestStorageRegistry
 import dev.bananajeans.solsleep.alarm.*
@@ -40,6 +44,7 @@ class ChallengeUiTest {
             engine().delete(e.rule.id)
         }
         context.stopService(Intent(context,RingingService::class.java))
+        finishRingingUis()
         main.close()
     }
     private fun fixture(p: ChallengePolicy): PendingAlarm {
@@ -53,8 +58,29 @@ class ChallengeUiTest {
         compose.waitUntil(30000) {RingingService.running && engine().entries().find {it.rule.id==id}?.pending?.state==DeliveryState.RINGING}
         return engine().entries().single {it.rule.id==id}.pending!!
     }
-    private fun open(p: PendingAlarm,action: String?=null)=ActivityScenario.launch<RingingActivity>(Intent(context,RingingActivity::class.java)
-        .putExtra(AlarmIntents.TOKEN,p.token).setAction(action).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+    private fun ringIntent(token: String,action: String?=null)=Intent(context,RingingActivity::class.java)
+        .putExtra(AlarmIntents.TOKEN,token).setAction(action)
+        .setData(android.net.Uri.parse("solsleep://ring/$token/${action ?: "open"}"))
+        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+    private fun open(p: PendingAlarm,action: String?=null): ActivityScenario<RingingActivity> {
+        // Match the notification's canonical content intent. Android 29 can redeliver
+        // that intent to singleTask; Scenario tracks by intent filter, not just class.
+        val scenario=ActivityScenario.launch<RingingActivity>(ringIntent(p.token))
+        if(action!=null) {
+            val text=if(action==AlarmIntents.DISMISS) context.getString(R.string.dismiss)
+                else context.getString(R.string.snooze_minutes,engine().entries().single {it.rule.id==id}.rule.snoozeMinutes)
+            waitText(text)
+            compose.onNodeWithText(text).performScrollTo().performClick()
+        }
+        return scenario
+    }
+    private fun finishRingingUis() {
+        InstrumentationRegistry.getInstrumentation().runOnMainSync {
+            val monitor=ActivityLifecycleMonitorRegistry.getInstance()
+            listOf(Stage.RESUMED,Stage.STARTED,Stage.PAUSED,Stage.STOPPED,Stage.CREATED)
+                .flatMap {monitor.getActivitiesInStage(it)}.filterIsInstance<RingingActivity>().distinct().forEach {it.finish()}
+        }
+    }
     // Manual Activity scenarios can resume before their first Compose hierarchy is registered.
     private fun waitText(text: String)=compose.waitUntil(15000) {compose.onAllNodesWithText(text).fetchSemanticsNodes(atLeastOneRootRequired=false).isNotEmpty()}
     @Test fun perAlarmChallengeConfigurationSurvivesEditorRecreationAndSave() {
@@ -120,11 +146,35 @@ class ChallengeUiTest {
     }
     @Test fun staleActivityTokenCannotActOnANewerRingingOccurrence() {
         val p=fixture(ChallengePolicy())
-        open(p.copy(token="expired-token"),AlarmIntents.DISMISS).use {
-            compose.waitUntil(10000) {it.state==androidx.lifecycle.Lifecycle.State.DESTROYED}
-            val current=engine().entries().single {e->e.rule.id==id}.pending!!
-            assertEquals(p,current);assertNull(current.challenge)
+        val instrumentation=InstrumentationRegistry.getInstrumentation()
+        // Establish the valid visible UI first so the original full-screen delivery
+        // cannot be mistaken for the later stale request.
+        instrumentation.runOnMainSync {context.startActivity(ringIntent(p.token))}
+        waitText(context.getString(R.string.dismiss))
+        val observed=AtomicReference<RingingActivity>()
+        val callback=ActivityLifecycleCallback {activity,stage->
+            if(activity is RingingActivity && stage==Stage.RESUMED &&
+                activity.intent.getStringExtra(AlarmIntents.TOKEN)=="expired-token") observed.set(activity)
         }
+        val monitor=ActivityLifecycleMonitorRegistry.getInstance()
+        monitor.addLifecycleCallback(callback)
+        try {
+            instrumentation.runOnMainSync {context.startActivity(ringIntent("expired-token",AlarmIntents.DISMISS))}
+            compose.waitUntil(10000) {observed.get()!=null}
+            compose.waitUntil(10000) {
+                var rejectedOrSuperseded=false
+                instrumentation.runOnMainSync {
+                    val activity=observed.get()
+                    // A later valid notification may legitimately reopen the current UI.
+                    rejectedOrSuperseded=activity.isFinishing || activity.isDestroyed ||
+                        activity.intent.getStringExtra(AlarmIntents.TOKEN)==p.token
+                }
+                rejectedOrSuperseded
+            }
+            val current=engine().entries().single {it.rule.id==id}.pending!!
+            assertEquals(p,current);assertNull(current.challenge)
+            assertEquals(DeliveryState.RINGING,current.state)
+        } finally {monitor.removeLifecycleCallback(callback)}
     }
     @Test fun legacyBroadcastActionsCannotBypassConfiguredTasks() {
         val p=fixture(ChallengePolicy())

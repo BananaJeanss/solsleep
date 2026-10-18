@@ -268,3 +268,11 @@ disposable installs/databases. No assertion/test is disabled. Physical NFC/mic,
 private-input contention, phone call audio, lock-screen emergency navigation,
 TalkBack, actual acoustic level and OEM recovery remain separate lab gates. Do
 not place test calls to emergency services or use test installs for personal data.
+
+The alarm UI harness follows the notification's canonical content-intent filter
+and presses real Snooze/Dismiss buttons. Android 29 can redeliver another intent
+to a singleTask Activity; a Scenario tied to a different action incorrectly sees
+it as permanently paused. The stale-action case observes actual lifecycle
+callbacks, waits for rejection or a later legitimate notification handoff, and
+asserts the entire current pending row/proof is unchanged. It does not require
+Android to suppress a fresh valid notification or bypass lifecycle assertions.
