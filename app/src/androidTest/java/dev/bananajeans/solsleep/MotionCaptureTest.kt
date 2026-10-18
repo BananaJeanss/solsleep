@@ -54,13 +54,16 @@ class MotionCaptureTest {
     }
     @After fun cleanup() {
         quiesceScreen()
+        compose.activityRule.scenario.moveToState(Lifecycle.State.DESTROYED)
         shell("input keyevent KEYCODE_WAKEUP");shell("settings put system font_scale 1.0")
+        await {kotlin.math.abs(context.resources.configuration.fontScale-1f)<.01f}
         shell("appops set ${context.packageName} POST_NOTIFICATION allow")
         context.stopService(Intent(context,MotionCaptureService::class.java));await {CaptureRuntime.liveOwner==null}
         clearRecords();AlarmGraph.engine(context).delete(alarmId)
     }
     private fun quiesceScreen() {
-        compose.waitForIdle()
+        // Configuration changes can replace the Compose root. Stop the real
+        // lifecycle first; cleanup must not await a frame on a stale/hidden root.
         compose.activityRule.scenario.moveToState(Lifecycle.State.CREATED)
         val model=java.util.concurrent.atomic.AtomicReference<CaptureViewModel>()
         compose.activityRule.scenario.onActivity {model.set(ViewModelProvider(it)[CaptureViewModel::class.java])}
@@ -200,8 +203,10 @@ class MotionCaptureTest {
             compose.onNodeWithText("Document: Receipt UI fixture.solmotion").assertIsDisplayed()
             compose.activityRule.scenario.recreate()
             compose.waitUntil(15000) {compose.onAllNodesWithTag("motion_receipts").fetchSemanticsNodes(atLeastOneRootRequired=false).isNotEmpty()}
-            compose.onNodeWithTag("motion_receipts").performScrollToNode(hasText("Document: Receipt UI fixture.solmotion"))
+            compose.onNodeWithTag("motion_receipts").performScrollToNode(hasText("Matching readback verified"))
             compose.onNodeWithText("Matching readback verified").assertIsDisplayed()
+            compose.onNodeWithTag("motion_receipts").performScrollToNode(hasText("Document: Receipt UI fixture.solmotion"))
+            compose.onNodeWithText("Document: Receipt UI fixture.solmotion").assertIsDisplayed()
             InstrumentationRegistry.getInstrumentation().uiAutomation.takeScreenshot().let {bitmap->
                 PlatformTestStorageRegistry.getInstance().openOutputFile("recording-export-history-large-text.png").use {bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG,100,it)}
             }
