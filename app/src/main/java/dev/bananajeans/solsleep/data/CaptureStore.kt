@@ -18,7 +18,7 @@ class CaptureStore(context: Context,name: String="motion-capture.db"): AutoClose
     companion object {private val locks=Array(32) {Any()}}
     private val credential=context.applicationContext.also {check(!it.isDeviceProtectedStorage)}
     private val openLock=locks[(credential.getDatabasePath(name).absolutePath.hashCode() and Int.MAX_VALUE)%locks.size]
-    private val helper=object: SQLiteOpenHelper(credential,name,null,2,DatabaseErrorHandler {
+    private val helper=object: SQLiteOpenHelper(credential,name,null,3,DatabaseErrorHandler {
         android.util.Log.e("SolSleepCapture","Capture database damaged; original files retained")
     }) {
         override fun onConfigure(db: SQLiteDatabase) {
@@ -40,11 +40,13 @@ class CaptureStore(context: Context,name: String="motion-capture.db"): AutoClose
                 sensor_name TEXT NOT NULL,sensor_vendor TEXT NOT NULL,sensor_version INTEGER NOT NULL,
                 resolution REAL NOT NULL,maximum_range REAL NOT NULL,wake_up INTEGER NOT NULL CHECK(wake_up IN (0,1)),
                 committed_samples INTEGER NOT NULL DEFAULT 0 CHECK(committed_samples>=0),
-                rejected_samples INTEGER NOT NULL DEFAULT 0 CHECK(rejected_samples>=0),gaps INTEGER NOT NULL DEFAULT 0 CHECK(gaps>=0))""")
+                rejected_samples INTEGER NOT NULL DEFAULT 0 CHECK(rejected_samples>=0),gaps INTEGER NOT NULL DEFAULT 0 CHECK(gaps>=0),
+                acquisition_payload TEXT CHECK(acquisition_payload IS NULL OR length(CAST(acquisition_payload AS BLOB))<=1024))""")
         }
         override fun onUpgrade(db: SQLiteDatabase,oldVersion: Int,newVersion: Int) {
-            check(oldVersion==1 && newVersion==2) {"No validated capture migration"}
-            createArchiveSchema(db)
+            check(oldVersion in 1..2 && newVersion==3) {"No validated capture migration"}
+            if(oldVersion<2) createArchiveSchema(db)
+            db.execSQL("ALTER TABLE streams ADD COLUMN acquisition_payload TEXT CHECK(acquisition_payload IS NULL OR length(CAST(acquisition_payload AS BLOB))<=1024)")
         }
         override fun onDowngrade(db: SQLiteDatabase,oldVersion: Int,newVersion: Int) {throw SQLiteException("Capture downgrade not supported")}
     }.apply {setWriteAheadLoggingEnabled(true)}
@@ -101,6 +103,7 @@ class CaptureStore(context: Context,name: String="motion-capture.db"): AutoClose
             put("anchor_ms",value.wall.toEpochMilli());put("anchor_ns",value.elapsedNanos)
             put("sensor_name",value.source.name);put("sensor_vendor",value.source.vendor);put("sensor_version",value.source.version)
             put("resolution",value.source.resolution);put("maximum_range",value.source.maximumRange);put("wake_up",if(value.source.wakeUp) 1 else 0)
+            put("acquisition_payload",value.provenance?.let(CaptureProvenanceCodec::encode))
         });Unit
     }
     @Synchronized fun checkpoint(stream: UUID,samples: Long,rejected: Long,gaps: Long)=transaction {db->
@@ -119,7 +122,8 @@ class CaptureStore(context: Context,name: String="motion-capture.db"): AutoClose
         buildList {while(c.moveToNext()) add(CaptureStream(UUID.fromString(c.string("id")),id,UUID.fromString(c.string("boot_id")),
             Instant.ofEpochMilli(c.long("anchor_ms")),c.long("anchor_ns"),CaptureSource(c.string("sensor_name"),c.string("sensor_vendor"),c.int("sensor_version"),
                 c.getFloat(c.getColumnIndexOrThrow("resolution")),c.getFloat(c.getColumnIndexOrThrow("maximum_range")),c.int("wake_up")==1),
-            c.long("committed_samples"),c.long("rejected_samples"),c.long("gaps")))}
+            c.long("committed_samples"),c.long("rejected_samples"),c.long("gaps"),
+            c.getColumnIndexOrThrow("acquisition_payload").let {if(c.isNull(it)) null else CaptureProvenanceCodec.decode(c.getString(it))}))}
     }
     /** Call only AFTER deleting owned raw files. A crash leaves the DELETING intent retryable. */
     @Synchronized fun finishDelete(id: UUID)=transaction {db->
@@ -161,6 +165,7 @@ class CaptureStore(context: Context,name: String="motion-capture.db"): AutoClose
                 put("sensor_name",v.source.name);put("sensor_vendor",v.source.vendor);put("sensor_version",v.source.version)
                 put("resolution",v.source.resolution);put("maximum_range",v.source.maximumRange);put("wake_up",if(v.source.wakeUp) 1 else 0)
                 put("committed_samples",v.committedSamples);put("rejected_samples",v.rejectedSamples);put("gaps",v.gaps)
+                put("acquisition_payload",v.provenance?.let(CaptureProvenanceCodec::encode))
             })
         }
         value.events.forEach {v->

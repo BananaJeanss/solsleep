@@ -1815,3 +1815,42 @@ Validated sleep inference, sonar and watch acquisition still require their own
 implementation, hardware/reference evidence and permission/source contracts.
 Combined/encrypted backups, the remaining challenge catalogue and production
 release gates stay open; this checkpoint is not full reference parity.
+
+### Recording provenance and observed coverage — execution in progress
+
+This is independent of the remaining physical challenge gates. Implement one
+vertical slice, with original raw files unchanged:
+
+1. Add a versioned nullable acquisition payload to each stream through capture
+   schema 2→3 (also validate 1→3). New acquisition freezes its actual original
+   ZoneId, requested period and installed base APK SHA-256; resumed acquisition
+   gets a fresh snapshot. Old rows remain null/unknown, never filled from today's
+   build, settings or sensor defaults. Reject unknown/malformed provenance while
+   retaining original rows. Alarm storage/initialization is independent.
+2. Read SOLR v1 unchanged and retain its exact writer/fixture bytes for recordings
+   with no provenance. Use bounded SOLR v2 for provenance-bearing recordings,
+   nullable per-stream metadata and unchanged SOLM chunks. Preserve mixed old/new
+   segments exactly through provider export/verification/restore/reopen. Extend
+   the independent Python producer/inspector and fixture without replacing v1.
+3. Rebuild versioned coverage from a finished metadata snapshot and streamed,
+   checksum-validated raw files. Count readings; join only adjacent samples in
+   the same stream and consecutive chunks, with a gap no larger than three times
+   the original requested period, capped at two seconds. This is an explicit
+   data-continuity policy, not physiological inference. Unknown cadence gives no
+   invented duration. Never join across missing chunks, streams/boots, pauses or
+   clock changes; don't extrapolate before the first or after the last sample.
+   Surface index deficits, missing chunks and overlap; corrupt/unmatched inputs
+   make analysis unavailable, not a successful empty report. Fingerprint exact
+   metadata/raw input and policy version for reproducible rebuilding.
+4. Add a real native coverage screen for finished recordings, with per-segment
+   readable values, original-zone/unknown labels, data-quality warnings, provenance
+   details and accessible scrolling/200% text. Do not add a sleep score, stages,
+   whole-night percentage or speculative awake/asleep labels. Retain the existing
+   raw-file checks and all alarm/journal workflows.
+5. Test migration/reopen/rollback/unknown versions, original null preservation,
+   real acquisition metadata, v1/v2 independent interop, malformed provenance,
+   missing/corrupt/irregular/large/backward-clock/overlap/boundary inputs, canonical
+   fingerprint/rebuilds and native 200% UI. Run clean local JVM/Python/lint/debug/
+   test/release and both full API 29/37 native suites, inspect XML/captures, then
+   merge and record exact evidence. Physical sensor usefulness, overnight power,
+   sonar, watch and sleep/awake accuracy remain separate unqualified work.

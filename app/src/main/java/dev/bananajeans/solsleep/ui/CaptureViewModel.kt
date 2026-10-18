@@ -22,7 +22,8 @@ import kotlinx.coroutines.sync.withLock
 import java.time.Instant
 import java.util.UUID
 
-data class CaptureDetails(val sessionId: UUID,val summary: MotionSummary,val streams: List<CaptureStream>,val events: List<CaptureEvent>)
+data class CaptureDetails(val sessionId: UUID,val summary: MotionSummary,val streams: List<CaptureStream>,val events: List<CaptureEvent>,
+    val coverage: MotionCoverageReport?=null,val coverageUnavailable: Boolean=false)
 data class CaptureUiState(val sessions: List<CaptureSession> = emptyList(),val active: CaptureSession?=null,
     val page: Int=0,val older: Boolean=false,val busy: Boolean=true,val unavailable: Boolean=false,
     val message: Int?=null,val pending: PendingMotion?=null,val recoveryPresent: Boolean=false,val recoveryError: Boolean=false,
@@ -71,7 +72,14 @@ class CaptureViewModel(app: Application): AndroidViewModel(app) {
     fun inspect(session: CaptureSession)=operation {
         check(session.state in setOf(CaptureState.PAUSED,CaptureState.INTERRUPTED,CaptureState.COMPLETED,CaptureState.FAILED))
         val details=withContext(Dispatchers.IO) {
-            CaptureStore(context).use {CaptureDetails(session.id,MotionFiles.inspectSession(context,it,session.id),it.streams(session.id),it.events(session.id))}
+            CaptureStore(context).use {store->
+                val summary=MotionFiles.inspectSession(context,store,session.id)
+                var unavailable=false
+                val coverage=if(session.state in setOf(CaptureState.COMPLETED,CaptureState.FAILED)) try {
+                    MotionFiles.coverage(context,store,session.id)
+                } catch(c: CancellationException) {throw c} catch(_: Exception) {unavailable=true;null} else null
+                CaptureDetails(session.id,summary,store.streams(session.id),store.events(session.id),coverage,unavailable)
+            }
         }
         mutable.update {it.copy(details=details)}
     }

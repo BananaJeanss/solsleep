@@ -13,11 +13,29 @@ parity, physiological accuracy and production readiness are not claimed.
 | --- | --- |
 | Phone motion | Actual raw accelerometer observations, controls, interruption recovery, saved checks and separate recording backups |
 | Manual journal | Reported rest intervals, corrections, notes/ratings/tags and verified Journal JSON portability |
-| Sleep analysis | Observed-coverage/morning analytics, sleep/awake/onset/stages remain unimplemented |
+| Sleep analysis | Observed recording coverage implemented under qualification below; morning/sleep/awake/onset/stage analysis remains unimplemented |
 | Sonar | Research only; no overnight/sonar microphone acquisition or calibrated acoustic/DSP workflow |
 | Wake-up challenges | Eight native puzzle types, NFC, relative voice level, experimental offline voiceover and custom JSON packs implemented; software qualified, physical gates below |
 | Wear / Health Connect | Acquisition adapters and physiological validation remain unimplemented |
 
+## Recording provenance and coverage under qualification
+
+The next software slice is on `feature/recording-coverage`; it is not yet merged
+or qualified. New acquisition stores the original ZoneId, requested interval and
+installed base APK SHA-256 in versioned stream metadata. Additive capture schema
+1/2→3 migration leaves legacy provenance null. Separate SOLR v2 backups preserve
+known/unknown mixed segments; old v1 reading and byte-identical writing remain.
+
+A native recording-coverage screen rebuilds per-segment counts and nearby-reading
+durations from validated raw files. Missing chunks and recorded interruptions
+break joins; absent cadence stays unknown. It does not infer sleep or whole-night
+coverage. Fingerprints bind the policy and canonical input. Corruption is distinct
+from a valid empty recording. See [RECORDING_COVERAGE](docs/RECORDING_COVERAGE.md)
+for the exact threshold, migration/format contract and planned qualification.
+
+Initial core and independent Python checks pass; full local/native qualification
+is still in progress. Final counts/source/artifacts must replace this statement
+only after the complete API 29/37 runs and actual capture/report review.
 
 ## Qualified wake-up challenge software milestone
 
@@ -157,9 +175,10 @@ session-scoped notification. Play subtype review is still required for that chan
 One durable open session, idempotent start identity and expected revisions protect
 state. Separate source segments retain boot/stream identities, sensor descriptors,
 wall/monotonic anchors and original finite float vectors in
-m/s² including gravity. The current request is about 10 Hz, but schema 2 does not
-store a per-source requested interval, producing build or original IANA zone. UTC
-and monotonic times remain exact; absent provenance is not invented on restore.
+m/s² including gravity. New schema 3 segments freeze the requested interval,
+original ZoneId and installed base APK hash. Schema 1/2 history keeps unknown
+provenance; UTC/monotonic anchors remain exact and restore never fills absent
+fields from current settings. The request is about 10 Hz, not guaranteed delivery.
 Duplicate/late/invalid readings stay missing; timestamp
 gaps and accuracy changes are explicit. A new stream is required after resume.
 PREPARING becomes RECORDING only after a real raw batch publishes. A dead owner
@@ -187,8 +206,8 @@ deletion, blocking an older copy from resurrecting that identity on this install
 The empty lock inode/directory remains; unlink is not secure erasure. Manual
 journals and alarms are untouched. Recording history uses bounded pages; source/event and file-path metadata pagination remain open.
 
-See [MOTION_CAPTURE.md](docs/MOTION_CAPTURE.md), [schema 2](schemas/capture/2.sql)
-and its non-destructive schema 1 migration fixture.
+See [MOTION_CAPTURE.md](docs/MOTION_CAPTURE.md), [schema 3](schemas/capture/3.sql)
+and its retained independent schema 1/2 migration fixtures.
 The older debug-only five-minute probe still stores diagnostic counters, not a
 night. Its components are absent from release; the actual recorder and its
 SPECIAL_USE permission are intentionally present in release now.

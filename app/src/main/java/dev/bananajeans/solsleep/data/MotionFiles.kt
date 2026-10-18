@@ -10,6 +10,12 @@ import java.util.UUID
 
 /** Credential-protected raw observations, never interpreted as physiological sleep measurements. */
 object MotionFiles {
+    /** Terminal snapshot only; parsing/sink errors propagate as unavailable analysis, not zero data. */
+    fun coverage(context: Context,store: CaptureStore,id: UUID): MotionCoverageReport {
+        val analyzer=MotionCoverage(store.recording(id))
+        forSession(context,id).exportBytes(analyzer::accept)
+        return analyzer.finish()
+    }
     /** An index may lag an interrupted publication; it must never silently claim missing files. */
     fun inspectSession(context: Context,store: CaptureStore,id: UUID): MotionSummary {
         val summary=forSession(context,id).summary()

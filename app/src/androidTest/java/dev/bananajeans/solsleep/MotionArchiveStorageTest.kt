@@ -169,7 +169,7 @@ class MotionArchiveStorageTest {
             assertEquals(1L,store.streams(id).single().committedSamples);assertEquals("Migrated",store.streams(id).single().source.name)
             assertFalse(store.restore(recording) {fail("Must retain migrated identity")})
         }
-        SQLiteDatabase.openDatabase(path.path,null,SQLiteDatabase.OPEN_READONLY).use {assertEquals(2,it.version)}
+        SQLiteDatabase.openDatabase(path.path,null,SQLiteDatabase.OPEN_READONLY).use {assertEquals(3,it.version)}
         context.deleteDatabase(name);fixture(2)
         CaptureStore(context,name).use {assertTrue(it.restore(recording) {});assertEquals(recording,it.recording(id))}
     }

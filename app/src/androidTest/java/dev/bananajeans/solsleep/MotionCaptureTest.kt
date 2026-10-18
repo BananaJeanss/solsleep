@@ -141,6 +141,12 @@ class MotionCaptureTest {
         val final=summary(first.id);assertTrue(final.samples>paused.samples);assertTrue(final.issues.isEmpty())
         CaptureStore(context).use {store->
             val streams=store.streams(first.id);assertEquals(2,streams.size)
+            val actualApk=java.security.MessageDigest.getInstance("SHA-256").let {digest->
+                java.io.File(context.applicationInfo.sourceDir).inputStream().use {input->
+                    val bytes=ByteArray(16384);while(true) {val count=input.read(bytes);if(count<0) break;digest.update(bytes,0,count)}
+                };digest.digest().joinToString("") {"%02x".format(it)}
+            }
+            streams.forEach {assertEquals(CaptureProvenance(actualApk,ZoneId.systemDefault().id,MotionCaptureBuffer.PERIOD_MICROS),it.provenance)}
             assertEquals(final.samples,streams.sumOf {it.committedSamples});assertEquals(2,final.streamSamples.size)
             val chunks=MotionFiles.forSession(context,first.id).recover().chunks
             assertTrue(chunks.all {it.sessionId==first.id && it.samples.all {s->s.x.isFinite() && s.y.isFinite() && s.z.isFinite()}})
@@ -155,6 +161,71 @@ class MotionCaptureTest {
         InstrumentationRegistry.getInstrumentation().uiAutomation.takeScreenshot().let {bitmap->
             PlatformTestStorageRegistry.getInstance().openOutputFile("phone-motion-saved.png").use {bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG,100,it)}
         }
+    }
+    private fun coverageFixture(legacy: Boolean=false): Pair<CaptureRecording,MotionChunk> {
+        val id=UUID.randomUUID();val sourceId=UUID.randomUUID();val boot=UUID.randomUUID()
+        val wall=Instant.parse("2026-10-17T23:00:00Z")
+        val stream=CaptureStream(sourceId,id,boot,wall,0,CaptureSource("Coverage UI fixture","Synthetic test data",1,.01f,40f,false),4,2,1,
+            if(legacy) null else CaptureProvenance("a".repeat(64),"Europe/Tallinn",100_000))
+        val recording=CaptureRecording(CaptureSession(id,UUID.randomUUID(),UUID.randomUUID(),CaptureState.COMPLETED,wall,wall.plusSeconds(2),2),
+            listOf(stream),listOf(CaptureEvent(42,id,CaptureReason.STOP,wall.plusSeconds(2),2_000_000_000,boot,null)))
+        val chunk=MotionChunk(id,sourceId,boot,0,wall,0,listOf(1_000_000_000L,1_100_000_000,1_200_000_000,1_600_000_000).map {MotionSample(it,-0.0f,1f,9.81f)})
+        CaptureStore(context).use {store->assertTrue(store.restore(recording) {MotionFiles.forSession(context,id).publish(chunk)})}
+        return recording to chunk
+    }
+    private fun openCoverage() {
+        click("Check saved observations")
+        compose.waitUntil(15000) {compose.onAllNodesWithTag("coverage_open").fetchSemanticsNodes(atLeastOneRootRequired=false).isNotEmpty()}
+        compose.onNodeWithTag("coverage_open").performScrollTo().performClick()
+        compose.waitUntil(15000) {compose.onAllNodesWithTag("coverage_screen").fetchSemanticsNodes(atLeastOneRootRequired=false).isNotEmpty()}
+    }
+    @Test fun nativeCoverageAtTwoHundredPercentTextRetainsRawDataAndSurvivesRecreation() {
+        val old=context.resources.configuration.fontScale
+        try {
+            shell("settings put system font_scale 2.0")
+            compose.waitUntil(15000) {context.resources.configuration.fontScale>=1.99f}
+            val (recording,chunk)=coverageFixture()
+            compose.activityRule.scenario.recreate()
+            openCoverage()
+            compose.onNodeWithTag("coverage_screen").performScrollToNode(hasTestTag("coverage_supported_0"))
+            compose.onNodeWithTag("coverage_supported_0").assertIsDisplayed().assertTextEquals("Time between nearby readings: 0.2 s")
+            compose.onNodeWithText("First reading:",substring=true).assertTextContains(":01.000",substring=true)
+            compose.onNodeWithText("Last reading:",substring=true).assertTextContains(":01.600",substring=true)
+            compose.activityRule.scenario.recreate()
+            compose.waitUntil(15000) {compose.onAllNodesWithTag("coverage_screen").fetchSemanticsNodes(atLeastOneRootRequired=false).isNotEmpty()}
+            compose.onNodeWithTag("coverage_screen").performScrollToNode(hasTestTag("coverage_supported_0"))
+            compose.onNodeWithTag("coverage_supported_0").assertIsDisplayed().assertTextEquals("Time between nearby readings: 0.2 s")
+            InstrumentationRegistry.getInstrumentation().uiAutomation.takeScreenshot().let {bitmap->
+                PlatformTestStorageRegistry.getInstance().openOutputFile("recording-coverage-large-text.png").use {bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG,100,it)}
+            }
+            compose.onNodeWithTag("coverage_screen").performScrollToNode(hasText("Show data provenance"))
+            compose.onNodeWithText("Show data provenance").performClick()
+            compose.onNodeWithTag("coverage_screen").performScrollToNode(hasText("Producing base APK SHA-256: "+"a".repeat(64)))
+            compose.onNodeWithText("Producing base APK SHA-256: "+"a".repeat(64)).assertIsDisplayed()
+            CaptureStore(context).use {assertEquals(recording,it.recording(recording.session.id))}
+            assertEquals(listOf(chunk),MotionFiles.forSession(context,recording.session.id).recover().chunks)
+        } finally {shell("settings put system font_scale $old")}
+    }
+    @Test fun legacyCoverageShowsUnknownCadenceAndLabeledUtcWithoutInventingDuration() {
+        val (recording,_)=coverageFixture(legacy=true)
+        openCoverage()
+        compose.onNodeWithTag("coverage_screen").performScrollToNode(hasText("Original sampling request unknown. A supported duration cannot be calculated for this segment."))
+        compose.onNodeWithText("Original sampling request unknown. A supported duration cannot be calculated for this segment.").assertIsDisplayed()
+        compose.onAllNodes(hasText("Requested interval:",substring=true)).assertCountEquals(0)
+        compose.onAllNodesWithTag("coverage_supported_0").assertCountEquals(0)
+        compose.onNodeWithTag("coverage_screen").performScrollToNode(hasText("Original time zone unknown. Times below use UTC."))
+        compose.onNodeWithText("Original time zone unknown. Times below use UTC.").assertIsDisplayed()
+        CaptureStore(context).use {assertNull(it.streams(recording.session.id).single().provenance)}
+    }
+    @Test fun corruptRawCoverageIsUnavailableAndNeverRenderedAsAZeroReadingSuccess() {
+        val (recording,chunk)=coverageFixture()
+        val path=context.noBackupFilesDir.resolve("motion/v1/${recording.session.id}/${chunk.streamId}-0.motion")
+        val original=path.readBytes().also {it[it.lastIndex]=(it.last().toInt() xor 1).toByte()};path.writeBytes(original)
+        openCoverage()
+        compose.onNodeWithTag("coverage_unavailable").assertIsDisplayed()
+        compose.onAllNodesWithTag("coverage_total").assertCountEquals(0)
+        CaptureStore(context).use {assertEquals(recording,it.recording(recording.session.id))}
+        assertArrayEquals(original,path.readBytes())
     }
     @Test fun unexpectedServiceStopRetainsChunksAndRequiresAnExplicitResume() {
         start();val id=session().id;val saved=summary(id).samples

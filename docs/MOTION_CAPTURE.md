@@ -15,6 +15,9 @@ actual accelerometer SI vectors (m/s²), their original monotonic timestamps, a
 millisecond wall-clock anchor, stream/boot identities and source name, vendor,
 version, resolution, range and wake-up capability. It requests a 100 ms interval;
 this is not a guaranteed observed rate. Actual timestamps remain available.
+New segments also snapshot the original ZoneId, requested period and installed
+base APK SHA-256. Historical null provenance stays unknown. The software change
+and observed coverage are [under qualification](RECORDING_COVERAGE.md).
 
 The phone-motion recording workflow has no sleep/stage/heart-rate/breathing/snore estimates or microphone capture,
 watch connection, network upload or automatic start. This does not create a manual
@@ -51,11 +54,13 @@ clock anchor. Paused time is not recorded or filled.
 
 ## Durable state and observation authority
 
-The separate credential-protected `motion-capture.db` schema 2 uses FULL/WAL,
+The separate credential-protected `motion-capture.db` schema 3 uses FULL/WAL,
 foreign keys, an expected revision, unique start request, and a partial unique
 index allowing only one open session. State and events commit together. Corrupt
 and unknown-schema files are retained, not reset. The checked-in SQL fixture is
-`schemas/capture/2.sql`, with the original schema 1 migration fixture retained. Process identity is distinct from the per-service owner;
+`schemas/capture/3.sql`, with independent schema 1/2 fixtures retained. Migration
+adds nullable provenance without attributing old samples to today's settings.
+Process identity is distinct from the per-service owner;
 boot identity is random and persisted against Android BOOT_COUNT. If boot count
 is unavailable, identity is conservatively limited to the process, not an
 invented cross-process boot relationship. No stable device ID is stored.
@@ -171,10 +176,10 @@ Android's task-manager Stop can kill the process without a service callback.
 Orphan reconciliation therefore remains necessary; a normal onDestroy test alone
 does not qualify process kill or reboot. Those physical cases remain NOT RUN.
 
-Schema 2 / separate recording portability follow-up is qualified in PR #8 (132
-JVM / four Python / 93 native cases per API). Requested cadence is currently
-a code policy, not a saved per-stream field; producing build and original IANA
-zone are also absent. UTC/monotonic anchors stay exact and restore invents no
-missing provenance. See MOTION_ARCHIVE.md and STATUS.md for current evidence.
+The historical schema 2 / recording portability checkpoint is qualified in PR #8
+(132 JVM / four Python / 93 native cases per API). That history lacks original
+cadence/build/zone, and keeps these unknown. The additive schema 3/provenance and
+coverage follow-up has its own current evidence in STATUS.md and
+[RECORDING_COVERAGE.md](RECORDING_COVERAGE.md).
 
 Optional visible, user-started microphone/NFC wake-up tasks are separate from motion recording. They do not add sonar or overnight audio acquisition. See [WAKE_CHALLENGES](WAKE_CHALLENGES.md).

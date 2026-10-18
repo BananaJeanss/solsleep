@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="coverage_open">View recording coverage</string>
+    <string name="coverage_title">Recording coverage</string>
+    <string name="coverage_heading">What was actually recorded</string>
+    <string name="coverage_explanation">These are validated phone readings and time between nearby readings. They do not measure sleep, wakefulness or sleep stages.</string>
+    <string name="coverage_readings">Validated readings: %1$d</string>
+    <string name="coverage_unavailable">Coverage could not be verified. Original records and files are retained. Check the recording’s file issues; unavailable does not mean zero readings.</string>
+    <string name="coverage_incomplete">Some data is missing or overlaps. Segment values describe only the validated readings below.</string>
+    <string name="coverage_overlap">Segments overlap within the same boot. Their durations are kept separate and must not be added together.</string>
+    <string name="coverage_no_segments">No acquisition segment was saved.</string>
+    <string name="coverage_segment">Segment %1$d</string>
+    <string name="coverage_zone">Original time zone: %1$s</string>
+    <string name="coverage_zone_unknown">Original time zone unknown. Times below use UTC.</string>
+    <string name="coverage_first">First reading: %1$s</string>
+    <string name="coverage_last">Last reading: %1$s</string>
+    <string name="coverage_no_readings">No validated readings in this segment.</string>
+    <string name="coverage_cadence_unknown">Original sampling request unknown. A supported duration cannot be calculated for this segment.</string>
+    <string name="coverage_supported">Time between nearby readings: %1$s</string>
+    <string name="coverage_gap_time">Other time between first and last reading: %1$s</string>
+    <string name="coverage_threshold">Maximum joined interval: %1$s</string>
+    <string name="coverage_gaps">Unjoined intervals: %1$d</string>
+    <string name="coverage_missing_chunks">Missing chunks before or within this segment: %1$d</string>
+    <string name="coverage_missing_index">Missing readings in saved progress: %1$d</string>
+    <string name="coverage_index_lag">Readings saved after the last progress checkpoint: %1$d</string>
+    <string name="coverage_boundaries">Pauses, separate segments and time before the first or after the last reading are never counted as covered. Durations are rounded to milliseconds. No whole-night percentage is inferred.</string>
+    <string name="coverage_events">Recorded pause or interruption events: %1$d</string>
+    <string name="coverage_provenance">Show data provenance</string>
+    <string name="coverage_hide_provenance">Hide data provenance</string>
+    <string name="coverage_policy">Coverage policy: %1$d</string>
+    <string name="coverage_fingerprint">Input SHA-256: %1$s</string>
+    <string name="coverage_requested">Requested interval: %1$d µs</string>
+    <string name="capture_cadence_unknown">Requested interval: unknown for this older segment</string>
+    <string name="coverage_apk">Producing base APK SHA-256: %1$s</string>
+    <string name="coverage_provenance_unknown">Acquisition provenance was not recorded. Current settings are not substituted.</string>
+    <string name="coverage_duration_hours">%1$d h %2$d min %3$s s</string>
+    <string name="coverage_duration_minutes">%1$d min %2$s s</string>
+    <string name="coverage_duration_seconds">%1$s s</string>
+</resources>
