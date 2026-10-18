@@ -5,7 +5,7 @@ import android.content.Intent
 import android.graphics.Bitmap
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.test.*
-import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
+import androidx.compose.ui.test.junit4.v2.createEmptyComposeRule
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -21,9 +21,12 @@ import java.util.UUID
 
 @RunWith(AndroidJUnit4::class)
 class ChallengeUiTest {
-    @get:Rule val compose=createAndroidComposeRule<MainActivity>()
+    @get:Rule val compose=createEmptyComposeRule()
+    private val context=InstrumentationRegistry.getInstrumentation().targetContext
+    private lateinit var main: ActivityScenario<MainActivity>
+    @Before fun launch() {main=ActivityScenario.launch(MainActivity::class.java)}
     private val id="challenge-ui-${UUID.randomUUID()}"
-    private fun engine()=AlarmGraph.engine(compose.activity)
+    private fun engine()=AlarmGraph.engine(context)
     private fun shell(cmd: String) {InstrumentationRegistry.getInstrumentation().uiAutomation.executeShellCommand(cmd).use {
         java.io.FileInputStream(it.fileDescriptor).use {s->s.readBytes()}}}
     @After fun cleanup() {
@@ -31,15 +34,16 @@ class ChallengeUiTest {
             e.pending?.takeIf {it.state==DeliveryState.RINGING}?.let {engine().timeout(it.token)}
             engine().delete(e.rule.id)
         }
-        compose.activity.stopService(Intent(compose.activity,RingingService::class.java))
+        context.stopService(Intent(context,RingingService::class.java))
+        main.close()
     }
     private fun fixture(p: ChallengePolicy): PendingAlarm {
         val now=Instant.ofEpochMilli(System.currentTimeMillis())
         val pending=PendingAlarm(UUID.randomUUID().toString(),now,LocalDate.now(),DeliveryState.RINGING,startedAt=now)
-        AlarmStore(compose.activity).use {it.put(AlarmRule(id,LocalTime.of(7,0),Repeat.Once(LocalDate.now()),label=id,vibrate=false,challenge=p),pending)}
+        AlarmStore(context).use {it.put(AlarmRule(id,LocalTime.of(7,0),Repeat.Once(LocalDate.now()),label=id,vibrate=false,challenge=p),pending)}
         return pending
     }
-    private fun open(p: PendingAlarm,action: String?=null)=ActivityScenario.launch<RingingActivity>(Intent(compose.activity,RingingActivity::class.java)
+    private fun open(p: PendingAlarm,action: String?=null)=ActivityScenario.launch<RingingActivity>(Intent(context,RingingActivity::class.java)
         .putExtra(AlarmIntents.TOKEN,p.token).setAction(action).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
     private fun waitText(text: String)=compose.waitUntil(15000) {compose.onAllNodesWithText(text).fetchSemanticsNodes().isNotEmpty()}
     @Test fun perAlarmChallengeConfigurationSurvivesEditorRecreationAndSave() {
@@ -47,9 +51,9 @@ class ChallengeUiTest {
         compose.waitUntil(10000) {compose.onAllNodesWithTag("alarm_label").fetchSemanticsNodes().isNotEmpty()}
         compose.onNodeWithTag("alarm_label").performTextInput(id);compose.onNodeWithTag("alarm_label").performImeAction()
         compose.onNodeWithText("Add a wake-up challenge").performScrollTo().performClick()
-        compose.onNodeWithTag("challenge_enabled").performClick();compose.onNodeWithText("Hard").performClick()
+        compose.onNodeWithTag("challenge_enabled").performClick();compose.onNodeWithText("Hard").performScrollTo().performClick()
         compose.onNodeWithText("Sleeping sheep").performScrollTo().performClick()
-        compose.onNodeWithTag("challenge_save").performClick();compose.activityRule.scenario.recreate()
+        compose.onNodeWithTag("challenge_save").performClick();main.recreate()
         compose.waitUntil(10000) {compose.onAllNodesWithTag("save_alarm").fetchSemanticsNodes().isNotEmpty()}
         compose.onNodeWithTag("save_alarm").assertIsDisplayed().performClick()
         compose.waitUntil(10000) {engine().entries().any {it.rule.label==id}}
@@ -76,10 +80,10 @@ class ChallengeUiTest {
         }
     }
     @Test fun sleepingSheepHasOneAccessibleTargetAndPhoneAccessAtTwoHundredPercentText() {
-        val old=compose.activity.resources.configuration.fontScale
+        val old=context.resources.configuration.fontScale
         try {
             shell("settings put system font_scale 2.0")
-            compose.waitUntil(15000) {runCatching {compose.activity.resources.configuration.fontScale>=1.99f}.getOrDefault(false)}
+            compose.waitUntil(15000) {runCatching {context.resources.configuration.fontScale>=1.99f}.getOrDefault(false)}
             val policy=ChallengePolicy(setOf(ChallengeKind.SHEEP),ChallengeDifficulty.HARD,rounds=1);val p=fixture(policy)
             open(p,AlarmIntents.SNOOZE).use {
                 waitText("Sleeping sheep")
@@ -97,7 +101,10 @@ class ChallengeUiTest {
             }
         } finally {
             shell("settings put system font_scale $old")
-            compose.waitUntil(15000) {runCatching {kotlin.math.abs(compose.activity.resources.configuration.fontScale-old)<.01f}.getOrDefault(false)}
+            // RingingActivity is singleTask: its scenario may replace the original task.
+            // Relaunch a visible Activity so the process receives the restored configuration.
+            if(main.state==androidx.lifecycle.Lifecycle.State.DESTROYED) main=ActivityScenario.launch(MainActivity::class.java)
+            compose.waitUntil(15000) {runCatching {kotlin.math.abs(context.resources.configuration.fontScale-old)<.01f}.getOrDefault(false)}
         }
     }
     @Test fun staleActivityTokenCannotActOnANewerRingingOccurrence() {
@@ -110,7 +117,7 @@ class ChallengeUiTest {
     }
     @Test fun legacyBroadcastActionsCannotBypassConfiguredTasks() {
         val p=fixture(ChallengePolicy())
-        compose.activity.sendBroadcast(Intent(compose.activity,AlarmReceiver::class.java).setAction(AlarmIntents.DISMISS).putExtra(AlarmIntents.TOKEN,p.token))
+        context.sendBroadcast(Intent(context,AlarmReceiver::class.java).setAction(AlarmIntents.DISMISS).putExtra(AlarmIntents.TOKEN,p.token))
         compose.waitUntil(10000) {engine().entries().single {it.rule.id==id}.pending!!.challenge!=null}
         assertEquals(DeliveryState.RINGING,engine().entries().single {it.rule.id==id}.pending!!.state)
         assertFalse(engine().snooze(p.token));assertFalse(engine().dismiss(p.token))

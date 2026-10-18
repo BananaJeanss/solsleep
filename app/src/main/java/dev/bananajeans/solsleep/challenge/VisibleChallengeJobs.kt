@@ -18,7 +18,11 @@ internal class VisibleChallengeJobs(private val lifecycle: Lifecycle): AutoClose
         jobs.put(slot,job)?.takeUnless {it===job}?.cancel()
         return true
     }
-    fun untrack(slot: Int,job: Job) {if(jobs[slot]===job) jobs.remove(slot)}
+    /** Return ownership so an old finally block cannot reset a replacement's UI. */
+    fun untrack(slot: Int,job: Job): Boolean {
+        if(jobs[slot]!==job) return false
+        jobs.remove(slot);return true
+    }
     private fun cancelAll() {jobs.values.toList().forEach {it.cancel()};jobs.clear()}
     override fun close() {closed=true;lifecycle.removeObserver(observer);cancelAll()}
 }

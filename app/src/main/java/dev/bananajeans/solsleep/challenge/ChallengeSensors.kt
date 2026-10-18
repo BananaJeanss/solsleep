@@ -78,7 +78,7 @@ internal tailrec fun Context.activity(): Activity=when(this) {is Activity->this;
         val job=currentCoroutineContext().job
         error=false;permissionReady=false
         try {
-            check(jobs.track(0,job))
+            if(!jobs.track(0,job)) {recording=false;return@LaunchedEffect}
             val samples=withContext(Dispatchers.IO) {captureVoice(context)}
             try {
             if(kind==ChallengeKind.VOICEOVER) {
@@ -98,14 +98,14 @@ internal tailrec fun Context.activity(): Activity=when(this) {is Activity->this;
             }
             } finally {samples.fill(0)}
         } catch(e: CancellationException) {throw e} catch(_: Exception) {error=true}
-        finally {jobs.untrack(0,job);recording=false}
+        finally {if(jobs.untrack(0,job)) recording=false}
     }
     LaunchedEffect(playing) {
         if(playing) {
             val job=currentCoroutineContext().job
-            try {check(jobs.track(1,job))
+            try {if(!jobs.track(1,job)) {playing=false;return@LaunchedEffect}
                 withContext(Dispatchers.IO) {playVoice(context,requireNotNull(policy.voiceClip).samples())}}
-            catch(e: CancellationException) {throw e} catch(_: Exception) {error=true} finally {jobs.untrack(1,job);playing=false}
+            catch(e: CancellationException) {throw e} catch(_: Exception) {error=true} finally {if(jobs.untrack(1,job)) playing=false}
         }
     }
     Text(stringResource(if(kind==ChallengeKind.VOICEOVER) R.string.task_voiceover_hint else R.string.task_voice_hint))

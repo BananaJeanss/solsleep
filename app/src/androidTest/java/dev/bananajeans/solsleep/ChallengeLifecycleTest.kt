@@ -42,7 +42,7 @@ class ChallengeLifecycleTest {
             val old=Job();val next=Job()
             scenario.onActivity {val owner=VisibleChallengeJobs(it.lifecycle)
                 assertTrue(owner.track(0,old));assertTrue(owner.track(0,next));assertTrue(old.isCancelled)
-                owner.untrack(0,old);assertTrue(next.isActive)
+                assertFalse(owner.untrack(0,old));assertTrue(next.isActive)
                 owner.close();assertTrue(next.isCancelled)
                 val late=Job();assertFalse(owner.track(1,late));assertTrue(late.isCancelled)}
         }
