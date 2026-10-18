@@ -1,4 +1,4 @@
-# Alarm archive v1
+# Alarm archive v1 / v2
 
 The initial portability slice exports only existing alarm definitions. It is a
 UTF-8 JSON document (`application/json`), independent of Android, SQLite, accounts,
@@ -6,9 +6,9 @@ and a backend. It is deliberately named an alarm archive, not a complete sleep
 backup. Health records, recordings, device permissions, credentials, current
 snooze/ringing state, OS PendingIntents and playback tokens are excluded.
 
-Container fields are `format` (`solsleep-alarm-archive`), `version` (1),
+Container fields are `format` (`solsleep-alarm-archive`), `version` (1, or 2 when challenges are present),
 `createdAt` (ISO instant), `alarmCount`, `alarmsSha256`, and `alarms` (array).
-Definitions use the same logical v1 format as the alarm database; every recurrence
+Definitions use the shared logical rule format: v1 without a challenge, v2 with a frozen challenge policy, pack and optional PCM voice reference. Both versions are readable. Definitions use the same format as the alarm database; every recurrence
 and user-configurable definition field is retained, including optional zone,
 skip date, source identity and revision. Null zone means follow the device zone.
 
@@ -20,8 +20,10 @@ reformatting an archive can invalidate it. A hostile party can replace both data
 and checksum: do not describe the checksum as authentication. The preview also
 shows the file's byte fingerprint internally for later fixture comparisons.
 
+Challenge/voice content counts toward the same limit; oversized exports fail before writing and never omit a rule or clip. Duplicate JSON keys are rejected, including escaped duplicate names.
+
 The parser consumes at most 512 KiB plus one sentinel byte, permits at most 500
-alarm definitions, caps structural nesting at eight before JSON parsing, decodes
+alarm definitions, caps structural nesting at twelve before JSON parsing, decodes
 UTF-8 strictly, checks counts/hashes/identities/types/versions, validates dates,
 time zones and settings, and refuses unknown fields rather than silently losing
 future behavior. It accepts no embedded paths, URLs, executable entries, ZIP
@@ -50,8 +52,8 @@ in its ViewModel; process death discards the preview without changing the store.
 
 This initial alarm-only format is **plaintext**, stated before export. Android
 credential/device storage protection does not encrypt an exported document. No
-portable encryption, password recovery, automatic destination retention, audio
-inclusion, reference-app CSV compatibility, or complete health restore is claimed.
+portable encryption, password recovery, automatic destination retention, general recording/audio
+inclusion (v2 includes only deliberately selected short challenge references), reference-app CSV compatibility, or complete health restore is claimed.
 
 Before health/audio archives are implemented, define and review authenticated
 encryption, password KDF and parameter limits, format negotiation, wrong-password

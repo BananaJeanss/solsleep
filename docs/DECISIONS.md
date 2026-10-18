@@ -47,7 +47,7 @@ OS registration is outside the DB transaction. Reconciliation retries the durabl
 
 Foreground playback uses alarm audio attributes and a local chime. On boot, schedule through AlarmManager; never start media playback directly from the boot receiver. Recovery retains the original deadline/start. Grace: 10 minutes. Ring limit: 30 minutes. Default snooze: five minutes, three attempts; configurable duration 1–60 minutes and limit 0–10. Failed snooze registration keeps the alarm ringing. Simultaneous alarms remain separate occurrences, presented sequentially by one output owner.
 
-Permissions: exact alarms, alarm UI/notifications, foreground playback, wake lock, vibration, boot recovery. No microphone, health, location, Bluetooth, network, overlay, accessibility, or device-admin access.
+Permissions: exact alarms, alarm UI/notifications, foreground playback, wake lock, vibration, boot recovery. Optional NFC and user-started visible microphone permission were subsequently added for wake-up tasks (see docs/WAKE_CHALLENGES.md). No health, location, Bluetooth, network, overlay, accessibility-service or device-admin access.
 
 References:
 - https://developer.android.com/develop/background-work/services/alarms
@@ -122,3 +122,14 @@ Primary references:
 - https://docs.gradle.org/9.8.1/release-notes.html
 - https://developer.android.com/jetpack/androidx/releases/core
 - https://developer.android.com/build/releases/agp-9-4-0-release-notes
+
+## Native declarative wake-up challenges — 18 October 2026
+
+Use host-validated native puzzles and versioned JSON task packs instead of arbitrary
+JavaScript/HTML/CSS. Packs are bounded content with no network, permissions, file
+access or executable hooks. This reduces the trusted surface on the alarm path.
+Freeze packs and optional PCM voice references into versioned per-alarm policy.
+Device-protected schema 2 adds nullable occurrence-scoped revision/CAS task state.
+Both Snooze and Dismiss require proof; failed snooze publication retains ringing.
+Emergency/system access remains under Android control. See WAKE_CHALLENGES.md and
+VOICEOVER.md for the detailed API research, contract, tradeoffs and hardware gates.

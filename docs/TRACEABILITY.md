@@ -15,6 +15,15 @@ family or its physical-device gates pass. See STATUS.md for actual run results.
 | A11 | Local ramp and vibration during ringing | Core setting preservation; actual service lifecycle | Measured acoustic/haptic onset, delayed stages and screen sunrise |
 | A12 | Bundled procedural local tone with system/tone-generator fallback | APK/resource builds and service delivery | Custom URI loss, decode/runtime failures, silent mode, playlists/radio and routes |
 | A18 | Alarm notification, full-screen PendingIntent, private lock-screen activity and readiness | Private component test, actual service start, UI workflows | Locked physical device, denied access, OEM and full-screen behavior |
+| A10 | Local challenge-visible gain, miss escalation and one-minute fixed quiet deadline | WakeChallengeTest gain/reopen/clock cases; native ringing flow | Physical audio/focus measurement and post-dismiss wake-up check |
+| C01 | Typed generated math at three levels, durable seed/progress | WakeChallengeTest, ChallengeEngineTest, ChallengeStoreTest | Choice math and physical usability |
+| C02 | Original code-drawn eyes-closed sheep, accessible labels/fallback | Seeded target tests; ChallengeUiTest actual 200% capture | Physical TalkBack/vision audit |
+| C03 | Learned hashed NFC UID, visible reader mode and native fallback | Hash/answer tests, optional feature/permission checks | Physical tag technologies, unavailable/locked operation; barcode/QR unimplemented |
+| C05 | Relative microphone-level task and offline voiceover delivery task | Finite/clipping/duration rejection; VoiceMatchTest and actual native reference assets | Real mic/route/room/false acceptance qualification; smile/laughter unimplemented |
+| C06 | Deterministic touch/spoken-passage maze | Hundreds of connected/acyclic/solvable generated mazes | Physical usability; jumping/tilt game unimplemented |
+| C07 | Digits, number trail, reverse/copy code, memory sequence and native pack phrases | Core solution/replay/Unicode tests; ringing recreation | Flags/distorted text and complete reference variants |
+| C09 | Fixed per-occurrence shuffled task mix and chained rounds | Stable seed/order/recovery/CAS tests | Physical/task-chain behavior across OEM interruptions |
+| C11 | Custom native JSON TEXT/CHOICE/ORDER authoring/import/export and rehearsal | Strict bounds/duplicate/unknown-field parser tests; frozen rule/backup storage | Android third-party app extension/grants and commercial-provider picker qualification |
 | T01 | Explicit phone recording start, durable single session, pause/resume/finish and consent | CaptureStoreTest lifecycle/idempotency/races; native MotionCaptureTest | Start delay, broader source modes and complete recorded-night UX |
 | T02 | Actual accelerometer vectors, source/boot/clock metadata, finite monotonic bounded batches and file checks | MotionCaptureTest core/policy/fault cases, native screen-off/readback and MotionFilesTest | Physical mattress/placement/rate/12-hour battery and signal usefulness; physiological validation |
 | T14 | Debug five-minute counters; actual recording source, sample/gap/rejection and saved-file diagnostics | Native diagnostic and capture UI/file checks | Live graph, calibration/clipping, physical quality and complete placement guidance |
@@ -30,7 +39,7 @@ All interchange fixtures are synthetic SolSleep data; recording tests also acqui
 Android compatibility fixtures. No reference CSV import or sensor measurement is
 implied by a native-format round trip.
 
-A10 escalation/wake-check, all task families C01–C11, tracking except the partial T01/T02/T14/T15 subsets above,
+A10 post-dismiss wake-check, task families C04/C08/C10 and the remaining variants of partial C01/C02/C03/C05/C06/C07/C09/C11, tracking except the partial T01/T02/T14/T15 subsets above,
 measurements/history apart from the H11/H12 subsets above, sound analysis and dream/lullaby families, watch/health
 integration and remaining integration families have no implemented workflow yet.
 The source contains no dormant controls pretending these features are available.

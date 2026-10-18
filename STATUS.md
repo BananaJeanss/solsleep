@@ -1,6 +1,6 @@
 # Implementation status
 
-18 October 2026 — [lossless recording backups and recoverable restore, PR #8](https://github.com/BananaJeanss/solsleep/pull/8), merged after exact-source qualification.
+18 October 2026 — native wake-up challenges and offline voiceover are under qualification on `feature/wake-challenges`. The previous qualified checkpoint is [PR #8](https://github.com/BananaJeanss/solsleep/pull/8).
 
 This is a **development build**. M0, M1, M2 and M3 remain partial. Full reference
 parity, physiological accuracy and production readiness are not claimed.
@@ -13,8 +13,40 @@ parity, physiological accuracy and production readiness are not claimed.
 | Manual journal | Reported rest intervals, corrections, notes/ratings/tags and verified Journal JSON portability |
 | Sleep analysis | Observed-coverage/morning analytics, sleep/awake/onset/stages remain unimplemented |
 | Sonar | Research only; no microphone acquisition or calibrated acoustic/DSP workflow |
-| Wake-up CAPTCHAs | C01–C11 unimplemented; optional durable math is the first planned vertical slice |
+| Wake-up challenges | Eight native puzzle types, NFC, relative voice level, experimental offline voiceover and custom JSON packs implemented; current qualification and physical gates below |
 | Wear / Health Connect | Acquisition adapters and physiological validation remain unimplemented |
+
+
+## Wake-up challenge milestone under qualification
+
+Per-alarm opt-in Easy/Normal/Hard, 1–12 rounds, selected task mix, 5–40% initial
+sound and rehearsal are implemented. Both Snooze and Dismiss require a durable
+host-validated task. Eight native puzzle types, visible NFC/microphone tasks,
+original offline voiceover references/own WAV import and native JSON custom packs
+are wired to actual alarm state. Original ringing/quiet starts survive recovery;
+failed snooze publication retains ringing and completed proof. See
+[WAKE_CHALLENGES](docs/WAKE_CHALLENGES.md) and [VOICEOVER](docs/VOICEOVER.md).
+
+The DP alarm database migrates 1→2 additively. Configured logical rules/archives
+are v2; old v1 definitions remain readable and byte-stable. Frozen packs and voice
+references are included within the same bounded 512 KiB alarm archive; excess
+fails before writing, never silently omits content. Task definitions/references
+are before-unlock data and plaintext in exports. Attempts are memory-only.
+
+No JavaScript, WebView, network, camera, call-placement, overlay, device-admin or
+accessibility-service permission is added. NFC and microphone are optional; Record
+asks runtime consent and capture stops on leaving. Public `ACTION_DIAL` opens the
+system dialer; it does not place a call or guarantee keyguard bypass. System
+emergency/phone controls remain available. Normal app actions are protected;
+Android force-stop/power/uninstall remain under owner control.
+
+Local and exact-source CI evidence will be added after the complete checks finish.
+Do not treat compilation or a synthetic similarity test as physical qualification.
+Real NFC, room/alarm bleed, voice score accuracy, input privacy/route contention,
+incoming call/audio focus, locked emergency UI, speaker/haptic gain and OEM/device
+recovery remain open with no attached hardware. Camera smile/barcode, movement,
+Google image reCAPTCHA, dream-note, travel profiles and external app task grants
+are unimplemented. Sonar, sleep inference and watch acquisition are unchanged.
 
 ## Can it be used overnight?
 

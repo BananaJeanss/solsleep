@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="task_math">Mental math</string>
+    <string name="task_sheep">Sleeping sheep</string>
+    <string name="task_order">Number trail</string>
+    <string name="task_memory">Remember digits</string>
+    <string name="task_pattern">Memory sequence</string>
+    <string name="task_maze">Find the exit</string>
+    <string name="task_reverse">Reverse digits</string>
+    <string name="task_copy">Copy the code</string>
+    <string name="task_nfc">Scan a tag</string>
+    <string name="task_voice">Raise your voice</string>
+    <string name="task_voiceover">Voiceover</string>
+    <string name="task_custom">Custom pack</string>
+    <string name="task_easy">Easy</string>
+    <string name="task_normal">Normal</string>
+    <string name="task_hard">Hard</string>
+    <string name="task_complete">Challenge complete. You can finish the alarm action.</string>
+    <string name="task_progress">Round %1$d of %2$d · %3$s</string>
+    <string name="task_reverse_hint">Type these digits backwards: %1$s</string>
+    <string name="task_recall">Enter the digits you remembered.</string>
+    <string name="task_ready">I have memorized it</string>
+    <string name="task_answer">Your answer</string>
+    <string name="task_check">Check answer</string>
+    <string name="task_steps">%1$d of %2$d in sequence</string>
+    <string name="task_sheep_hint">Find the one sheep with its eyes closed.</string>
+    <string name="task_sleeping_sheep">Sheep %1$d, eyes closed</string>
+    <string name="task_awake_sheep">Sheep %1$d, eyes open</string>
+    <string name="task_order_hint">Tap the numbers in order. Next: %1$d</string>
+    <string name="task_maze_hint">You are at row %1$d, column %2$d. Reach row %3$d, column %3$d. Available directions are open passages.</string>
+    <string name="task_up">Up</string>
+    <string name="task_right">Right</string>
+    <string name="task_down">Down</string>
+    <string name="task_left">Left</string>
+    <string name="task_replay">Show it again (counts as a miss)</string>
+    <string name="task_fallback">Use the accessible code task (+2 rounds)</string>
+    <string name="task_scan_tag">Hold your saved NFC tag against the phone.</string>
+    <string name="task_nfc_unavailable">NFC is unavailable or off. Enable it in Android settings, or use the alternative task.</string>
+    <string name="task_voiceover_hint">Listen, tap Record, stay quiet for half a second, then copy the delivery in a normal voice. The experimental score compares rhythm and relative pitch, not the words, your identity or whether you are awake. No speech is uploaded or saved.</string>
+    <string name="task_voice_hint">After Record, stay quiet for half a second, then speak clearly for two seconds. No need to yell. This measures relative microphone level, not words or calibrated loudness. Recording lasts six seconds and is discarded.</string>
+    <string name="task_stop_audio">Stop reference</string>
+    <string name="task_reference">Play reference</string>
+    <string name="task_score">Delivery score: %1$d / 100. Target: %2$d.</string>
+    <string name="task_mic_error">Recording unavailable, interrupted or permission denied. Try again or use the alternative task.</string>
+    <string name="task_recording">Recording… tap to cancel</string>
+    <string name="task_record">Record for six seconds</string>
+    <string name="task_enable">Add a wake-up challenge</string>
+    <string name="task_settings">Wake-up challenges</string>
+    <plurals name="task_summary"><item quantity="one">%1$d round · %2$s · Snooze and Dismiss</item><item quantity="other">%1$d rounds · %2$s · Snooze and Dismiss</item></plurals>
+    <plurals name="task_misses"><item quantity="one">%1$d miss</item><item quantity="other">%1$d misses</item></plurals>
+    <string name="task_required">Require a challenge</string>
+    <string name="task_contract">Both Snooze and Dismiss require completion. The sound stays on at a lower level while this screen is open, rises after misses and returns to full level after one minute. Progress survives reopening. System controls and phone access remain available.</string>
+    <string name="task_rounds">Rounds: %1$d</string>
+    <string name="task_quiet">Starting sound level: %1$d%%</string>
+    <string name="task_mix_hint">Choose a mix. Difficulty changes puzzle size and complexity. At least one task must stay selected.</string>
+    <string name="task_enroll_nfc">Save or replace an NFC tag</string>
+    <string name="task_nfc_saved">Tag saved as a hash. This is a wake-up task, not a secure identity check; tags can be copied.</string>
+    <string name="task_voiceover_setup">Choose an original robot-voice phrase, or import your own 0.5–6 second PCM WAV (16-bit, mono/stereo, 8–48 kHz, up to 2 MiB). Rehearse before relying on it.</string>
+    <string name="voice_morning" translatable="false">Good morning. The sun is up.</string>
+    <string name="voice_captain" translatable="false">Captain, the pillows have taken over.</string>
+    <string name="voice_moon" translatable="false">Moon control. I am ready for breakfast.</string>
+    <string name="task_selected_clip">Reference: %1$s</string>
+    <string name="task_own_clip">Your voiceover clip</string>
+    <string name="task_import_voice">Import your WAV clip</string>
+    <string name="task_pack_hint">Native JSON packs support typed answers, choices and ordered sequences for all three levels. Maximum 48 KiB. No scripts, web content, network, permissions or file access. Task definitions and voice references are stored with alarms before unlock and included in alarm backups; avoid secrets.</string>
+    <string name="task_import_pack">Import a JSON pack</string>
+    <string name="task_export_pack">Export pack / example</string>
+    <string name="task_import_error">The file could not be read, validated or verified. No existing task was replaced. For voice clips, check format, duration and that speech is audible.</string>
+    <string name="task_preview">Rehearse this challenge</string>
+    <string name="task_rehearsal">Rehearsal · no alarm will change</string>
+    <string name="task_phone">Phone / emergency access</string>
+    <string name="task_phone_hint">Opens the system dialer. Calling requires your action and may require unlocking. Android lock-screen emergency controls remain available. Leaving this screen restores normal alarm volume.</string>
+    <string name="task_phone_unavailable">No dialer is available. Use Android’s lock-screen emergency controls.</string>
+    <string name="task_continue">Finish chosen action</string>
+    <string name="task_switch_dismiss">Complete to dismiss instead</string>
+    <string name="task_switch_snooze">Complete to snooze instead</string>
+    <string name="task_quiet_hint">The alarm continues. Leaving restores normal volume; progress is retained.</string>
+    <string name="task_preview_blocked">An alarm is ringing. Finish it before previewing the alarm sound.</string>
+    <string name="task_permission_ready">Microphone permission granted. Tap Record when ready.</string>
+    <string name="task_pack_imported">Pack validated and selected. Rehearse, then save the alarm.</string>
+    <string name="task_clip_imported">Reference selected. Rehearse, then save the alarm.</string>
+    <string name="task_pack_exported">Pack saved and successfully read back.</string>
+</resources>

@@ -228,3 +228,41 @@ The real framework-sensor cases remain unchanged and pass in the same suite.
 PR #8 final source and exact CI39 results are in STATUS.md. Tests use disposable
 installs and named private databases/slots, never personal data. No test/assertion
 is disabled. The original 79 native cases plus these 14 give 93 per API.
+
+
+## Wake-up challenge regression contract
+
+`WakeChallengeTest` exercises each ordinary puzzle at every level over hundreds of
+seeds, mixed ordering, exact progress/replay, numeric locale input, one-minute gain
+and failure escalation, connected acyclic mazes and solved paths, accessible
+fallback work, NFC domain hashes, invalid voice evidence, strict custom packs,
+Unicode/control/duplicate/depth/stream attacks and exact frozen rule/archive data.
+The independently authored `challenge-pack-v1.json` has different tasks per level.
+The JSON Schema is editor assistance; Kotlin validation is authoritative.
+
+`ChallengeEngineTest` covers both action gates, stale identities/revisions,
+process/ringing recovery, completed proof retention on scheduler/publication
+failure, alternate intended action, failed task CAS, original ringing expiry,
+edit protection and a fresh task after snooze. Existing plain-alarm cases remain.
+`VoiceMatchTest` covers exact reference PCM, amplitude invariance, bounded tempo
+variation, silence/noise/clipping, quiet baseline suppression, strict WAV lengths/
+formats/metadata/downsampling, host scoring, portable references and rejection of
+oversized output before destination writes. Synthetic tones test DSP properties;
+they are not human recognition or microphone qualification.
+
+`ChallengeStoreTest` uses actual Android SQLite for schema 1→2 with ringing data,
+independent schema 2, reopen, cross-connection CAS, direct finish/snooze guards,
+exact frozen packs/voice and the actual bundled PCM references. Permission checks
+assert optional NFC/microphone and absence of network/camera/call/overlay access.
+`ChallengeUiTest` saves per-alarm settings across recreation, solves the real
+ringing task after a retained miss/recreation, checks the fixed phone control and
+accessible fallback with real 200% system text, refuses stale activity tokens and
+proves old broadcasts cannot bypass configured challenges. Screenshots use
+PlatformTestStorage, not a web mockup or synthetic image.
+
+Run source qualification on both API 29 and 37 and inspect actual test XML and
+large-text capture before merge. Exact runs/counts live in STATUS.md. These use
+disposable installs/databases. No assertion/test is disabled. Physical NFC/mic,
+private-input contention, phone call audio, lock-screen emergency navigation,
+TalkBack, actual acoustic level and OEM recovery remain separate lab gates. Do
+not place test calls to emergency services or use test installs for personal data.

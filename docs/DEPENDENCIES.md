@@ -18,6 +18,7 @@ service access or changes the app's GPL license.
 | JUnit 4 | 4.13.2, test-only | Domain and instrumentation assertions | EPL-1.0; junit-team/junit4 |
 | AndroidX Test / Espresso | Runner 1.7.0, JUnit extension 1.3.0, Espresso 3.7.0 | Real Android/UI tests | Apache-2.0; android/android-test |
 | Android robot derivative | Editable SVG/vector paths | Original sleeping pose and themed icon | CC BY 3.0; Google attribution in NOTICE |
+| Voiceover references | CMU Flite 2.2 `cmu_us_kal`, generation only | Original phrases rendered to offline PCM; no engine linked | CMU permissive notice in third_party/flite-COPYING.txt; docs/VOICEOVER.md |
 | Dawn chime | Reproducible sine-wave script | Bundled local alarm output | Original SolSleep source; GPL-3.0-or-later |
 
 Expressive is the intentional beta dependency; its APIs are kept in the UI layer.

@@ -32,8 +32,8 @@ object AlarmIntents {
                 .setData(("solsleep://alarm/"+token+"/"+action).toUri()).putExtra(TOKEN,token),
             flags or PendingIntent.FLAG_IMMUTABLE)
 
-    fun open(context: Context, token: String): PendingIntent = PendingIntent.getActivity(context,0,
-        Intent(context,RingingActivity::class.java).setData(("solsleep://ring/"+token).toUri())
+    fun open(context: Context, token: String, action: String?=null): PendingIntent = PendingIntent.getActivity(context,0,
+        Intent(context,RingingActivity::class.java).setData(("solsleep://ring/"+token+"/"+(action ?: "open")).toUri()).putExtra(TOKEN,token).setAction(action)
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP),
         PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
 }

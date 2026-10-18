@@ -246,6 +246,7 @@ import kotlinx.coroutines.delay
     val locale=LocalConfiguration.current.locales[0]
     val time=rememberTimePickerState(initialHour=rule?.time?.hour ?: 7,initialMinute=rule?.time?.minute ?: 0,
         is24Hour=DateFormat.is24HourFormat(context))
+    var challengeJson by rememberSaveable {mutableStateOf(rule?.challenge?.let(ChallengePolicyCodec::encode))}
     var label by rememberSaveable {mutableStateOf(rule?.label ?: "")}
     var kind by rememberSaveable {mutableIntStateOf(when(rule?.repeat) {
         is Repeat.Weekly -> 1;is Repeat.EveryDays -> 2;is Repeat.AlternatingWeeks -> 3;else -> 0
@@ -333,6 +334,7 @@ import kotlinx.coroutines.delay
             ToggleRow(stringResource(R.string.vibrate),null,vibrate) {vibrate=it}
             ToggleRow(stringResource(R.string.gentle),null,gentle) {gentle=it}
             if(gentle) NumberSetting(R.string.ramp_seconds,ramp,{ramp=it},1..120,"ramp_seconds")
+            dev.bananajeans.solsleep.challenge.ChallengeSetting(challengeJson?.let(ChallengePolicyCodec::decode)) {challengeJson=it?.let(ChallengePolicyCodec::encode)}
             NumberSetting(R.string.snooze_duration,snooze,{snooze=it},1..60,"snooze_minutes")
             NumberSetting(R.string.snooze_limit,limit,{limit=it},0..10,"snooze_limit")
         }
@@ -341,7 +343,7 @@ import kotlinx.coroutines.delay
                 val base=rule ?: AlarmRule(draftId,local,requireNotNull(repeat))
                 onSave(base.copy(time=local,repeat=requireNotNull(repeat),label=label.trim(),vibrate=vibrate,
                     zoneId=if(fixedZone) requireNotNull(zone).id else null,rampSeconds=if(gentle) ramp.toInt() else 0,
-                    snoozeMinutes=snooze.toInt(),snoozeLimit=limit.toInt()))
+                    snoozeMinutes=snooze.toInt(),snoozeLimit=limit.toInt(),challenge=challengeJson?.let(ChallengePolicyCodec::decode)))
             },modifier=Modifier.fillMaxWidth().heightIn(min=56.dp).testTag("save_alarm")) {
                 Text(stringResource(R.string.save))
             }
@@ -440,15 +442,19 @@ import kotlinx.coroutines.delay
 @Composable private fun SoundPreview(onDismiss: ()->Unit) {
     val context=LocalContext.current
     val lifecycle=androidx.lifecycle.compose.LocalLifecycleOwner.current.lifecycle
-    DisposableEffect(lifecycle) {
-        val audio=AlarmAudio(context,0)
-        audio.start()
-        val observer=LifecycleEventObserver {_,event-> if(event==Lifecycle.Event.ON_STOP) audio.close()}
+    var blocked by remember {mutableStateOf(false)}
+    val audio=remember(context) {AlarmAudio(context,0)}
+    DisposableEffect(lifecycle,audio) {
+        val observer=LifecycleEventObserver {_,event->if(event==Lifecycle.Event.ON_STOP) audio.close()}
         lifecycle.addObserver(observer)
         onDispose {lifecycle.removeObserver(observer);audio.close()}
     }
-    LaunchedEffect(Unit) {delay(5000);onDismiss()}
+    LaunchedEffect(audio) {
+        blocked=kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {AlarmGraph.engine(context).ringing().isNotEmpty()}
+        if(!blocked) audio.start()
+        delay(5000);onDismiss()
+    }
     AlertDialog(onDismissRequest=onDismiss,title={Text(stringResource(R.string.test_sound))},
-        text={Text(stringResource(R.string.test_sound_hint))},
+        text={Text(stringResource(if(blocked) R.string.task_preview_blocked else R.string.test_sound_hint))},
         confirmButton={TextButton(onClick=onDismiss) {Text(stringResource(R.string.close))}})
 }

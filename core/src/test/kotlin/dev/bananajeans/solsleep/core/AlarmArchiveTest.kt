@@ -56,12 +56,12 @@ class AlarmArchiveTest {
         rejected(changed {root->root["alarms"]=JsonArray(listOf(AlarmRuleCodec.element(rules[0].copy(label="Tampered"))))})
     }
     @Test fun unknownContainerVersionAndFieldsAreRefused() {
-        rejected(changed {it["version"]=JsonPrimitive(2)})
+        rejected(changed {it["version"]=JsonPrimitive(99)})
         rejected(changed {it["recordings"]=JsonArray(emptyList())})
     }
     @Test fun countMismatchIsRefused() {rejected(changed {it["alarmCount"]=JsonPrimitive(100)})}
     @Test fun unsupportedRecordVersionFieldAndWrongTypesAreRefused() {
-        for((field,value) in listOf("version" to JsonPrimitive(2),"futureFeature" to JsonPrimitive(true),"enabled" to JsonPrimitive("true"),"ramp" to JsonPrimitive(Long.MAX_VALUE),"kind" to JsonPrimitive("future"))) {
+        for((field,value) in listOf("version" to JsonPrimitive(99),"futureFeature" to JsonPrimitive(true),"enabled" to JsonPrimitive("true"),"ramp" to JsonPrimitive(Long.MAX_VALUE),"kind" to JsonPrimitive("future"))) {
             rejected(changed {root->
                 val record=AlarmRuleCodec.element(rules[0]).toMutableMap();record[field]=value
                 root["alarms"]=JsonArray(listOf(JsonObject(record)));root["alarmCount"]=JsonPrimitive(1);rehash(root)
@@ -69,7 +69,7 @@ class AlarmArchiveTest {
         }
     }
     @Test fun duplicateIdentitiesAreRefusedAfterValidChecksum() {
-        rejected(changed {root->root["alarms"]=JsonArray(List(2) {AlarmRuleCodec.element(rules[0])});root["alarmCount"]=JsonPrimitive(2);rehash(root)})
+        rejected(changed {root->root["alarms"]=JsonArray(List(2) {AlarmRuleCodec.element(rules[0])});root["alarmCount"]=JsonPrimitive(99);rehash(root)})
     }
     @Test fun unknownZoneInvalidDayMaskAndOutOfRangeValuesAreRefused() {
         for((field,value) in listOf("zone" to JsonPrimitive("Not/AZone"),"days" to JsonPrimitive(128),"snooze" to JsonPrimitive(0),"limit" to JsonPrimitive(11),"revision" to JsonPrimitive(0))) {
