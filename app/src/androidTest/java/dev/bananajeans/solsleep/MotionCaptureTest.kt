@@ -211,6 +211,7 @@ class MotionCaptureTest {
         openCoverage()
         compose.onNodeWithTag("coverage_screen").performScrollToNode(hasText("Original sampling request unknown. A supported duration cannot be calculated for this segment."))
         compose.onNodeWithText("Original sampling request unknown. A supported duration cannot be calculated for this segment.").assertIsDisplayed()
+        compose.onAllNodes(hasText("Requested interval:",substring=true)).assertCountEquals(0)
         compose.onAllNodesWithTag("coverage_supported_0").assertCountEquals(0)
         compose.onNodeWithTag("coverage_screen").performScrollToNode(hasText("Original time zone unknown. Times below use UTC."))
         compose.onNodeWithText("Original time zone unknown. Times below use UTC.").assertIsDisplayed()

@@ -214,7 +214,7 @@ Raw recordings are separate from Journal exports. Finish a recording and use Exp
     <string name="capture_byte_count">Saved bytes: %1$d</string>
     <string name="capture_issue_count">Detected file issues: %1$d</string>
     <string name="capture_source">Accelerometer: %1$s · %2$s
-Units: m/s² (including gravity) · Requested interval: 100 ms</string>
+Units: m/s² (including gravity)</string>
     <string name="capture_index_samples">Progress index — saved samples: %1$d</string>
     <string name="capture_index_rejected">Rejected samples: %1$d</string>
     <string name="capture_index_gaps">Detected gaps over two seconds: %1$d</string>

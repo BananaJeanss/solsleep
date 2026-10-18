@@ -145,6 +145,8 @@ import java.time.format.DateTimeFormatter
                     modifier=Modifier.semantics {testTag="coverage_open"}) {Text(stringResource(R.string.coverage_open))}
                 details.streams.forEach {stream->
                     Text(stringResource(R.string.capture_source,stream.source.name,stream.source.vendor))
+                    Text(stream.provenance?.let {stringResource(R.string.coverage_requested,it.requestedPeriodMicros)}
+                        ?: stringResource(R.string.capture_cadence_unknown))
                     Text(stringResource(R.string.capture_index_samples,stream.committedSamples))
                     Text(stringResource(R.string.capture_index_rejected,stream.rejectedSamples))
                     Text(stringResource(R.string.capture_index_gaps,stream.gaps))

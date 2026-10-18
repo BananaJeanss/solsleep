@@ -331,3 +331,10 @@ actual installed APK hash/cadence/zone on real framework acquisition, plus nativ
 known/legacy/unavailable coverage screens and a retained 200% recreation capture.
 Final full-suite results and source/ZIP/capture provenance belong in STATUS.md;
 implementation or an initial passing subset is not a complete qualification.
+
+CI47 passed all 203 JVM/nine Python/116-per-API native cases, but capture review
+caught an inherited source-description string hardcoding a 100 ms request for
+legacy recordings. It was removed; raw-file details now use retained provenance
+or an explicit unknown label. The legacy coverage UI regression also refuses any
+invented requested-interval value. CI47 is not the final visual qualification;
+the corrected exact source must complete the full checks again.

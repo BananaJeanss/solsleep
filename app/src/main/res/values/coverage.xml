@@ -30,6 +30,7 @@
     <string name="coverage_policy">Coverage policy: %1$d</string>
     <string name="coverage_fingerprint">Input SHA-256: %1$s</string>
     <string name="coverage_requested">Requested interval: %1$d µs</string>
+    <string name="capture_cadence_unknown">Requested interval: unknown for this older segment</string>
     <string name="coverage_apk">Producing base APK SHA-256: %1$s</string>
     <string name="coverage_provenance_unknown">Acquisition provenance was not recorded. Current settings are not substituted.</string>
     <string name="coverage_duration_hours">%1$d h %2$d min %3$s s</string>
