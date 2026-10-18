@@ -24,7 +24,12 @@ class ChallengeUiTest {
     @get:Rule val compose=createEmptyComposeRule()
     private val context=InstrumentationRegistry.getInstrumentation().targetContext
     private lateinit var main: ActivityScenario<MainActivity>
-    @Before fun launch() {main=ActivityScenario.launch(MainActivity::class.java)}
+    @Before fun launch() {
+        if(android.os.Build.VERSION.SDK_INT>=31) shell("appops set "+context.packageName+" SCHEDULE_EXACT_ALARM allow")
+        if(android.os.Build.VERSION.SDK_INT>=33) shell("pm grant "+context.packageName+" android.permission.POST_NOTIFICATIONS")
+        RingingService.createChannel(context)
+        main=ActivityScenario.launch(MainActivity::class.java)
+    }
     private val id="challenge-ui-${UUID.randomUUID()}"
     private fun engine()=AlarmGraph.engine(context)
     private fun shell(cmd: String) {InstrumentationRegistry.getInstrumentation().uiAutomation.executeShellCommand(cmd).use {
@@ -38,10 +43,15 @@ class ChallengeUiTest {
         main.close()
     }
     private fun fixture(p: ChallengePolicy): PendingAlarm {
-        val now=Instant.ofEpochMilli(System.currentTimeMillis())
-        val pending=PendingAlarm(UUID.randomUUID().toString(),now,LocalDate.now(),DeliveryState.RINGING,startedAt=now)
-        AlarmStore(context).use {it.put(AlarmRule(id,LocalTime.of(7,0),Repeat.Once(LocalDate.now()),label="Challenge test",vibrate=false,challenge=p),pending)}
-        return pending
+        val due=Instant.ofEpochMilli(System.currentTimeMillis()+1500)
+        val pending=PendingAlarm(UUID.randomUUID().toString(),due,LocalDate.now())
+        val rule=AlarmRule(id,LocalTime.of(7,0),Repeat.Once(LocalDate.now()),label="Challenge test",vibrate=false,challenge=p)
+        AlarmStore(context).use {it.put(rule,pending)}
+        // Main-screen reconciliation correctly recovers a RINGING row with no service.
+        // Use the real delivery path so this is an actually owned alarm, including at 200% text.
+        AndroidWakeScheduler(context).schedule(rule,pending)
+        compose.waitUntil(30000) {RingingService.running && engine().entries().find {it.rule.id==id}?.pending?.state==DeliveryState.RINGING}
+        return engine().entries().single {it.rule.id==id}.pending!!
     }
     private fun open(p: PendingAlarm,action: String?=null)=ActivityScenario.launch<RingingActivity>(Intent(context,RingingActivity::class.java)
         .putExtra(AlarmIntents.TOKEN,p.token).setAction(action).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))

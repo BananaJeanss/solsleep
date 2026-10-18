@@ -256,7 +256,7 @@ they are not human recognition or microphone qualification.
 independent schema 2, reopen, cross-connection CAS, direct finish/snooze guards,
 exact frozen packs/voice and the actual bundled PCM references. Permission checks
 assert optional NFC/microphone and absence of network/camera/call/overlay access.
-`ChallengeUiTest` saves per-alarm settings across recreation, solves the real
+`ChallengeUiTest` delivers through actual AlarmManager/receiver/foreground playback (never an unowned fabricated ringing row), then saves per-alarm settings across recreation, solves the real
 ringing task after a retained miss/recreation, checks the fixed phone control and
 accessible fallback with real 200% system text, refuses stale activity tokens and
 proves old broadcasts cannot bypass configured challenges. Screenshots use
