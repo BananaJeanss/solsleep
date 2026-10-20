@@ -24,12 +24,33 @@ CI52 and CI53 built successfully but both API 29 and API 37 jobs failed.
 The earlier lifecycle cleanup change is therefore not an established fix.
 The last fully qualified app milestone remains PR #10, recorded below.
 
-The current execution environment cannot run commands, inspect downloaded ZIP
-reports, attach a persistent local APK or compile changes. GitHub job status and
-text logs were inspected remotely. The logs report failing native tests and
-reference the archived reports; they do not identify the failed assertions.
-No root cause, native pass count or fix is claimed from those logs. This is a
-concrete continuation blocker, separate from the physical-device gates.
+Local command execution remains unavailable. A read-only CI inspection overcame
+the report-inspection blocker: actual CI52/53 XML and matching artifact digests
+were examined in diagnostic run 39459390877, job 118754565820. CI52 has 116 cases
+and nine failures per API; CI53 has 126 cases and eleven failures per API. Every
+reported failure is the recording-screen cleanup's busy-state wait.
+
+The stopped-Activity cleanup used a wall-clock loop while work awaited the
+Compose-controlled Main dispatcher. Both branches now use a bounded Compose-aware
+wait at the same state predicate. No app/storage code or test body was changed.
+Core/native JUnit report gates now reject absent/empty reports and any failures,
+errors or skipped cases, and expose the real counts in job logs.
+
+Corrected [CI57](https://github.com/BananaJeanss/solsleep/actions/runs/39460085331)
+passes 203 core and 26 Python checks, lint and both build variants.
+[CI58](https://github.com/BananaJeanss/solsleep/actions/runs/39460116668)
+passes 213 core and 26 Python checks, lint and both build variants.
+Native qualification is still pending. CI58 API 37 failed downloading/unpacking
+Google's system-image ZIP before app tests started; retry that job after the
+other jobs finish. Its missing-report gate correctly failed. CI57 installed the
+same API 37 image and is running tests. Earlier CI54–56 were superseded by the
+report-gate update, not counted as complete qualification.
+
+A separate read-only inspection branch, PR #13, cannot qualify app tests and
+must not merge. CI59 found that CI53's failed-test artifacts did not contain the
+receipt screenshot; fresh successful native captures still require review.
+No public release, successful native rerun or physical qualification is claimed
+at this checkpoint. Neither feature PR has been merged.
 
 ## Current tracking and wake-task status
 

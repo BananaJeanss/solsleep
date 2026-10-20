@@ -60,10 +60,23 @@ Known native artifact digests from the job upload logs:
 | CI52 / 37 | 12153014272 | `74cd03bae6b57fb4ebdfdb786f5d6a58beb1922d7662ae6fc8aa70eb9ce758d3` |
 | CI53 / 29 | 12154450592 | `1bb2bd99bab1f9c04db706fffd36cb978c2b5140b7059327e439a30e22261cb4` |
 
-These identify retained evidence; the archives were not re-opened in this session.
-The execution tool reports no usable environment, preventing local ZIP
-inspection, compilation and persistent APK attachment. Neither PR was merged and
-no release gate was bypassed. Resume with the failure investigation in PLAN.md.
+The read-only diagnostic job in CI54 subsequently downloaded these archives;
+the action's computed digests match the identities above. It parsed four actual
+JUnit files: CI52 contains 116 cases/nine cleanup failures per API; CI53 contains
+126 cases/eleven cleanup failures per API. Every reported failure points to the
+same stopped-Activity busy wait in MotionCaptureTest.cleanup.
+
+Both branches now advance the Compose test clock while awaiting that same
+bounded state predicate. Full CI57/58 are active, with all core/Python checks,
+lint and build variants passing. Native qualification remains pending; CI58
+API 37 failed unpacking the upstream emulator image before tests and needs a
+scoped retry after its remaining jobs finish. The new report gate correctly
+rejected its missing results. Neither feature PR is merged.
+
+Local command execution and persistent local APK attachment are still unavailable.
+Read-only hosted inspection provides a practical route for reports, but failed
+CI53 artifacts lacked the receipt screenshot; review fresh captures before
+qualifying its UI. PR #13 is temporary inspection only and must not merge.
 
 ## Permanent download acceptance
 

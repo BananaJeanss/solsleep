@@ -15,14 +15,15 @@ endpoint, but no public release exists. Do not substitute an expiring download
 for the planned durable release. Current evidence and artifact identities are in
 [DEVELOPMENT_DOWNLOADS](docs/DEVELOPMENT_DOWNLOADS.md).
 
-1. Restore a usable execution environment; the command tool currently returns
-   “No usable execution environment is available.” Retain existing worktrees and
-   original recording data. Do not reset either to recover the environment.
-2. Download CI52/CI53 native report ZIPs, check their published digests, inspect
-   actual failing JUnit cases, stack traces and logcat, then reproduce the
-   concrete failure. Both APIs failed on both runs; the earlier cleanup
-   hypothesis is unconfirmed. Do not blindly rerun, suppress tests or weaken
-   assertions to obtain a green result.
+1. Local execution remains unavailable, but read-only hosted CI can inspect
+   immutable artifacts and compile/test authored changes. Retain existing
+   worktrees and all original data. Do not reset either to recover the environment.
+2. **Completed investigation:** CI54's read-only job checked actual CI52/53 JUnit
+   reports and artifact digests. All reported failures were MotionCaptureTest
+   cleanup waiting through a wall-clock loop while Main work was controlled by
+   Compose's test clock. Both branches now use Compose waitUntil at the same
+   bounded predicate. Temporary inspection code is removed from feature CI;
+   permanent report gates reject absent/empty/failing/errored/skipped reports.
 3. Correct the demonstrated cause and run the complete core, Python, lint,
    debug/test/release and API 29/37 suites. Inspect XML and large-text captures.
    Keep PR #11 and PR #12 in draft until their required evidence passes.
@@ -33,8 +34,12 @@ for the planned durable release. Current evidence and artifact identities are in
 5. Retarget and qualify PR #12 against the merged base, merge it, verify its own
    main publication and update receipt/backup evidence before the next M2 slice.
 
-This checkpoint changes documentation only. Neither failed run establishes new
-qualification; the last fully qualified app milestone remains PR #10. Physical
+The correction is committed in both feature branches. CI57/58 pass their core,
+Python, lint and build jobs; native qualification remains pending. CI58 API 37
+failed the upstream emulator ZIP installation before app tests and needs a scoped
+retry when its other jobs finish. PR #13 is read-only capture inspection and must
+close without merge. This main checkpoint changes documentation only.
+Neither earlier failed run establishes new qualification; the last fully qualified app milestone remains PR #10. Physical
 overnight, microphone/NFC, accuracy, sonar and watch gates remain open.
 
 ## 1. Product contract
