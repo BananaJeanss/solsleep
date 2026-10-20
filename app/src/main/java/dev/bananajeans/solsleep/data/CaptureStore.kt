@@ -131,6 +131,46 @@ class CaptureStore(context: Context,name: String="motion-capture.db"): AutoClose
         db.insertOrThrow("deleted_sessions",null,ContentValues().apply {put("id",old.id.toString());put("request_id",old.requestId.toString())})
         check(db.delete("sessions","id=? AND state='DELETING'",arrayOf(id.toString()))==1)
     }
+    /** Includes durably confirmed DELETING intents even if raw erasure has not finished.
+     * No historical timestamps are fabricated. Existing v2/v3 schema stays unchanged.
+     */
+    @Synchronized fun deletionSnapshot(): RecordingDeletionSnapshot=transaction {db->
+        db.rawQuery("SELECT id,request_id FROM deleted_sessions UNION ALL SELECT id,request_id FROM sessions WHERE state='DELETING' ORDER BY id LIMIT ?",
+            arrayOf((RecordingDeletionArchive.MAX_MARKERS+1).toString())).use {cursor->
+            val markers=buildList {while(cursor.moveToNext()) add(RecordingDeletion(
+                UUID.fromString(cursor.getString(0)),UUID.fromString(cursor.getString(1))))}
+            RecordingDeletionSnapshot(markers)
+        }
+    }
+    /** Additive identity import. A marker NEVER deletes or changes a present recording.
+     * Preview and commit share classification; commit rechecks under the write transaction.
+     */
+    @Synchronized fun mergeDeletionHistory(snapshot: RecordingDeletionSnapshot,previewOnly: Boolean=false): RecordingDeletionMerge=transaction {db->
+        check(db.rawQuery("SELECT 1 FROM sessions WHERE state NOT IN ('COMPLETED','FAILED','DELETING') LIMIT 1",null).use {!it.moveToFirst()}) {
+            "Finish active recording before importing deletion history"
+        }
+        var added=0;var known=0;var live=0;var collisions=0
+        snapshot.markers.forEach {marker->
+            val args=arrayOf(marker.sessionId.toString(),marker.requestId.toString())
+            if(db.rawQuery("SELECT 1 FROM sessions WHERE id=? OR request_id=? LIMIT 1",args).use {it.moveToFirst()}) live++
+            else {
+                val existing=db.rawQuery("SELECT id,request_id FROM deleted_sessions WHERE id=? OR request_id=?",args).use {cursor->
+                    buildList {while(cursor.moveToNext()) add(cursor.getString(0) to cursor.getString(1))}
+                }
+                when {
+                    existing.isEmpty()->{
+                        if(!previewOnly) db.insertOrThrow("deleted_sessions",null,ContentValues().apply {
+                            put("id",args[0]);put("request_id",args[1])
+                        })
+                        added++
+                    }
+                    existing.size==1 && existing.single()==(args[0] to args[1])->known++
+                    else->collisions++
+                }
+            }
+        }
+        RecordingDeletionMerge(added,known,live,collisions)
+    }
     /** Metadata snapshot is transactional; only terminal records can be portable. */
     @Synchronized fun recording(id: UUID): CaptureRecording=transaction {db->
         listOf("streams" to MotionArchive.MAX_STREAMS,"events" to MotionArchive.MAX_EVENTS).forEach {(table,limit)->

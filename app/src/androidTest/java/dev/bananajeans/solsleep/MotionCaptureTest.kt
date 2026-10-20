@@ -92,6 +92,58 @@ class MotionCaptureTest {
         compose.onNodeWithText("Start recording").assertIsDisplayed().performClick()
         await {runCatching {session().state==CaptureState.RECORDING}.getOrDefault(false)}
     }
+    @Test fun nativeDeletionHistoryPreviewAtLargeTextRequiresConfirmationAndSurvivesRecreation() {
+        shell("settings put system font_scale 2.0")
+        val marker=RecordingDeletion(UUID.randomUUID(),UUID.randomUUID())
+        val bytes=java.io.ByteArrayOutputStream().also {
+            RecordingDeletionArchive.write(RecordingDeletionSnapshot(listOf(marker)),it,Instant.EPOCH)
+        }.toByteArray()
+        val uri=android.net.Uri.parse("content://dev.bananajeans.solsleep.debug.test.journal/normal/${UUID.randomUUID()}")
+        try {
+            context.contentResolver.openOutputStream(uri,"wt")!!.use {it.write(bytes)}
+            val model=java.util.concurrent.atomic.AtomicReference<CaptureViewModel>()
+            compose.activityRule.scenario.onActivity {
+                model.set(ViewModelProvider(it)[CaptureViewModel::class.java]);model.get().inspectDeletionHistory(uri)
+            }
+            compose.waitUntil(25000) {model.get().state.value.deletionPreview!=null && !model.get().state.value.busy}
+            CaptureStore(context).use {assertTrue(it.deletionSnapshot().markers.isEmpty())}
+            compose.activityRule.scenario.recreate()
+            compose.onNodeWithTag("recording_deletions_preview").assertExists()
+            compose.onNodeWithTag("recording_deletions_close").assertIsDisplayed().assertIsEnabled()
+            compose.onNodeWithTag("recording_deletions_confirm").assertIsDisplayed().assertIsEnabled()
+            InstrumentationRegistry.getInstrumentation().uiAutomation.takeScreenshot().let {bitmap->
+                PlatformTestStorageRegistry.getInstance().openOutputFile("recording-deletions-large-text.png").use {
+                    bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG,100,it)
+                }
+            }
+            compose.onNodeWithTag("recording_deletions_confirm").performClick()
+            await {CaptureStore(context).use {it.deletionSnapshot().markers==listOf(marker)}}
+            assertNull(CaptureRuntime.liveOwner)
+            CaptureStore(context).use {assertTrue(it.sessions().isEmpty());assertNull(it.active())}
+        } finally {context.contentResolver.delete(uri,null,null)}
+    }
+    @Test fun closingDeletionPreviewImportsNothingAndNewInspectionRechecksLocalConflicts() {
+        val marker=RecordingDeletion(UUID.randomUUID(),UUID.randomUUID())
+        val bytes=java.io.ByteArrayOutputStream().also {
+            RecordingDeletionArchive.write(RecordingDeletionSnapshot(listOf(marker)),it,Instant.EPOCH)
+        }.toByteArray()
+        val uri=android.net.Uri.parse("content://dev.bananajeans.solsleep.debug.test.journal/normal/${UUID.randomUUID()}")
+        try {
+            context.contentResolver.openOutputStream(uri,"wt")!!.use {it.write(bytes)}
+            val model=java.util.concurrent.atomic.AtomicReference<CaptureViewModel>()
+            compose.activityRule.scenario.onActivity {
+                model.set(ViewModelProvider(it)[CaptureViewModel::class.java]);model.get().inspectDeletionHistory(uri)
+            }
+            compose.waitUntil(25000) {model.get().state.value.deletionPreview!=null && !model.get().state.value.busy}
+            compose.onNodeWithTag("recording_deletions_close").performClick()
+            compose.waitUntil(25000) {model.get().state.value.deletionPreview==null}
+            CaptureStore(context).use {assertTrue(it.deletionSnapshot().markers.isEmpty());it.mergeDeletionHistory(RecordingDeletionSnapshot(listOf(marker)))}
+            compose.activityRule.scenario.onActivity {model.get().inspectDeletionHistory(uri)}
+            compose.waitUntil(25000) {model.get().state.value.deletionMergePreview?.alreadyKnown==1 && !model.get().state.value.busy}
+            compose.onNodeWithTag("recording_deletions_close").performClick()
+            CaptureStore(context).use {assertEquals(listOf(marker),it.deletionSnapshot().markers)}
+        } finally {context.contentResolver.delete(uri,null,null)}
+    }
     @Test fun nativeArchivePreviewRestoreAndLargeTextExposeRealSavedRecordingWithoutStartingCapture() {
         shell("settings put system font_scale 2.0")
         val id=UUID.randomUUID();val request=UUID.randomUUID();val owner=UUID.randomUUID();val boot=UUID.randomUUID();val sourceId=UUID.randomUUID()

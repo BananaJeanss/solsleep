@@ -2063,3 +2063,26 @@ manifests, bounded KDF parameters and consented minimum-phone measurements.
 Sonar, sleep inference and watch acquisition keep their separate implementation,
 permission/source and physical/reference-data gates. The remaining scope ledger
 still applies; these software slices do not complete the entire reference app.
+
+### Portable recording deletion execution — 20 October 2026
+
+The next user-facing M2 prerequisite is a separate bounded identity-only SOLD v1
+file, before a combined all-record container. Implementation candidate:
+
+- [x] Define fixed-width bounded format, immutable snapshots, strict checksum/EOF
+  and identity/order rules, with independent Python producer/inspector fixture.
+- [x] Snapshot completed and durably confirmed pending deletions transactionally.
+  Additive import preserves existing records and conflicting pairs; one SQLite
+  transaction, idempotent retry, both identity keys checked, no schema reset.
+- [x] Add SAF export with close/readback verification and native confirmation
+  preview, explicit counts/trust/plaintext/unknown-time semantics and fixed Close.
+- [x] Add 12 core, 4 independent Python and 12 native provider/SQLite/UI regression
+  cases, including rollback/reopen/concurrent helpers and 200% recreation.
+- [ ] Execute the complete hosted build/core/tools/lint and both API suites.
+- [ ] Inspect actual reports and original native screenshots; merge and publish
+  only after passing checks. Physical faults remain unqualified.
+
+Local execution remains unavailable. Hosted CI will supply actual results; the
+existing public build is unchanged until qualification and main publication.
+See [RECORDING_DELETIONS](docs/RECORDING_DELETIONS.md). Combined manifests,
+encrypted recovery, large-history partitions and receipt portability remain open.

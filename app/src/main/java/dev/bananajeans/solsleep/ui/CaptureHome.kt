@@ -48,11 +48,21 @@ import java.time.format.DateTimeFormatter
         if(uri!=null && id!=null) model.export(UUID.fromString(id),uri)
     }
     val open=rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) {uri->if(uri!=null) model.stage(uri)}
+    val exportDeletions=rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/octet-stream")) {uri->
+        if(uri!=null) model.exportDeletionHistory(uri)
+    }
+    val openDeletions=rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) {uri->
+        if(uri!=null) model.inspectDeletionHistory(uri)
+    }
     val notificationPermission=rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {model.reload()}
     val context=LocalContext.current
     val locale=LocalConfiguration.current.locales[0]
     val use24=android.text.format.DateFormat.is24HourFormat(context)
     val formatter=remember(locale,use24) {DateTimeFormatter.ofPattern(android.text.format.DateFormat.getBestDateTimePattern(locale,if(use24) "yMMMdHm" else "yMMMdhm"),locale)}
+    state.deletionPreview?.let {preview->
+        RecordingDeletionPreviewScreen(preview,state.deletionMergePreview,state.busy,model::importDeletionHistory,model::closeDeletionPreview)
+        return
+    }
     if(state.exportHistorySession!=null) {
         MotionExportHistoryScreen(state.exportHistory,state.exportHistoryUnavailable,model::closeExportHistory)
         return
@@ -121,6 +131,24 @@ import java.time.format.DateTimeFormatter
                             modifier=Modifier.semantics {testTag="motion_restore"}) {Text(stringResource(R.string.motion_restore))}
                     }
                     TextButton(onClick={discard=true},enabled=!state.busy) {Text(stringResource(R.string.motion_discard))}
+                }
+            }
+            item {
+                HorizontalDivider()
+                Text(stringResource(R.string.recording_deletions_title),style=MaterialTheme.typography.titleMedium)
+                Text(stringResource(R.string.recording_deletions_hint))
+                OutlinedButton(onClick={exportDeletions.launch("solsleep-recording-deletions.soldelete")},enabled=!state.busy && !state.unavailable,
+                    modifier=Modifier.fillMaxWidth().semantics {testTag="recording_deletions_export"}) {
+                    Text(stringResource(R.string.recording_deletions_export))
+                }
+                OutlinedButton(onClick={openDeletions.launch(arrayOf("application/octet-stream"))},enabled=!state.busy && !state.unavailable && state.active==null,
+                    modifier=Modifier.fillMaxWidth().semantics {testTag="recording_deletions_open"}) {
+                    Text(stringResource(R.string.recording_deletions_open))
+                }
+                if(state.active!=null) Text(stringResource(R.string.motion_finish_before_restore))
+                state.deletionResult?.let {result->
+                    Text(stringResource(R.string.recording_deletions_result,result.added,result.alreadyKnown,result.liveConflicts,result.identityConflicts),
+                        Modifier.semantics {testTag="recording_deletions_result"})
                 }
             }
             item {Text(stringResource(R.string.capture_limits),style=MaterialTheme.typography.bodySmall)}
