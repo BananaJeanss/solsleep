@@ -6,6 +6,37 @@
 **Project state:** implementation started after this research baseline. See [STATUS.md](STATUS.md) for verified code, tests, and the current physical-device gate, and [docs/TRACEABILITY.md](docs/TRACEABILITY.md) for implemented subsets. The repository was empty during the initial planning pass.
 **Document status:** initial engineering proposal. Implementation choices below are proposed decisions; research findings are identified separately and linked to primary sources.
 
+## Current execution priority — 20 October 2026
+
+Resolve APK delivery and qualify the two existing implementation branches before
+adding another feature. The user's reported 404 is unresolved as a permanent
+download: a preview artifact can be recovered through the connected GitHub
+endpoint, but no public release exists. Do not substitute an expiring download
+for the planned durable release. Current evidence and artifact identities are in
+[DEVELOPMENT_DOWNLOADS](docs/DEVELOPMENT_DOWNLOADS.md).
+
+1. Restore a usable execution environment; the command tool currently returns
+   “No usable execution environment is available.” Retain existing worktrees and
+   original recording data. Do not reset either to recover the environment.
+2. Download CI52/CI53 native report ZIPs, check their published digests, inspect
+   actual failing JUnit cases, stack traces and logcat, then reproduce the
+   concrete failure. Both APIs failed on both runs; the earlier cleanup
+   hypothesis is unconfirmed. Do not blindly rerun, suppress tests or weaken
+   assertions to obtain a green result.
+3. Correct the demonstrated cause and run the complete core, Python, lint,
+   debug/test/release and API 29/37 suites. Inspect XML and large-text captures.
+   Keep PR #11 and PR #12 in draft until their required evidence passes.
+4. Merge qualified PR #11, let its main run pass every release dependency, then
+   verify the published APK anonymously, including signature, hashes, exact
+   source/run identity and retry behavior. Provide the actual public asset URL.
+   Never publish an unqualified APK as a successful release to work around 404.
+5. Retarget and qualify PR #12 against the merged base, merge it, verify its own
+   main publication and update receipt/backup evidence before the next M2 slice.
+
+This checkpoint changes documentation only. Neither failed run establishes new
+qualification; the last fully qualified app milestone remains PR #10. Physical
+overnight, microphone/NFC, accuracy, sonar and watch gates remain open.
+
 ## 1. Product contract
 
 Build a free, open-source Android sleep app with the functional breadth of Sleep as Android, an original Material 3 Expressive interface, dependable alarms, durable records, and useful watch interoperability. Aim to improve transparency, recovery, accessibility, and control of personal data.
