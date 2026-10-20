@@ -34,6 +34,14 @@ jobs:
           root = Path("prior-reports")
           paths = list(root.rglob("recording-export-history-large-text.png"))
           if len(paths) != 1:
+              print("CAPTURE_PATHS=" + json.dumps([str(p) for p in root.rglob("*.png")][:40]))
+              for log in root.rglob("device-logcat.txt"):
+                  lines = log.read_text(errors="replace").splitlines()
+                  hits = [i for i, line in enumerate(lines) if "MotionCaptureTest.setup(" in line]
+                  print("SETUP_STACK_HITS=", len(hits))
+                  for i in hits[:2]:
+                      for line in lines[max(0, i-8):i+12]:
+                          print("|", line)
               raise SystemExit("Expected exactly one original receipt screenshot")
           path = paths[0]
           if path.is_symlink() or path.stat().st_size > 1024 * 1024:
