@@ -1,4 +1,5 @@
 name: Selected capture regression inspection
+# Temporary diagnostic branch; keep main documentation synchronized.
 on:
   pull_request:
     paths: [".github/workflows/android.yml"]

@@ -6,6 +6,42 @@
 **Project state:** implementation started after this research baseline. See [STATUS.md](STATUS.md) for verified code, tests, and the current physical-device gate, and [docs/TRACEABILITY.md](docs/TRACEABILITY.md) for implemented subsets. The repository was empty during the initial planning pass.
 **Document status:** initial engineering proposal. Implementation choices below are proposed decisions; research findings are identified separately and linked to primary sources.
 
+## Current execution priority — 20 October 2026
+
+Resolve APK delivery and qualify the two existing implementation branches before
+adding another feature. The user's reported 404 is unresolved as a permanent
+download: a preview artifact can be recovered through the connected GitHub
+endpoint, but no public release exists. Do not substitute an expiring download
+for the planned durable release. Current evidence and artifact identities are in
+[DEVELOPMENT_DOWNLOADS](docs/DEVELOPMENT_DOWNLOADS.md).
+
+1. Local execution remains unavailable, but read-only hosted CI can inspect
+   immutable artifacts and compile/test authored changes. Retain existing
+   worktrees and all original data. Do not reset either to recover the environment.
+2. **Completed investigation:** CI54's read-only job checked actual CI52/53 JUnit
+   reports and artifact digests. All reported failures were MotionCaptureTest
+   cleanup waiting through a wall-clock loop while Main work was controlled by
+   Compose's test clock. Both branches now use Compose waitUntil at the same
+   bounded predicate. Temporary inspection code is removed from feature CI;
+   permanent report gates reject absent/empty/failing/errored/skipped reports.
+3. Correct the demonstrated cause and run the complete core, Python, lint,
+   debug/test/release and API 29/37 suites. Inspect XML and large-text captures.
+   Keep PR #11 and PR #12 in draft until their required evidence passes.
+4. Merge qualified PR #11, let its main run pass every release dependency, then
+   verify the published APK anonymously, including signature, hashes, exact
+   source/run identity and retry behavior. Provide the actual public asset URL.
+   Never publish an unqualified APK as a successful release to work around 404.
+5. Retarget and qualify PR #12 against the merged base, merge it, verify its own
+   main publication and update receipt/backup evidence before the next M2 slice.
+
+The correction is committed in both feature branches. CI57/58 pass their core,
+Python, lint and build jobs; native qualification remains pending. CI58 API 37
+failed the upstream emulator ZIP installation before app tests and needs a scoped
+retry when its other jobs finish. PR #13 is read-only capture inspection and must
+close without merge. This main checkpoint changes documentation only.
+Neither earlier failed run establishes new qualification; the last fully qualified app milestone remains PR #10. Physical
+overnight, microphone/NFC, accuracy, sonar and watch gates remain open.
+
 ## 1. Product contract
 
 Build a free, open-source Android sleep app with the functional breadth of Sleep as Android, an original Material 3 Expressive interface, dependable alarms, durable records, and useful watch interoperability. Aim to improve transparency, recovery, accessibility, and control of personal data.
@@ -1918,51 +1954,3 @@ these accuracy gates passed. Execute each as a separate qualified vertical slice
 
 Full production readiness, reference parity, physical durability and physiological
 accuracy remain open. All unchecked scope-ledger work still applies.
-
-### Development APK distribution — execution in progress, 19 October 2026
-
-1. Keep production signing separate. Give CI debug builds bounded monotonically
-   ordered run/attempt codes and exact source versions. Optionally load a private
-   persistent CI debug keystore only on trusted main; preserve normal local and
-   PR signing. Default runner certificates and update/data limits stay visible.
-2. Verify the actual signed APK/application/API/version using Android build tools.
-   Package a dedicated artifact with APK/certificate SHA-256, exact source/tree/
-   run identity and file checksums. Retain full build/native reports separately.
-3. After the build and both full API suites pass, publish that exact same-run
-   bundle from a job with narrowly scoped write access. Create a versioned draft,
-   verify remote asset readback, then publish a development prerelease. Refuse
-   tag/source mismatches or asset replacement; resume only matching partial drafts.
-4. Test changed artifacts, malformed/duplicate fields, wrong run, unsafe files,
-   draft interruption/readback, public retry and private-key file handling.
-   Run actual CI and inspect a public release download before claiming success.
-5. Continue M2 with recording-export attempt/verified history. Its local metadata
-   must never block verified recovery or touch original recordings/alarms. Retain
-   last verified receipt across later failures, with explicit interrupted/unknown
-   states and actual SQLite/provider/lifecycle regressions.
-
-Contract, configuration and primary research: [DEVELOPMENT_RELEASES](docs/DEVELOPMENT_RELEASES.md).
-
-### Recording export receipts — execution in progress, 19 October 2026
-
-1. Add independently bounded local attempt/destination/verified models and a
-   guarded audit wrapper. Record STARTED before snapshot, WRITTEN only after
-   successful provider close, VERIFIED only after exact validated readback.
-   Propagate cancellation and preserve original transfer errors; audit failure
-   cannot block a verified external recovery copy or invent a saved receipt.
-2. Implement an independent CE FULL/WAL SQLite store with a schema-1 fixture,
-   expected-phase updates, global sequence ordering and indexed per-recording
-   latest-attempt/latest-verified queries. Retain future/corrupt bytes. Keep
-   raw capture, journal, alarm stores and SOLR bytes unchanged.
-3. Retain only URI digest, validated authority and optional display name, not a
-   URI capability or persisted grant. Metadata-query failure stays unknown.
-   Show a native per-recording history screen with explicit interrupted/empty/
-   unavailable states, prior verified copy, current display zone and selectable
-   content fingerprints. Deletion removes scoped local receipts, with explicit
-   failure semantics and no deletion of external files or another session.
-4. Prove core transfer/audit failure boundaries, actual SQLite fixture/reopen/
-   rollback/races/corruption, provider denial/truncation/replacement and verified
-   recovery despite unavailable receipts. Exercise 200% recreation/unavailable
-   native UI, inspect exact reports/captures, then qualify both full API suites
-   and merge. This slice is separate from tonight's APK distribution candidate.
-
-Detailed contract/research: [RECORDING_EXPORT_HISTORY](docs/RECORDING_EXPORT_HISTORY.md).

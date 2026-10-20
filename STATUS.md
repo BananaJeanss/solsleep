@@ -8,6 +8,50 @@ The exact source passed the complete API 29/37 software qualification below.
 This is a **development build**. M0, M1, M2 and M3 remain partial. Full reference
 parity, physiological accuracy and production readiness are not claimed.
 
+## Download and qualification update — 20 October 2026
+
+The reported Actions APK link returned 404 for the user. The artifact still exists
+and the connected GitHub download endpoint returned a preview ZIP, but this does
+not establish anonymous or durable access to the original Actions URL. No public
+GitHub release exists at this checkpoint. See
+[download status and recovery steps](docs/DEVELOPMENT_DOWNLOADS.md).
+
+[PR #11](https://github.com/BananaJeanss/solsleep/pull/11) implements verified debug
+bundles and gated development releases.
+[PR #12](https://github.com/BananaJeanss/solsleep/pull/12) implements persistent
+recording-export receipts. Both remain drafts, unmerged and **unqualified**:
+CI52 and CI53 built successfully but both API 29 and API 37 jobs failed.
+The earlier lifecycle cleanup change is therefore not an established fix.
+The last fully qualified app milestone remains PR #10, recorded below.
+
+Local command execution remains unavailable. A read-only CI inspection overcame
+the report-inspection blocker: actual CI52/53 XML and matching artifact digests
+were examined in diagnostic run 39459390877, job 118754565820. CI52 has 116 cases
+and nine failures per API; CI53 has 126 cases and eleven failures per API. Every
+reported failure is the recording-screen cleanup's busy-state wait.
+
+The stopped-Activity cleanup used a wall-clock loop while work awaited the
+Compose-controlled Main dispatcher. Both branches now use a bounded Compose-aware
+wait at the same state predicate. No app/storage code or test body was changed.
+Core/native JUnit report gates now reject absent/empty reports and any failures,
+errors or skipped cases, and expose the real counts in job logs.
+
+Corrected [CI57](https://github.com/BananaJeanss/solsleep/actions/runs/39460085331)
+passes 203 core and 26 Python checks, lint and both build variants.
+[CI58](https://github.com/BananaJeanss/solsleep/actions/runs/39460116668)
+passes 213 core and 26 Python checks, lint and both build variants.
+Native qualification is still pending. CI58 API 37 failed downloading/unpacking
+Google's system-image ZIP before app tests started; retry that job after the
+other jobs finish. Its missing-report gate correctly failed. CI57 installed the
+same API 37 image and is running tests. Earlier CI54–56 were superseded by the
+report-gate update, not counted as complete qualification.
+
+A separate read-only inspection branch, PR #13, cannot qualify app tests and
+must not merge. CI59 found that CI53's failed-test artifacts did not contain the
+receipt screenshot; fresh successful native captures still require review.
+No public release, successful native rerun or physical qualification is claimed
+at this checkpoint. Neither feature PR has been merged.
+
 ## Current tracking and wake-task status
 
 | Feature | Implemented status |
