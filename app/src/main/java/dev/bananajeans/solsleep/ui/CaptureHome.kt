@@ -60,7 +60,7 @@ import java.time.format.DateTimeFormatter
     val use24=android.text.format.DateFormat.is24HourFormat(context)
     val formatter=remember(locale,use24) {DateTimeFormatter.ofPattern(android.text.format.DateFormat.getBestDateTimePattern(locale,if(use24) "yMMMdHm" else "yMMMdhm"),locale)}
     state.deletionPreview?.let {preview->
-        RecordingDeletionPreviewScreen(preview,state.deletionMergePreview,state.busy,model::importDeletionHistory,model::closeDeletionPreview)
+        RecordingDeletionPreviewScreen(preview,state.deletionMergePreview,state.busy,state.deletionImportError,model::importDeletionHistory,model::closeDeletionPreview)
         return
     }
     if(state.exportHistorySession!=null) {

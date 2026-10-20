@@ -12,13 +12,15 @@ import java.util.concurrent.CancellationException
 /** Identity only: no invented deletion time, sensor payload or URI permission. */
 data class RecordingDeletion(val sessionId: UUID,val requestId: UUID)
 
+class RecordingDeletionLimitException: IllegalArgumentException("Deletion history exceeds export capacity; retained")
+
 /** Defensive immutable copy; both identities must be unique and pair consistently. */
 class RecordingDeletionSnapshot(markers: Collection<RecordingDeletion>) {
     val markers: List<RecordingDeletion>
     init {
-        require(markers.size<=RecordingDeletionArchive.MAX_MARKERS) {"Deletion history exceeds export capacity; retained"}
+        if(markers.size>RecordingDeletionArchive.MAX_MARKERS) throw RecordingDeletionLimitException()
         val copy=markers.toList()
-        require(copy.size<=RecordingDeletionArchive.MAX_MARKERS)
+        if(copy.size>RecordingDeletionArchive.MAX_MARKERS) throw RecordingDeletionLimitException()
         require(copy.map {it.sessionId}.distinct().size==copy.size)
         require(copy.map {it.requestId}.distinct().size==copy.size)
         this.markers=Collections.unmodifiableList(copy.sortedBy {it.sessionId.toString()})

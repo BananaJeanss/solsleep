@@ -16,4 +16,6 @@
     <string name="recording_deletions_export_failed">Deletion history could not be exported. Local identities and recordings are retained.</string>
     <string name="recording_deletions_import_failed">Deletion history could not be inspected. No identities were imported. Finish any active recording and choose a supported, intact file.</string>
     <string name="recording_deletions_imported">Deletion identities imported. Existing recordings and deletion identities were kept.</string>
+    <string name="recording_deletions_limit">Deletion history is larger than the supported 10,000 identities. Nothing was exported or removed. Large-history partitioned export is not yet available.</string>
+    <string name="recording_deletions_commit_failed">Import did not finish. Existing recordings are kept. You can retry or close this preview.</string>
 </resources>

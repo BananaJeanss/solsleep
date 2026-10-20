@@ -94,6 +94,12 @@ class RecordingDeletionsTest {
         },{read=true;ByteArrayInputStream(bytes())},epoch);fail("Close failure")}
         catch(e: IOException) {assertSame(error,e);assertFalse(e is RecordingDeletionVerificationException)}
         assertFalse(read)
+        val writeError=IOException("output write")
+        try {RecordingDeletionArchive.exportVerified(RecordingDeletionSnapshot(listOf(a)),{
+            object: OutputStream() {override fun write(b: Int) {throw writeError}}
+        },{read=true;ByteArrayInputStream(bytes())},epoch);fail("Write failure")}
+        catch(e: IOException) {assertSame(writeError,e)}
+        assertFalse(read)
         var opened=false
         rejects {RecordingDeletionArchive.exportVerified(RecordingDeletionSnapshot(listOf(a)),
             {opened=true;ByteArrayOutputStream()},{ByteArrayInputStream(bytes())},Instant.ofEpochSecond(0,1))}

@@ -87,3 +87,8 @@ large-history partitioning remain unfinished.
 Primary Android documentation reviewed:
 https://developer.android.com/training/data-storage/shared/documents-files
 The implementation uses per-document SAF access and no broad storage permission.
+
+SQL import failure keeps the preview open with an explicit retryable error;
+Close remains available. Oversized local history has a distinct capacity message
+and is retained, not truncated. Native fault tests exercise a real SQL abort,
+visible error, no partial rows and successful explicit retry.

@@ -3,7 +3,7 @@
 Portable recording deletion history is an implementation candidate on the next
 feature branch. It is not in the published APK yet. The bounded identity-only
 format, additive SQLite import, verified SAF export and native preview have
-12 new core, 4 Python and 12 native test cases awaiting hosted execution.
+12 new core, 4 Python and 13 native test cases awaiting hosted execution.
 See [RECORDING_DELETIONS](docs/RECORDING_DELETIONS.md). No existing record is
 deleted by imported markers; existing identities win. Main evidence below
 continues to describe the published build.

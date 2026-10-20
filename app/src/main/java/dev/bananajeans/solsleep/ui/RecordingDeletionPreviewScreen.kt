@@ -18,7 +18,7 @@ import dev.bananajeans.solsleep.R
 import dev.bananajeans.solsleep.core.*
 
 @Composable fun RecordingDeletionPreviewScreen(preview: RecordingDeletionPreview,result: RecordingDeletionMerge?,
-    busy: Boolean,onImport: ()->Unit,onClose: ()->Unit) {
+    busy: Boolean,error: Boolean,onImport: ()->Unit,onClose: ()->Unit) {
     BackHandler {if(!busy) onClose()}
     Scaffold(topBar={TopAppBar(title={Text(stringResource(R.string.recording_deletions_title))},navigationIcon={
         IconButton(onClick=onClose,enabled=!busy,modifier=Modifier.semantics {testTag="recording_deletions_close"}) {
@@ -36,6 +36,8 @@ import dev.bananajeans.solsleep.core.*
             .semantics {testTag="recording_deletions_preview"},verticalArrangement=Arrangement.spacedBy(16.dp)) {
             Text(stringResource(R.string.recording_deletions_preview),style=MaterialTheme.typography.headlineSmall)
             Text(stringResource(R.string.recording_deletions_preview_hint))
+            if(error) Text(stringResource(R.string.recording_deletions_commit_failed),
+                Modifier.semantics {testTag="recording_deletions_error"},color=MaterialTheme.colorScheme.error)
             Text(stringResource(R.string.recording_deletions_count,preview.snapshot.markers.size))
             result?.let {
                 Text(stringResource(R.string.recording_deletions_result,it.added,it.alreadyKnown,it.liveConflicts,it.identityConflicts))

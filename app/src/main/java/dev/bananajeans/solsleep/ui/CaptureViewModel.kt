@@ -29,7 +29,7 @@ data class CaptureUiState(val sessions: List<CaptureSession> = emptyList(),val a
     val message: Int?=null,val pending: PendingMotion?=null,val recoveryPresent: Boolean=false,val recoveryError: Boolean=false,
     val error: Boolean=false,val sensorAvailable: Boolean=false,val notifications: Boolean=false,val details: CaptureDetails?=null,
     val deletionPreview: RecordingDeletionPreview?=null,val deletionMergePreview: RecordingDeletionMerge?=null,
-    val deletionResult: RecordingDeletionMerge?=null,
+    val deletionResult: RecordingDeletionMerge?=null,val deletionImportError: Boolean=false,
     val exportHistorySession: UUID?=null,val exportHistory: MotionExportSummary?=null,val exportHistoryUnavailable: Boolean=false)
 
 class CaptureViewModel(app: Application): AndroidViewModel(app) {
@@ -142,10 +142,11 @@ class CaptureViewModel(app: Application): AndroidViewModel(app) {
             mutable.update {it.copy(message=R.string.recording_deletions_exported)}
         } catch(c: CancellationException) {throw c}
         catch(_: RecordingDeletionVerificationException) {mutable.update {it.copy(message=R.string.recording_deletions_unverified)}}
+        catch(_: RecordingDeletionLimitException) {mutable.update {it.copy(message=R.string.recording_deletions_limit)}}
         catch(_: Exception) {mutable.update {it.copy(message=R.string.recording_deletions_export_failed)}}
     }
     fun inspectDeletionHistory(uri: Uri)=operation {
-        mutable.update {it.copy(deletionPreview=null,deletionMergePreview=null,deletionResult=null)}
+        mutable.update {it.copy(deletionPreview=null,deletionMergePreview=null,deletionResult=null,deletionImportError=false)}
         try {
             val (preview,result)=withContext(Dispatchers.IO) {
                 val preview=RecordingDeletionDocuments(context).inspect(uri)
@@ -157,7 +158,11 @@ class CaptureViewModel(app: Application): AndroidViewModel(app) {
     }
     fun importDeletionHistory()=operation {
         val preview=requireNotNull(mutable.value.deletionPreview)
-        val result=withContext(Dispatchers.IO) {CaptureStore(context).use {it.mergeDeletionHistory(preview.snapshot)}}
+        mutable.update {it.copy(deletionImportError=false)}
+        val result=try {
+            withContext(Dispatchers.IO) {CaptureStore(context).use {it.mergeDeletionHistory(preview.snapshot)}}
+        } catch(c: CancellationException) {throw c}
+        catch(_: Exception) {mutable.update {it.copy(deletionImportError=true)};return@operation}
         mutable.update {it.copy(deletionPreview=null,deletionMergePreview=null,deletionResult=result,
             message=R.string.recording_deletions_imported)}
         // A previously staged raw recording may now conflict with an imported marker.

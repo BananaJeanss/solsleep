@@ -122,6 +122,34 @@ class MotionCaptureTest {
             CaptureStore(context).use {assertTrue(it.sessions().isEmpty());assertNull(it.active())}
         } finally {context.contentResolver.delete(uri,null,null)}
     }
+    @Test fun deletionImportSqlFailureShowsRetryableErrorAndNeverSilentlyClosesPreview() {
+        val marker=RecordingDeletion(UUID.randomUUID(),UUID.randomUUID())
+        val bytes=java.io.ByteArrayOutputStream().also {
+            RecordingDeletionArchive.write(RecordingDeletionSnapshot(listOf(marker)),it,Instant.EPOCH)
+        }.toByteArray()
+        val uri=android.net.Uri.parse("content://dev.bananajeans.solsleep.debug.test.journal/normal/${UUID.randomUUID()}")
+        try {
+            context.contentResolver.openOutputStream(uri,"wt")!!.use {it.write(bytes)}
+            val model=java.util.concurrent.atomic.AtomicReference<CaptureViewModel>()
+            compose.activityRule.scenario.onActivity {
+                model.set(ViewModelProvider(it)[CaptureViewModel::class.java]);model.get().inspectDeletionHistory(uri)
+            }
+            compose.waitUntil(25000) {model.get().state.value.deletionPreview!=null && !model.get().state.value.busy}
+            fun sql(statement: String) {
+                android.database.sqlite.SQLiteDatabase.openDatabase(context.getDatabasePath("motion-capture.db").path,null,
+                    android.database.sqlite.SQLiteDatabase.OPEN_READWRITE).use {it.execSQL(statement)}
+            }
+            sql("CREATE TRIGGER fail_deletion_import BEFORE INSERT ON deleted_sessions BEGIN SELECT RAISE(ABORT,'injected'); END")
+            compose.onNodeWithTag("recording_deletions_confirm").performClick()
+            compose.waitUntil(25000) {model.get().state.value.deletionImportError && !model.get().state.value.busy}
+            compose.onNodeWithTag("recording_deletions_error").performScrollTo().assertIsDisplayed()
+            compose.onNodeWithTag("recording_deletions_close").assertIsDisplayed().assertIsEnabled()
+            CaptureStore(context).use {assertTrue(it.deletionSnapshot().markers.isEmpty())}
+            sql("DROP TRIGGER fail_deletion_import")
+            compose.onNodeWithTag("recording_deletions_confirm").performClick()
+            await {CaptureStore(context).use {it.deletionSnapshot().markers==listOf(marker)}}
+        } finally {context.contentResolver.delete(uri,null,null)}
+    }
     @Test fun closingDeletionPreviewImportsNothingAndNewInspectionRechecksLocalConflicts() {
         val marker=RecordingDeletion(UUID.randomUUID(),UUID.randomUUID())
         val bytes=java.io.ByteArrayOutputStream().also {

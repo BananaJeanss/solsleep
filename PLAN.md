@@ -2076,7 +2076,7 @@ file, before a combined all-record container. Implementation candidate:
   transaction, idempotent retry, both identity keys checked, no schema reset.
 - [x] Add SAF export with close/readback verification and native confirmation
   preview, explicit counts/trust/plaintext/unknown-time semantics and fixed Close.
-- [x] Add 12 core, 4 independent Python and 12 native provider/SQLite/UI regression
+- [x] Add 12 core, 4 independent Python and 13 native provider/SQLite/UI regression
   cases, including rollback/reopen/concurrent helpers and 200% recreation.
 - [ ] Execute the complete hosted build/core/tools/lint and both API suites.
 - [ ] Inspect actual reports and original native screenshots; merge and publish
