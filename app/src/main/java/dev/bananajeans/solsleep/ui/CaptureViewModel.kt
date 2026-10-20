@@ -27,7 +27,8 @@ data class CaptureDetails(val sessionId: UUID,val summary: MotionSummary,val str
 data class CaptureUiState(val sessions: List<CaptureSession> = emptyList(),val active: CaptureSession?=null,
     val page: Int=0,val older: Boolean=false,val busy: Boolean=true,val unavailable: Boolean=false,
     val message: Int?=null,val pending: PendingMotion?=null,val recoveryPresent: Boolean=false,val recoveryError: Boolean=false,
-    val error: Boolean=false,val sensorAvailable: Boolean=false,val notifications: Boolean=false,val details: CaptureDetails?=null)
+    val error: Boolean=false,val sensorAvailable: Boolean=false,val notifications: Boolean=false,val details: CaptureDetails?=null,
+    val exportHistorySession: UUID?=null,val exportHistory: MotionExportSummary?=null,val exportHistoryUnavailable: Boolean=false)
 
 class CaptureViewModel(app: Application): AndroidViewModel(app) {
     private val mutable=MutableStateFlow(CaptureUiState())
@@ -93,13 +94,25 @@ class CaptureViewModel(app: Application): AndroidViewModel(app) {
     }
     fun export(sessionId: UUID,uri: Uri)=operation {
         try {
-            withContext(Dispatchers.IO) {MotionDocuments(context).export(sessionId,uri)}
-            mutable.update {it.copy(message=R.string.motion_export_verified)}
+            val result=withContext(Dispatchers.IO) {MotionDocuments(context).exportAudited(sessionId,uri)}
+            when(result) {
+                is AuditedMotionResult.Verified->mutable.update {it.copy(message=if(result.auditRecorded) R.string.motion_export_verified else R.string.motion_receipt_not_recorded)}
+                is AuditedMotionResult.Failed->throw result.error
+            }
         } catch(c: CancellationException) {throw c}
         catch(_: MotionSpaceException) {mutable.update {it.copy(message=R.string.motion_archive_space)}}
         catch(_: MotionVerificationException) {mutable.update {it.copy(message=R.string.motion_export_unverified)}}
         catch(_: Exception) {mutable.update {it.copy(message=R.string.motion_export_failed)}}
     }
+    fun showExportHistory(sessionId: UUID)=operation {
+        mutable.update {it.copy(exportHistorySession=sessionId,exportHistory=null,exportHistoryUnavailable=false)}
+        val summary=withContext(Dispatchers.IO) {
+            try {MotionExportHistory(context).use {it.summary(sessionId)}}
+            catch(c: CancellationException) {throw c} catch(_: Exception) {null}
+        }
+        mutable.update {if(it.exportHistorySession==sessionId) it.copy(exportHistory=summary,exportHistoryUnavailable=summary==null) else it}
+    }
+    fun closeExportHistory() {mutable.update {it.copy(exportHistorySession=null,exportHistory=null,exportHistoryUnavailable=false)}}
     fun stage(uri: Uri)=operation {
         try {
             val pending=withContext(Dispatchers.IO) {MotionDocuments(context).stage(uri)}
@@ -128,6 +141,11 @@ class CaptureViewModel(app: Application): AndroidViewModel(app) {
                 if(session.state!=CaptureState.DELETING) store.transition(session.id,session.revision,CaptureState.DELETING,CaptureReason.DELETE,
                     CaptureRuntime.ownerId,Instant.ofEpochMilli(System.currentTimeMillis()),SystemClock.elapsedRealtimeNanos(),CaptureRuntime.bootId(context))
                 else check(store.get(session.id)?.state==CaptureState.DELETING)
+                // Commit deletion intent before removing any associated metadata.
+                // A damaged receipt database cannot veto raw-record deletion.
+                try {MotionExportHistory(context).use {it.deleteForSession(session.id)}}
+                catch(c: CancellationException) {throw c}
+                catch(_: Exception) {mutable.update {it.copy(message=R.string.motion_receipt_delete_unavailable)}}
                 MotionFiles.forSession(context,session.id).eraseOwned();store.finishDelete(session.id)
             }
         }

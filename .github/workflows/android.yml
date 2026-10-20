@@ -4,6 +4,7 @@ on:
     paths: [".github/workflows/android.yml"]
 permissions:
   contents: read
+  actions: read
 jobs:
   public-download:
     if: >-
@@ -16,7 +17,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-          ref: 3be27815bb5cb03ca6ab1c256b6c7415db732059
+          ref: b7afd0c9db9b6c5150c2e879de0946469c87a8cf
       - name: Download public release assets without authentication and verify exact bytes
         shell: bash
         run: |
@@ -27,8 +28,8 @@ jobs:
           from urllib.request import Request, urlopen
           sys.path.insert(0, "tools")
           from debug_delivery import FILES, validate_bundle
-          expected = json.loads("{\"apkSha256\":\"bfad3211966689f9982641ab2c6c6271b1c9c0fe3e6588b8b252f1ab13afe186\",\"applicationId\":\"dev.bananajeans.solsleep.debug\",\"buildAttempt\":1,\"certificateSha256\":\"99208e9e0148ed64191f839c5f7144c15088adb3e65aa230db9cd4ec846bfe91\",\"commit\":\"3be27815bb5cb03ca6ab1c256b6c7415db732059\",\"debuggable\":true,\"minSdk\":29,\"repository\":\"BananaJeanss/solsleep\",\"runId\":39468001698,\"runNumber\":68,\"schema\":1,\"signing\":\"runner-ephemeral\",\"targetSdk\":37,\"tree\":\"b11be16d78f42a6c00716328e331bbe43cfd9a2b\",\"versionCode\":16801,\"versionName\":\"0.1.0-dev.68.1.3be27815bb5c-debug\"}")
-          tag = "debug-68.1-3be27815bb5c"
+          expected = json.loads("{\"apkSha256\":\"2e94f41f39258efeb491c487b1873344d7017032d658471fd0316ffc0d99bbb7\",\"applicationId\":\"dev.bananajeans.solsleep.debug\",\"buildAttempt\":1,\"certificateSha256\":\"cccd603ec9d9a76750bb6bc0a5b56148f0c5babde6e4f678802b5548fdfafc5b\",\"commit\":\"b7afd0c9db9b6c5150c2e879de0946469c87a8cf\",\"debuggable\":true,\"minSdk\":29,\"repository\":\"BananaJeanss/solsleep\",\"runId\":39471810590,\"runNumber\":71,\"schema\":1,\"signing\":\"runner-ephemeral\",\"targetSdk\":37,\"tree\":\"d3c74e911ca0f05b6b0998ff02764844e34d6eba\",\"versionCode\":17101,\"versionName\":\"0.1.0-dev.71.1.b7afd0c9db9b-debug\"}")
+          tag = "debug-71.1-b7afd0c9db9b"
           base = "https://github.com/BananaJeanss/solsleep/releases/download/" + tag + "/"
           limits = {"solsleep-debug.apk": 64 * 1024 * 1024, "build-info.json": 65536,
                     "APK_SIGNER.txt": 65536, "SHA256SUMS": 65536}
@@ -61,4 +62,42 @@ jobs:
               print("PUBLIC_RELEASE_VERIFIED=" + json.dumps(dict(tag=tag, commit=actual["commit"],
                   tree=actual["tree"], apkSha256=actual["apkSha256"],
                   certificateSha256=actual["certificateSha256"], authentication="none")))
+          PY
+      - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          repository: BananaJeanss/solsleep
+          run-id: 39471810590
+          artifact-ids: 12287940967
+          path: build-proof
+          merge-multiple: true
+          github-token: ${{ github.token }}
+      - name: Inspect actual core and lint XML from the successful main build
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import hashlib, json
+          from pathlib import Path
+          import xml.etree.ElementTree as ET
+          root = Path("build-proof")
+          lint = list(root.rglob("lint-results-debug.xml"))
+          assert len(lint) == 1, "Expected one lint XML report"
+          assert lint[0].stat().st_size <= 16 * 1024 * 1024
+          issues = list(ET.parse(lint[0]).getroot().iter("issue"))
+          errors = [i for i in issues if i.get("severity") in ("Fatal", "Error")]
+          print("LINT_RESULT=" + json.dumps(dict(issues=len(issues), errors=len(errors),
+              sha256=hashlib.sha256(lint[0].read_bytes()).hexdigest())))
+          assert not errors, "Lint errors in retained report"
+          reports = sorted((root / "core/build/test-results").rglob("TEST-*.xml"))
+          assert reports, "No retained core XML"
+          cases = []
+          hashes = {}
+          for path in reports:
+              assert path.stat().st_size <= 16 * 1024 * 1024
+              cases.extend(ET.parse(path).getroot().iter("testcase"))
+              hashes[path.name] = hashlib.sha256(path.read_bytes()).hexdigest()
+          problems = [p.tag for case in cases for p in case if p.tag in ("failure", "error", "skipped")]
+          identities = [(case.get("classname"), case.get("name")) for case in cases]
+          assert len(identities) == len(set(identities)), "Duplicate core test identities"
+          print("CORE_REPORT_RESULT=" + json.dumps(dict(cases=len(cases), problems=len(problems), reports=len(reports), sha256=hashes)))
+          assert len(cases) == 213 and not problems, "Core qualification mismatch"
           PY

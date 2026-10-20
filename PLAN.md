@@ -1978,3 +1978,28 @@ accuracy remain open. All unchecked scope-ledger work still applies.
    states and actual SQLite/provider/lifecycle regressions.
 
 Contract, configuration and primary research: [DEVELOPMENT_RELEASES](docs/DEVELOPMENT_RELEASES.md).
+
+### Recording export receipts — execution in progress, 19 October 2026
+
+1. Add independently bounded local attempt/destination/verified models and a
+   guarded audit wrapper. Record STARTED before snapshot, WRITTEN only after
+   successful provider close, VERIFIED only after exact validated readback.
+   Propagate cancellation and preserve original transfer errors; audit failure
+   cannot block a verified external recovery copy or invent a saved receipt.
+2. Implement an independent CE FULL/WAL SQLite store with a schema-1 fixture,
+   expected-phase updates, global sequence ordering and indexed per-recording
+   latest-attempt/latest-verified queries. Retain future/corrupt bytes. Keep
+   raw capture, journal, alarm stores and SOLR bytes unchanged.
+3. Retain only URI digest, validated authority and optional display name, not a
+   URI capability or persisted grant. Metadata-query failure stays unknown.
+   Show a native per-recording history screen with explicit interrupted/empty/
+   unavailable states, prior verified copy, current display zone and selectable
+   content fingerprints. Deletion removes scoped local receipts, with explicit
+   failure semantics and no deletion of external files or another session.
+4. Prove core transfer/audit failure boundaries, actual SQLite fixture/reopen/
+   rollback/races/corruption, provider denial/truncation/replacement and verified
+   recovery despite unavailable receipts. Exercise 200% recreation/unavailable
+   native UI, inspect exact reports/captures, then qualify both full API suites
+   and merge. This slice is separate from tonight's APK distribution candidate.
+
+Detailed contract/research: [RECORDING_EXPORT_HISTORY](docs/RECORDING_EXPORT_HISTORY.md).

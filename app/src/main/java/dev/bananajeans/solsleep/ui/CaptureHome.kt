@@ -53,6 +53,10 @@ import java.time.format.DateTimeFormatter
     val locale=LocalConfiguration.current.locales[0]
     val use24=android.text.format.DateFormat.is24HourFormat(context)
     val formatter=remember(locale,use24) {DateTimeFormatter.ofPattern(android.text.format.DateFormat.getBestDateTimePattern(locale,if(use24) "yMMMdHm" else "yMMMdhm"),locale)}
+    if(state.exportHistorySession!=null) {
+        MotionExportHistoryScreen(state.exportHistory,state.exportHistoryUnavailable,model::closeExportHistory)
+        return
+    }
     if(showCoverage && state.details!=null) {
         CaptureCoverageScreen(requireNotNull(state.details)) {showCoverage=false;model.closeDetails()}
         return
@@ -82,14 +86,14 @@ import java.time.format.DateTimeFormatter
             }
             state.active?.let {active->item {
                 CaptureCard(active,formatter,enabled=!state.busy && !state.unavailable,
-                    onResume={model.resume(active)},onPause={model.pause(active)},onStop={model.stop(active)},onInspect={model.inspect(active)},onDelete={},onExport={})
+                    onResume={model.resume(active)},onPause={model.pause(active)},onStop={model.stop(active)},onInspect={model.inspect(active)},onDelete={},onExport={},onExportHistory={})
             }}
             item {Text(stringResource(R.string.capture_saved),style=MaterialTheme.typography.titleLarge)}
             items(state.sessions.filter {it.id!=state.active?.id},key={it.id}) {session->
                 CaptureCard(session,formatter,enabled=!state.busy && !state.unavailable,onResume={model.resume(session)},onPause={model.pause(session)},
                     onStop={model.stop(session)},onInspect={model.inspect(session)},onDelete={deleting=session},onExport={
                         exportId=session.id.toString();create.launch("solsleep-motion-${session.id}.solmotion")
-                    })
+                    },onExportHistory={model.showExportHistory(session.id)})
             }
             item {FlowRow(horizontalArrangement=Arrangement.spacedBy(12.dp)) {
                 if(state.page>0) TextButton(onClick={model.page(-1)},enabled=!state.busy) {Text(stringResource(R.string.capture_newer))}
@@ -160,7 +164,7 @@ import java.time.format.DateTimeFormatter
 }
 
 @Composable private fun CaptureCard(session: CaptureSession,formatter: DateTimeFormatter,enabled: Boolean,
-    onResume: ()->Unit,onPause: ()->Unit,onStop: ()->Unit,onInspect: ()->Unit,onDelete: ()->Unit,onExport: ()->Unit) {
+    onResume: ()->Unit,onPause: ()->Unit,onStop: ()->Unit,onInspect: ()->Unit,onDelete: ()->Unit,onExport: ()->Unit,onExportHistory: ()->Unit) {
     Card(Modifier.fillMaxWidth().semantics {testTag="capture_${session.id}"}) {
         Column(Modifier.padding(20.dp),verticalArrangement=Arrangement.spacedBy(10.dp)) {
             Text(formatter.format(session.startedAt.atZone(ZoneId.systemDefault())),style=MaterialTheme.typography.titleMedium)
@@ -181,6 +185,8 @@ import java.time.format.DateTimeFormatter
                 if(session.state !in setOf(CaptureState.PREPARING,CaptureState.RECORDING,CaptureState.DELETING)) TextButton(onClick=onInspect,enabled=enabled) {Text(stringResource(R.string.capture_details))}
                 if(session.state in setOf(CaptureState.COMPLETED,CaptureState.FAILED)) TextButton(onClick=onExport,enabled=enabled,
                     modifier=Modifier.semantics {testTag="motion_export_${session.id}"}) {Text(stringResource(R.string.motion_export))}
+                if(session.state in setOf(CaptureState.COMPLETED,CaptureState.FAILED)) TextButton(onClick=onExportHistory,enabled=enabled,
+                    modifier=Modifier.semantics {testTag="motion_export_history_${session.id}"}) {Text(stringResource(R.string.motion_receipts_title))}
                 if(session.terminal) TextButton(onClick=onDelete,enabled=enabled) {Text(stringResource(R.string.delete))}
             }
         }
