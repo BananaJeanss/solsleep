@@ -62,14 +62,14 @@ class MotionCaptureTest {
         clearRecords();AlarmGraph.engine(context).delete(alarmId)
     }
     private fun quiesceScreen() {
-        // Configuration changes can replace the Compose root. Stop the real
-        // lifecycle first; cleanup must not await a frame on a stale/hidden root.
-        compose.activityRule.scenario.moveToState(Lifecycle.State.CREATED)
         val model=java.util.concurrent.atomic.AtomicReference<CaptureViewModel>()
         compose.activityRule.scenario.onActivity {model.set(ViewModelProvider(it)[CaptureViewModel::class.java])}
-        // ViewModel continuations use the Compose-controlled Main dispatcher.
-        // A wall-clock-only sleep leaves queued completion stuck after onStop.
-        // waitUntil advances Main and yields for real IO without requiring a root.
+        // A fresh screen starts busy before repeatOnLifecycle launches its load.
+        // Let that real load finish while the Activity is still STARTED.
+        compose.waitUntil(25000) {!model.get().state.value.busy}
+        // Stop periodic reloads, then drain work already launched on Main/IO.
+        // Neither wait requires an attached or idle Compose root.
+        compose.activityRule.scenario.moveToState(Lifecycle.State.CREATED)
         compose.waitUntil(25000) {!model.get().state.value.busy}
     }
     private fun clearRecords() {
