@@ -222,7 +222,7 @@ Units: m/s² (including gravity)</string>
     <string name="capture_event_count">Session events: %1$d</string>
     <string name="capture_retained_damage">Some files could not be validated. Original damaged files are retained; valid samples are counted separately.</string>
     <string name="capture_delete_title">Delete this motion recording?</string>
-    <string name="capture_delete_body">Removes this recording’s raw files and session metadata from this installation. Manual journal entries and alarms stay unchanged. An interrupted deletion can be retried. This is not a secure erase guarantee for flash storage.</string>
+    <string name="capture_delete_body">Removes this recording’s raw files, session metadata and local export receipts from this installation. External documents are not deleted. Manual journal entries and alarms stay unchanged. An interrupted deletion can be retried. This is not a secure erase guarantee for flash storage.</string>
     <string name="capture_low_space">Stopped because the recording storage limit or free-space reserve was reached.</string>
     <string name="capture_time_limit">Stopped at the 12-hour segment limit.</string>
     <string name="capture_clock_change">Stopped after a clock change. Resume to create a new clock anchor.</string>

@@ -69,8 +69,13 @@ class ChallengeUiTest {
         if(action!=null) {
             val text=if(action==AlarmIntents.DISMISS) context.getString(R.string.dismiss)
                 else context.getString(R.string.snooze_minutes,engine().entries().single {it.rule.id==id}.rule.snoozeMinutes)
-            waitText(text)
-            compose.onNodeWithText(text).performScrollTo().performClick()
+            // Full-screen delivery can replace the initial root after text was
+            // found. Require the actual visible/enabled click within one bounded
+            // retry; never start a task directly through the engine or an intent.
+            compose.waitUntil(15000) {runCatching {
+                compose.onNodeWithText(text).performScrollTo().assertIsDisplayed().assertIsEnabled().performClick()
+                true
+            }.getOrDefault(false)}
         }
         return scenario
     }
