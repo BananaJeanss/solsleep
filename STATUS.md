@@ -10,47 +10,51 @@ parity, physiological accuracy and production readiness are not claimed.
 
 ## Download and qualification update — 20 October 2026
 
-The reported Actions APK link returned 404 for the user. The artifact still exists
-and the connected GitHub download endpoint returned a preview ZIP, but this does
-not establish anonymous or durable access to the original Actions URL. No public
-GitHub release exists at this checkpoint. See
-[download status and recovery steps](docs/DEVELOPMENT_DOWNLOADS.md).
+The reported Actions APK link returned 404. The repository is public and the
+connected artifact endpoint can recover preview bytes, but **no public release
+exists yet**. A temporary recovered URL is not permanent delivery. See
+[download status](docs/DEVELOPMENT_DOWNLOADS.md).
 
-[PR #11](https://github.com/BananaJeanss/solsleep/pull/11) implements verified debug
-bundles and gated development releases.
-[PR #12](https://github.com/BananaJeanss/solsleep/pull/12) implements persistent
-recording-export receipts. Both remain drafts, unmerged and **unqualified**:
-CI52 and CI53 built successfully but both API 29 and API 37 jobs failed.
-The earlier lifecycle cleanup change is therefore not an established fix.
-The last fully qualified app milestone remains PR #10, recorded below.
+[PR #11](https://github.com/BananaJeanss/solsleep/pull/11) implements verified
+standalone debug bundles and gated main-run prereleases. Current source
+`7f284b48e3e9eddd39620ec979130ed1baaa86e2` passes 203 core and 26 Python
+checks, lint and debug/shrunk release builds. Actual
+[CI62](https://github.com/BananaJeanss/solsleep/actions/runs/39463089168)
+API29 XML contains all 116 cases with no failure/error/skip. API37 first failed
+unpacking an SDK package before tests; only that job was retried, and is running.
+No qualification pass or release publication is claimed yet.
 
-Local command execution remains unavailable. A read-only CI inspection overcame
-the report-inspection blocker: actual CI52/53 XML and matching artifact digests
-were examined in diagnostic run 39459390877, job 118754565820. CI52 has 116 cases
-and nine failures per API; CI53 has 126 cases and eleven failures per API. Every
-reported failure is the recording-screen cleanup's busy-state wait.
+[PR #12](https://github.com/BananaJeanss/solsleep/pull/12) implements local
+recording-export receipts, independent of raw recordings and alarms.
+[CI61](https://github.com/BananaJeanss/solsleep/actions/runs/39463085604)
+passes 213 core/26 Python, lint/builds and all 126 API37 cases.
+API29 has 126 cases and one failure in the earlier ChallengeUiTest: its helper
+found Dismiss, then lost that control before scrolling. All recording/storage/
+receipt cases passed, including the two new native history cases. Source
+`841328e12cd5ff92c5c741ee9e3fbc3d27e347f0` now requires a visible, enabled,
+actual scroll-and-click within the existing bounded wait. It does not start the
+task through an engine shortcut. Full
+[CI66](https://github.com/BananaJeanss/solsleep/actions/runs/39466387300)
+qualification is pending; every prior assertion and both APIs remain enabled.
 
-The stopped-Activity cleanup used a wall-clock loop while work awaited the
-Compose-controlled Main dispatcher. Both branches now use a bounded Compose-aware
-wait at the same state predicate. No app/storage code or test body was changed.
-Core/native JUnit report gates now reject absent/empty reports and any failures,
-errors or skipped cases, and expose the real counts in job logs.
+The earlier CI52/53 XML retained cleanup failures, while later logcat inspection
+also exposed setup failures before recording test bodies. A fresh ViewModel
+starts busy before the STARTED lifecycle effect launches its load. The corrected
+harness waits for the actual initial load before stopping the Activity, then
+drains launched work with a bounded Compose-aware wait. Cleanup destroys the
+Activity before restoring font scale and requires no stale Compose-root idle.
+CI62's native pass and CI61's passing recording cases now demonstrate this
+correction; failed/superseded earlier runs are not qualification evidence.
 
-Corrected [CI57](https://github.com/BananaJeanss/solsleep/actions/runs/39460085331)
-passes 203 core and 26 Python checks, lint and both build variants.
-[CI58](https://github.com/BananaJeanss/solsleep/actions/runs/39460116668)
-passes 213 core and 26 Python checks, lint and both build variants.
-Native qualification is still pending. CI58 API 37 failed downloading/unpacking
-Google's system-image ZIP before app tests started; retry that job after the
-other jobs finish. Its missing-report gate correctly failed. CI57 installed the
-same API 37 image and is running tests. Earlier CI54–56 were superseded by the
-report-gate update, not counted as complete qualification.
-
-A separate read-only inspection branch, PR #13, cannot qualify app tests and
-must not merge. CI59 found that CI53's failed-test artifacts did not contain the
-receipt screenshot; fresh successful native captures still require review.
-No public release, successful native rerun or physical qualification is claimed
-at this checkpoint. Neither feature PR has been merged.
+Core and native CI report gates reject missing/empty reports and any failed,
+errored or skipped cases, and print real counts/details before retaining full
+artifacts. Local command execution remains unavailable; hosted builds and
+read-only artifact inspection provide the working verification route. Both
+original CI61 receipt captures were visually reviewed at 200% text and retained
+with hashes in [SCREENSHOTS](docs/SCREENSHOTS.md). They show a synthetic fixture,
+not a measured night or full-app qualification. Temporary PR #13 was closed
+without merge; its additional startup experiment was not promoted into feature
+branches. Neither feature PR is merged. Physical qualification remains open.
 
 ## Current tracking and wake-task status
 
@@ -62,6 +66,33 @@ at this checkpoint. Neither feature PR has been merged.
 | Sonar | Research only; no overnight/sonar microphone acquisition or calibrated acoustic/DSP workflow |
 | Wake-up challenges | Eight native puzzle types, NFC, relative voice level, experimental offline voiceover and custom JSON packs implemented; software qualified, physical gates below |
 | Wear / Health Connect | Acquisition adapters and physiological validation remain unimplemented |
+
+## Development APK distribution under qualification
+
+[PR #11](https://github.com/BananaJeanss/solsleep/pull/11) adds standalone signed
+debug APK bundles, actual package/certificate verification, checksums and exact
+source/run metadata. Qualified main runs will publish the exact same artifact as
+a versioned GitHub development prerelease after both full API suites pass.
+Optional private CI debug signing is supported; production signing is separate.
+See [DEVELOPMENT_RELEASES](docs/DEVELOPMENT_RELEASES.md) and
+[the tonight test guide](docs/TONIGHT_TEST.md) before installing/changing signers.
+
+[CI50](https://github.com/BananaJeanss/solsleep/actions/runs/39170270014) is **not a
+qualification pass**: 203 JVM, 24 Python, zero lint and both build variants pass,
+and actual API 37 XML contains all 116 passing cases. API 29 reached the job time
+limit during the large-text coverage case and produced no final JUnit XML.
+The downloaded artifact remains a preview. Its signature/checksums/build identity
+were independently checked; a public release is not yet established.
+
+Retained logcat shows the coverage screenshot being opened, then font reset and
+Activity recreation before progress stopped. The harness is being corrected to
+stop its real lifecycle before cleanup, avoid an unbounded Compose idle wait on
+a replaced root, and destroy its Activity before restoring font scale. Test
+bodies/assertions and both platforms remain enabled; a complete rerun is required.
+Publisher review also corrected authenticated draft lookup and explicit tag
+creation, with 26 Python cases and actionlint passing locally. A disposable private
+CI keystore was prepared, used to sign an actual APK, verified against independent
+keytool certificate bytes and removed. No private key was committed or distributed.
 
 ## Qualified recording provenance and coverage software milestone
 

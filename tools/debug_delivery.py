@@ -34,13 +34,13 @@ def unique_object(pairs):
     return obj
 
 
-def validate_info(info: dict) -> None:
+def validate_info(info: dict, *, repository: str = REPO) -> None:
     expected = {"schema", "repository", "commit", "tree", "runId", "runNumber", "buildAttempt",
                 "applicationId", "versionCode", "versionName", "minSdk", "targetSdk", "debuggable",
                 "apkSha256", "certificateSha256", "signing"}
     if set(info) != expected or type(info["schema"]) is not int or info["schema"] != 1:
         raise ValueError("Unknown build metadata schema")
-    if info["repository"] != REPO or not all(isinstance(info[k], str) and COMMIT.fullmatch(info[k]) for k in ("commit", "tree")):
+    if not re.fullmatch(r"[A-Za-z0-9_.-]{1,39}/[A-Za-z0-9_.-]{1,100}", repository) or info["repository"] != repository or not all(isinstance(info[k], str) and COMMIT.fullmatch(info[k]) for k in ("commit", "tree")):
         raise ValueError("Wrong repository/source identity")
     for key in ("runId", "runNumber", "buildAttempt", "versionCode", "minSdk", "targetSdk"):
         if type(info[key]) is not int or info[key] <= 0:
@@ -58,7 +58,7 @@ def validate_info(info: dict) -> None:
         raise ValueError("Unknown signing policy")
 
 
-def validate_bundle(directory: Path, *, commit: str, run_id: int, run_number: int, attempt: int) -> dict:
+def validate_bundle(directory: Path, *, commit: str, run_id: int, run_number: int, attempt: int, repository: str = REPO) -> dict:
     if directory.is_symlink() or {p.name for p in directory.iterdir()} != FILES:
         raise ValueError("Unexpected delivery files")
     for name in FILES:
@@ -71,7 +71,7 @@ def validate_bundle(directory: Path, *, commit: str, run_id: int, run_number: in
     if sums != wanted:
         raise ValueError("Delivery checksum mismatch")
     info = json.loads(directory.joinpath("build-info.json").read_text(), object_pairs_hook=unique_object)
-    validate_info(info)
+    validate_info(info, repository=repository)
     if (info["commit"], info["runId"], info["runNumber"], info["buildAttempt"]) != (commit, run_id, run_number, attempt):
         raise ValueError("Artifact belongs to a different workflow source/run")
     if digest(directory / "solsleep-debug.apk") != info["apkSha256"]:
@@ -104,14 +104,14 @@ def package(apk: Path, directory: Path) -> dict:
                 targetSdk=int(re.search(r"^targetSdkVersion:'(\d+)'", badging, re.MULTILINE)[1]),
                 debuggable="application-debuggable" in badging.splitlines(), apkSha256=digest(apk),
                 certificateSha256=certs[0], signing="private-ci" if os.environ.get("SOLSLEEP_DEBUG_KEYSTORE") else "runner-ephemeral")
-    validate_info(info)
+    validate_info(info, repository=os.environ["GITHUB_REPOSITORY"])
     directory.mkdir(parents=True, exist_ok=False)
     shutil.copyfile(apk, directory / "solsleep-debug.apk")
     directory.joinpath("build-info.json").write_text(json.dumps(info, indent=2, sort_keys=True) + "\n")
     directory.joinpath("APK_SIGNER.txt").write_text(signer)
     directory.joinpath("SHA256SUMS").write_text("".join(
         f"{digest(directory / name)}  {name}\n" for name in sorted(FILES - {"SHA256SUMS"})))
-    return validate_bundle(directory, commit=sha, run_id=info["runId"], run_number=info["runNumber"], attempt=info["buildAttempt"])
+    return validate_bundle(directory, commit=sha, run_id=info["runId"], run_number=info["runNumber"], attempt=info["buildAttempt"], repository=info["repository"])
 
 
 if __name__ == "__main__":

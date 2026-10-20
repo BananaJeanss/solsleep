@@ -1,51 +1,64 @@
-name: Recording evidence inspection
+name: Anonymous APK download verification
 on:
   pull_request:
     paths: [".github/workflows/android.yml"]
 permissions:
   contents: read
-  actions: read
-concurrency:
-  group: capture-inspection-${{ github.ref }}
-  cancel-in-progress: true
 jobs:
-  inspect:
+  public-download:
     if: >-
       github.repository == 'BananaJeanss/solsleep' &&
       github.event.pull_request.head.repo.full_name == 'BananaJeanss/solsleep' &&
       github.head_ref == 'inspection/recording-reports'
-    strategy:
-      fail-fast: false
-      matrix:
-        api: [29, 37]
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          repository: BananaJeanss/solsleep
-          run-id: 39463085604
-          name: api-${{ matrix.api }}-device-results
-          path: prior-reports
-          github-token: ${{ github.token }}
-      - name: Expose original native receipt capture for review
+          persist-credentials: false
+          ref: 3be27815bb5cb03ca6ab1c256b6c7415db732059
+      - name: Download public release assets without authentication and verify exact bytes
         shell: bash
         run: |
           python3 - <<'PY'
+          import hashlib, json, sys, tempfile
           from pathlib import Path
-          import base64, hashlib, json
-          root = Path("prior-reports")
-          paths = list(root.rglob("recording-export-history-large-text.png"))
-          if len(paths) != 1:
-              raise SystemExit("Expected exactly one original receipt screenshot")
-          path = paths[0]
-          if path.is_symlink() or path.stat().st_size > 1024 * 1024:
-              raise SystemExit("Unexpected capture file")
-          data = path.read_bytes()
-          if not data.startswith(b"\x89PNG\r\n\x1a\n"):
-              raise SystemExit("Not an original PNG")
-          print("CAPTURE_META=" + json.dumps(dict(path=str(path), bytes=len(data),
-              sha256=hashlib.sha256(data).hexdigest(),
-              gitBlobSha=hashlib.sha1(b"blob " + str(len(data)).encode() + b"\0" + data).hexdigest())))
-          print("CAPTURE_BYTES=" + base64.b64encode(data).decode())
+          from urllib.parse import quote, urlsplit
+          from urllib.request import Request, urlopen
+          sys.path.insert(0, "tools")
+          from debug_delivery import FILES, validate_bundle
+          expected = json.loads("{\"apkSha256\":\"bfad3211966689f9982641ab2c6c6271b1c9c0fe3e6588b8b252f1ab13afe186\",\"applicationId\":\"dev.bananajeans.solsleep.debug\",\"buildAttempt\":1,\"certificateSha256\":\"99208e9e0148ed64191f839c5f7144c15088adb3e65aa230db9cd4ec846bfe91\",\"commit\":\"3be27815bb5cb03ca6ab1c256b6c7415db732059\",\"debuggable\":true,\"minSdk\":29,\"repository\":\"BananaJeanss/solsleep\",\"runId\":39468001698,\"runNumber\":68,\"schema\":1,\"signing\":\"runner-ephemeral\",\"targetSdk\":37,\"tree\":\"b11be16d78f42a6c00716328e331bbe43cfd9a2b\",\"versionCode\":16801,\"versionName\":\"0.1.0-dev.68.1.3be27815bb5c-debug\"}")
+          tag = "debug-68.1-3be27815bb5c"
+          base = "https://github.com/BananaJeanss/solsleep/releases/download/" + tag + "/"
+          limits = {"solsleep-debug.apk": 64 * 1024 * 1024, "build-info.json": 65536,
+                    "APK_SIGNER.txt": 65536, "SHA256SUMS": 65536}
+          assert set(limits) == FILES
+          with tempfile.TemporaryDirectory() as temp:
+              directory = Path(temp)
+              for name in sorted(FILES):
+                  # No Authorization header, token, cookies or credential handler.
+                  request = Request(base + quote(name), headers={"User-Agent": "SolSleep-public-download-check"})
+                  total = 0
+                  digest = hashlib.sha256()
+                  with urlopen(request, timeout=60) as response:
+                      assert response.status == 200
+                      assert urlsplit(response.geturl()).scheme == "https"
+                      with (directory / name).open("xb") as output:
+                          while True:
+                              chunk = response.read(65536)
+                              if not chunk:
+                                  break
+                              total += len(chunk)
+                              if total > limits[name]:
+                                  raise SystemExit("Public asset exceeds bound: " + name)
+                              output.write(chunk)
+                              digest.update(chunk)
+                  print("PUBLIC_ASSET", name, "HTTP", 200, "bytes", total, "sha256", digest.hexdigest())
+              actual = validate_bundle(directory, commit=expected["commit"], run_id=expected["runId"],
+                  run_number=expected["runNumber"], attempt=expected["buildAttempt"])
+              if actual != expected:
+                  raise SystemExit("Public metadata differs from the trusted build result")
+              print("PUBLIC_RELEASE_VERIFIED=" + json.dumps(dict(tag=tag, commit=actual["commit"],
+                  tree=actual["tree"], apkSha256=actual["apkSha256"],
+                  certificateSha256=actual["certificateSha256"], authentication="none")))
           PY

@@ -13,7 +13,6 @@ import java.nio.channels.FileChannel
 import java.nio.file.*
 import java.util.UUID
 import java.security.MessageDigest
-import android.provider.OpenableColumns
 
 class MotionSpaceException: IOException("Insufficient free storage for a recording recovery copy")
 
@@ -117,35 +116,6 @@ class MotionDocuments(context: Context,private val databaseName: String="motion-
     fun export(id: UUID,uri: Uri): MotionArchivePreview=export(id,
         {requireNotNull(context.contentResolver.openOutputStream(uri,"wt"))},
         {requireNotNull(context.contentResolver.openInputStream(uri))})
-    fun exportAudited(id: UUID,uri: Uri,historyName: String="motion-exports.db"): AuditedMotionResult {
-        val audit=MotionExportHistory(context,historyName) // Opens lazily inside guarded audit calls.
-        var result: AuditedMotionResult?=null
-        try {
-            result=AuditedMotionExport.run(id,destination(uri),audit) {written->
-                export(id,{requireNotNull(context.contentResolver.openOutputStream(uri,"wt"))},
-                    {written();requireNotNull(context.contentResolver.openInputStream(uri))})
-            }
-        } finally {
-            try {audit.close()} catch(c: java.util.concurrent.CancellationException) {throw c} catch(_: Exception) {
-                result=when(val value=result) {
-                    is AuditedMotionResult.Verified->value.copy(auditRecorded=false)
-                    is AuditedMotionResult.Failed->value.copy(auditRecorded=false)
-                    null->null
-                }
-            }
-        }
-        return requireNotNull(result)
-    }
-    private fun destination(uri: Uri): MotionExportDestination? {
-        val text=uri.toString()
-        if(uri.scheme!="content" || text.length>16384) return null
-        val hash=MessageDigest.getInstance("SHA-256").digest(text.toByteArray(Charsets.UTF_8)).joinToString("") {"%02x".format(it)}
-        val authority=uri.authority?.substringAfterLast('@')?.takeIf {it.matches(Regex("[A-Za-z0-9._-]{1,255}"))}
-        val name=try {context.contentResolver.query(uri,arrayOf(OpenableColumns.DISPLAY_NAME),null,null,null)?.use {c->
-            if(c.moveToFirst()) c.getColumnIndex(OpenableColumns.DISPLAY_NAME).takeIf {it>=0}?.let(c::getString) else null
-        }} catch(c: java.util.concurrent.CancellationException) {throw c} catch(_: Exception) {null}
-        return try {MotionExportDestination(hash,authority,name)} catch(_: IllegalArgumentException) {MotionExportDestination(hash,authority,null)}
-    }
     fun export(id: UUID,output: ()->OutputStream,input: ()->InputStream): MotionArchivePreview {
         // Separate disposable spool; it is never mistaken for a recoverable import.
         val spool=File.createTempFile("motion-export-",".solmotion",context.cacheDir)

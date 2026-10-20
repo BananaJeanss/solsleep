@@ -153,3 +153,38 @@ an inherited hardcoded interval caption and are not the final visual evidence.
 | --- | --- |
 | API 29 | `0da3ba43f21488910f3d44158008acaf975087a2c07b0fa156d198222367fd8b` |
 | API 37 | `45ca812bea6620513cb0564a8fe0f5fc66228f55ce0e0654a90b38f98d134fab` |
+
+## Recording export receipts — reviewed preview, 20 October 2026
+
+Original PNG bytes from [CI61](https://github.com/BananaJeanss/solsleep/actions/runs/39463085604),
+source checkout `a99b7e33823c247b4889a6dd68be1816878f0e22`, tree
+`3aa26324558db59cefab5fe372d08465e7f7f4a3`, PR #12 app code
+`7c3c781610fcca7cc3528cfc6f1eb391cdb3b7a4`. All recording cases passed
+on both APIs; the whole API29 run failed one earlier alarm-control readiness
+case and is not full-app qualification. The subsequent source change affects
+that test helper only, not the receipt UI/runtime or fixture.
+
+The actual native test publishes a synthetic known verified receipt and a later
+failed attempt, opens history at 200% system text, recreates its Activity,
+captures this viewport, verifies the selectable content fingerprint and confirms
+scoped deletion without changing the original recording before deletion.
+Both images were visually reviewed: Close stays fixed, document/provider details
+are readable, and long identities/fingerprints remain selectable and scrollable.
+The truncated toolbar title and content entering/leaving the scrolled viewport
+do not obscure Close. The fixture is not a real backup destination or human night.
+
+| View | API29 light fallback | API37 dark |
+| --- | --- | --- |
+| Last verified copy, 200% text | ![Receipt history API29](screenshots/recording-receipts-large-text-api29.png) | ![Receipt history API37](screenshots/recording-receipts-large-text-api37.png) |
+
+| Capture | Bytes | SHA-256 |
+| --- | --- | --- |
+| API29 | 172985 | `1c2b8b17ce8cc3c37df074cb1adcc447704a59021addf832bdf3992a842d652f` |
+| API37 | 174651 | `35891c42961c01bb99901c7a7e816019a522a1eb9632aa1396ac4fb082589148` |
+
+The CI67 read-only inspection downloaded the original API artifacts, emitted
+exact PNG bytes/hashes and executed no artifact code. Git's returned blob IDs match the IDs computed from the original payloads;
+the PNG SHA-256 values are recorded separately above.
+Temporary PR #13 was closed without merge. No image generation, editing,
+resizing or reconstruction was used. These previews establish rendered UI for
+known input, not physiological accuracy or a completed release gate.
