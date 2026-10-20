@@ -41,6 +41,8 @@ class MotionCaptureTest {
         assertTrue("Capture did not reach the expected durable state",condition())
     }
     @Before fun setup() {
+        // Fresh launch only: synchronize its first composition before quiescing.
+        compose.onNodeWithTag("capture_home").assertExists()
         quiesceScreen()
         context.stopService(Intent(context,MotionCaptureService::class.java));await {CaptureRuntime.liveOwner==null}
         clearRecords()
@@ -54,23 +56,30 @@ class MotionCaptureTest {
     }
     @After fun cleanup() {
         quiesceScreen()
+        compose.activityRule.scenario.moveToState(Lifecycle.State.DESTROYED)
         shell("input keyevent KEYCODE_WAKEUP");shell("settings put system font_scale 1.0")
+        await {kotlin.math.abs(context.resources.configuration.fontScale-1f)<.01f}
         shell("appops set ${context.packageName} POST_NOTIFICATION allow")
         context.stopService(Intent(context,MotionCaptureService::class.java));await {CaptureRuntime.liveOwner==null}
         clearRecords();AlarmGraph.engine(context).delete(alarmId)
     }
     private fun quiesceScreen() {
-        compose.waitForIdle()
-        compose.activityRule.scenario.moveToState(Lifecycle.State.CREATED)
         val model=java.util.concurrent.atomic.AtomicReference<CaptureViewModel>()
         compose.activityRule.scenario.onActivity {model.set(ViewModelProvider(it)[CaptureViewModel::class.java])}
-        await {!model.get().state.value.busy}
+        // A fresh screen starts busy before repeatOnLifecycle launches its load.
+        // Let that real load finish while the Activity is still STARTED.
+        compose.waitUntil(25000) {!model.get().state.value.busy}
+        // Stop periodic reloads, then drain work already launched on Main/IO.
+        // Neither wait requires an attached or idle Compose root.
+        compose.activityRule.scenario.moveToState(Lifecycle.State.CREATED)
+        compose.waitUntil(25000) {!model.get().state.value.busy}
     }
     private fun clearRecords() {
         // Disposable test installation only. Tests never target a personal installation.
         CaptureStore(context).use {store->store.sessions(100).forEach {MotionFiles.forSession(context,it.id).eraseOwned()}}
         MotionDocuments(context).discard()
         context.deleteDatabase("motion-capture.db")
+        context.deleteDatabase("motion-exports.db")
     }
     private fun click(text: String) {
         // The durable service acknowledgement can precede the next screen projection/frame.
@@ -178,6 +187,62 @@ class MotionCaptureTest {
         compose.waitUntil(15000) {compose.onAllNodesWithTag("coverage_open").fetchSemanticsNodes(atLeastOneRootRequired=false).isNotEmpty()}
         compose.onNodeWithTag("coverage_open").performScrollTo().performClick()
         compose.waitUntil(15000) {compose.onAllNodesWithTag("coverage_screen").fetchSemanticsNodes(atLeastOneRootRequired=false).isNotEmpty()}
+    }
+    @Test fun exportReceiptsKeepThePriorVerifiedCopyVisibleAtLargeTextAcrossRecreation() {
+        val old=context.resources.configuration.fontScale
+        try {
+            shell("settings put system font_scale 2.0")
+            compose.waitUntil(15000) {context.resources.configuration.fontScale>=1.99f}
+            val (recording,chunk)=coverageFixture()
+            MotionExportHistory(context).use {history->
+                val first=history.start(recording.session.id,MotionExportDestination("b".repeat(64),"test.documents","Receipt UI fixture.solmotion"),recording.session.startedAt)
+                history.written(first,recording.session.startedAt);history.verified(first,"c".repeat(64),recording.session.startedAt)
+                val later=history.start(recording.session.id,null,recording.session.updatedAt);history.failed(later,recording.session.updatedAt)
+            }
+            compose.activityRule.scenario.recreate()
+            click("Recording export history")
+            compose.waitUntil(15000) {compose.onAllNodesWithTag("motion_receipts").fetchSemanticsNodes(atLeastOneRootRequired=false).isNotEmpty()}
+            compose.onNodeWithTag("motion_receipts").performScrollToNode(hasText("Write did not complete"))
+            compose.onNodeWithText("Write did not complete").assertIsDisplayed()
+            compose.onNodeWithTag("motion_receipts").performScrollToNode(hasText("Document: Receipt UI fixture.solmotion"))
+            compose.onNodeWithText("Document: Receipt UI fixture.solmotion").assertIsDisplayed()
+            compose.activityRule.scenario.recreate()
+            compose.waitUntil(15000) {compose.onAllNodesWithTag("motion_receipts").fetchSemanticsNodes(atLeastOneRootRequired=false).isNotEmpty()}
+            compose.onNodeWithTag("motion_receipts").performScrollToNode(hasText("Matching readback verified"))
+            compose.onNodeWithText("Matching readback verified").assertIsDisplayed()
+            compose.onNodeWithTag("motion_receipts").performScrollToNode(hasText("Document: Receipt UI fixture.solmotion"))
+            compose.onNodeWithText("Document: Receipt UI fixture.solmotion").assertIsDisplayed()
+            InstrumentationRegistry.getInstrumentation().uiAutomation.takeScreenshot().let {bitmap->
+                PlatformTestStorageRegistry.getInstance().openOutputFile("recording-export-history-large-text.png").use {bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG,100,it)}
+            }
+            compose.onNodeWithTag("motion_receipts").performScrollToNode(hasText("Verified archive content fingerprint: "+"c".repeat(64)))
+            compose.onNodeWithText("Verified archive content fingerprint: "+"c".repeat(64)).assertIsDisplayed()
+            CaptureStore(context).use {assertEquals(recording,it.recording(recording.session.id))}
+            assertEquals(listOf(chunk),MotionFiles.forSession(context,recording.session.id).recover().chunks)
+            compose.onNodeWithContentDescription("Close").performClick()
+            compose.onNodeWithTag("capture_home").assertExists()
+            click("Delete");compose.onNode(hasText("Delete") and hasAnyAncestor(isDialog())).performClick()
+            await {sessions().isEmpty()}
+            MotionExportHistory(context).use {assertEquals(MotionExportSummary(recording.session.id),it.summary(recording.session.id))}
+        } finally {shell("settings put system font_scale $old")}
+    }
+    @Test fun unavailableReceiptHistoryNeverShowsKnownAbsenceAndRetainsOriginalDatabase() {
+        val (recording,_)=coverageFixture()
+        MotionExportHistory(context).use {it.start(recording.session.id,null,recording.session.startedAt)}
+        val path=context.getDatabasePath("motion-exports.db")
+        val damaged=path.readBytes().also {"BROKEN-RECEIPT!!".toByteArray().copyInto(it)};path.writeBytes(damaged)
+        compose.activityRule.scenario.recreate();click("Recording export history")
+        compose.waitUntil(15000) {compose.onAllNodesWithTag("motion_receipts").fetchSemanticsNodes(atLeastOneRootRequired=false).isNotEmpty()}
+        compose.onNodeWithTag("motion_receipts").performScrollToNode(hasText("Export history is unavailable.",substring=true))
+        compose.onNodeWithText("Export history is unavailable.",substring=true).assertIsDisplayed()
+        compose.onAllNodes(hasText("No export attempt has been recorded",substring=true)).assertCountEquals(0)
+        assertArrayEquals(damaged,path.readBytes())
+        CaptureStore(context).use {assertEquals(recording,it.recording(recording.session.id))}
+        compose.onNodeWithContentDescription("Close").performClick()
+        click("Delete");compose.onNode(hasText("Delete") and hasAnyAncestor(isDialog())).performClick()
+        await {sessions().isEmpty()}
+        compose.waitUntil(15000) {runCatching {compose.onNodeWithTag("motion_archive_message").assertTextContains("Local export receipts could not be removed",substring=true);true}.getOrDefault(false)}
+        assertArrayEquals(damaged,path.readBytes())
     }
     @Test fun nativeCoverageAtTwoHundredPercentTextRetainsRawDataAndSurvivesRecreation() {
         val old=context.resources.configuration.fontScale

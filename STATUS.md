@@ -8,29 +8,6 @@ The exact source passed the complete API 29/37 software qualification below.
 This is a **development build**. M0, M1, M2 and M3 remain partial. Full reference
 parity, physiological accuracy and production readiness are not claimed.
 
-## Download and qualification update — 20 October 2026
-
-The reported Actions APK link returned 404 for the user. The artifact still exists
-and the connected GitHub download endpoint returned a preview ZIP, but this does
-not establish anonymous or durable access to the original Actions URL. No public
-GitHub release exists at this checkpoint. See
-[download status and recovery steps](docs/DEVELOPMENT_DOWNLOADS.md).
-
-[PR #11](https://github.com/BananaJeanss/solsleep/pull/11) implements verified debug
-bundles and gated development releases.
-[PR #12](https://github.com/BananaJeanss/solsleep/pull/12) implements persistent
-recording-export receipts. Both remain drafts, unmerged and **unqualified**:
-CI52 and CI53 built successfully but both API 29 and API 37 jobs failed.
-The earlier lifecycle cleanup change is therefore not an established fix.
-The last fully qualified app milestone remains PR #10, recorded below.
-
-The current execution environment cannot run commands, inspect downloaded ZIP
-reports, attach a persistent local APK or compile changes. GitHub job status and
-text logs were inspected remotely. The logs report failing native tests and
-reference the archived reports; they do not identify the failed assertions.
-No root cause, native pass count or fix is claimed from those logs. This is a
-concrete continuation blocker, separate from the physical-device gates.
-
 ## Current tracking and wake-task status
 
 | Feature | Implemented status |

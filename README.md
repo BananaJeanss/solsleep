@@ -102,6 +102,12 @@ tests on each of API 29 and API 37, with zero lint issues.
 
 ## Build
 
+Development downloads: [GitHub Releases](https://github.com/BananaJeanss/solsleep/releases)
+and the standalone debug APK artifact in [Android checks](https://github.com/BananaJeanss/solsleep/actions/workflows/android.yml).
+Read [signing, updates and data recovery](docs/DEVELOPMENT_RELEASES.md) before
+installing: runner-generated certificates can change between builds. This is
+an experimental debug distribution, with production signing still pending.
+
 Requires JDK 17, Android platform `android-37.0` / API 37, and Build Tools 36.0.0. Set `ANDROID_HOME` or `sdk.dir` in an untracked `local.properties`.
 
 ```sh

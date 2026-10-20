@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+<resources>
+    <string name="motion_receipts_title">Recording export history</string>
+    <string name="motion_receipts_hint">These are local receipts for this recording. Verification means matching bytes were read back after the document was closed. It does not prove the file is still available or backed up by a cloud service.</string>
+    <string name="motion_receipts_empty">No export attempt has been recorded for this recording. Earlier app versions did not save receipts.</string>
+    <string name="motion_receipts_unavailable">Export history is unavailable. Its original database is retained. This does not mean there are no exports, and you can still make a verified recovery copy.</string>
+    <string name="motion_receipts_last_attempt">Last attempt</string>
+    <string name="motion_receipts_last_verified">Last verified copy</string>
+    <string name="motion_receipts_no_verified">No verified copy is recorded.</string>
+    <string name="motion_receipts_started">Started; completion is unknown</string>
+    <string name="motion_receipts_written">Document closed; verification was interrupted or not recorded</string>
+    <string name="motion_receipts_verified">Matching readback verified</string>
+    <string name="motion_receipts_failed_write">Write did not complete</string>
+    <string name="motion_receipts_unverified">Written, but readback could not be verified</string>
+    <string name="motion_receipts_date">Last recorded update: %1$s (%2$s)</string>
+    <string name="motion_receipts_name">Document: %1$s</string>
+    <string name="motion_receipts_unknown_name">Document name unknown</string>
+    <string name="motion_receipts_provider">Provider: %1$s</string>
+    <string name="motion_receipts_unknown_destination">Destination identity unknown</string>
+    <string name="motion_receipts_identity">Destination URI SHA-256: %1$s</string>
+    <string name="motion_receipts_fingerprint">Verified archive content fingerprint: %1$s</string>
+    <string name="motion_receipt_not_recorded">Recording export readback verified, but the local receipt could not be saved. Keep the external copy.</string>
+    <string name="motion_receipt_delete_unavailable">Local export receipts could not be removed; their database is retained. External documents are not deleted.</string>
+</resources>

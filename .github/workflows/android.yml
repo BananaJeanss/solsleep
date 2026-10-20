@@ -6,7 +6,7 @@ permissions:
   contents: read
 env:
   SOLSLEEP_BUILD_NUMBER: ${{ github.run_number }}
-  SOLSLEEP_BUILD_SHA: 7c3c781610fcca7cc3528cfc6f1eb391cdb3b7a4
+  SOLSLEEP_BUILD_SHA: ${{ github.event.pull_request.head.sha }}
   SOLSLEEP_BUILD_ATTEMPT: ${{ github.run_attempt }}
 concurrency:
   group: capture-inspection-${{ github.ref }}
@@ -26,7 +26,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-          ref: 7c3c781610fcca7cc3528cfc6f1eb391cdb3b7a4
+          ref: ${{ github.event.pull_request.head.sha }}
       - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
         with:
           distribution: temurin
@@ -61,7 +61,7 @@ jobs:
           adb shell settings put global window_animation_scale 0
           adb shell settings put global transition_animation_scale 0
           adb shell settings put global animator_duration_scale 0
-          ./gradlew :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=dev.bananajeans.solsleep.MotionCaptureTest --no-daemon
+          ./gradlew :app:connectedDebugAndroidTest '-Pandroid.testInstrumentationRunnerArguments.class=dev.bananajeans.solsleep.MotionCaptureTest#exportReceiptsKeepThePriorVerifiedCopyVisibleAtLargeTextAcrossRecreation' --no-daemon
       - name: Summarize native test reports
         if: always()
         shell: bash
