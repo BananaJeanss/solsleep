@@ -452,3 +452,14 @@ success and failure before retaining the same full artifacts. Missing/empty
 reports, failures, errors or skipped tests fail this additional report gate. The temporary cross-run diagnostic job was removed
 after inspecting the saved evidence. Local command execution is still unavailable;
 no new local build or passing rerun is claimed in this checkpoint.
+
+CI60 logcat inspection (run 39462663075, API29 job 118765848046) found
+MotionCaptureTest.setup failures as well as cleanup failures: all eleven receipt
+screen cases failed before their bodies, explaining absent capture PNGs. The XML
+only retained the later cleanup failure. CaptureUiState starts busy=true and the
+first load is launched by CaptureHome's STARTED repeatOnLifecycle effect. Stopping
+a fresh Activity before that effect runs prevents initialization; clock advancement
+after stopping is insufficient. quiesceScreen now waits for that actual initial
+load while STARTED, then moves to CREATED and drains any work already launched.
+No test body or data/UI assertion was removed. CI57/58 are superseded, not passes;
+the SDK download failure in CI58 does not require retry at superseded source.
