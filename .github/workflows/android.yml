@@ -58,6 +58,38 @@ jobs:
         run: |
           ./gradlew :core:test :app:lintDebug :app:assembleDebug --no-daemon
           ./gradlew :app:assembleRelease --no-daemon
+      - name: Summarize core test reports
+        if: always()
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import xml.etree.ElementTree as ET
+          root = Path("core/build/test-results")
+          reports = sorted(root.rglob("TEST-*.xml"))
+          print("JUnit reports:", len(reports))
+          if not reports:
+              raise SystemExit("No JUnit reports found; inspect retained logcat")
+          total_problems = 0
+          for report in reports:
+              if report.stat().st_size > 16 * 1024 * 1024:
+                  raise SystemExit("Oversize JUnit report")
+              suite = ET.parse(report).getroot()
+              cases = list(suite.iter("testcase"))
+              if not cases:
+                  raise SystemExit("Report contains no test cases")
+              problems = [(c, p) for c in cases for p in c if p.tag in ("failure", "error", "skipped")]
+              total_problems += len(problems)
+              print("|", report, "cases", len(cases), "problems", len(problems))
+              for case, problem in problems:
+                  print("| CASE", case.get("classname"), case.get("name"), problem.tag)
+                  detail = problem.get("message", "") + "\n" + (problem.text or "")
+                  for line in detail[:24000].splitlines():
+                      print("|", line)
+          if total_problems:
+              raise SystemExit("JUnit contains failures, errors or skipped tests")
+          PY
+
       - name: Verify signed APK and package standalone download
         id: identity
         run: |
@@ -163,8 +195,8 @@ jobs:
           adb shell settings put global transition_animation_scale 0
           adb shell settings put global animator_duration_scale 0
           ./gradlew :app:connectedDebugAndroidTest --no-daemon
-      - name: Print native failure reports
-        if: failure()
+      - name: Summarize native test reports
+        if: always()
         shell: bash
         run: |
           python3 - <<'PY'
@@ -172,21 +204,27 @@ jobs:
           import xml.etree.ElementTree as ET
           root = Path("app/build/outputs/androidTest-results")
           reports = sorted(root.rglob("TEST-*.xml"))
-          print("Saved native reports:", len(reports))
+          print("JUnit reports:", len(reports))
           if not reports:
               raise SystemExit("No JUnit reports found; inspect retained logcat")
+          total_problems = 0
           for report in reports:
               if report.stat().st_size > 16 * 1024 * 1024:
                   raise SystemExit("Oversize JUnit report")
               suite = ET.parse(report).getroot()
               cases = list(suite.iter("testcase"))
+              if not cases:
+                  raise SystemExit("Report contains no test cases")
               problems = [(c, p) for c in cases for p in c if p.tag in ("failure", "error", "skipped")]
+              total_problems += len(problems)
               print("|", report, "cases", len(cases), "problems", len(problems))
               for case, problem in problems:
                   print("| CASE", case.get("classname"), case.get("name"), problem.tag)
                   detail = problem.get("message", "") + "\n" + (problem.text or "")
                   for line in detail[:24000].splitlines():
                       print("|", line)
+          if total_problems:
+              raise SystemExit("JUnit contains failures, errors or skipped tests")
           PY
 
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2

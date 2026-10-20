@@ -447,7 +447,8 @@ https://github.com/androidx/androidx/blob/androidx-main/compose/ui/ui-test/src/a
 Current upstream source explains the mechanism; the actual pinned dependency is
 qualified only by the app's full API runs.
 
-Future failing native jobs print actual JUnit failure details before retaining
-the same full artifacts. The temporary cross-run diagnostic job was removed
+Core and native jobs now print actual case counts and failure details on both
+success and failure before retaining the same full artifacts. Missing/empty
+reports, failures, errors or skipped tests fail this additional report gate. The temporary cross-run diagnostic job was removed
 after inspecting the saved evidence. Local command execution is still unavailable;
 no new local build or passing rerun is claimed in this checkpoint.
