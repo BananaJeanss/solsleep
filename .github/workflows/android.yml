@@ -1,37 +1,107 @@
-name: Recording evidence inspection
+name: Selected capture regression inspection
 on:
   pull_request:
     paths: [".github/workflows/android.yml"]
 permissions:
   contents: read
-  actions: read
+env:
+  SOLSLEEP_BUILD_NUMBER: ${{ github.run_number }}
+  SOLSLEEP_BUILD_SHA: 7c3c781610fcca7cc3528cfc6f1eb391cdb3b7a4
+  SOLSLEEP_BUILD_ATTEMPT: ${{ github.run_attempt }}
+concurrency:
+  group: capture-inspection-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
-  inspect:
-    if: >-
-      github.repository == 'BananaJeanss/solsleep' &&
-      github.event.pull_request.head.repo.full_name == 'BananaJeanss/solsleep' &&
-      github.head_ref == 'inspection/recording-reports'
+  capture-regression:
+    if: github.event.pull_request.head.repo.full_name == 'BananaJeanss/solsleep' && github.head_ref == 'inspection/recording-reports'
     strategy:
       fail-fast: false
       matrix:
-        api: [29, 37]
+        include:
+          - api: 29
+            platform: android-29
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 20
     steps:
-      - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          repository: BananaJeanss/solsleep
-          run-id: 39173248195
-          name: api-${{ matrix.api }}-device-results
-          path: prior-reports
-          github-token: ${{ github.token }}
-      - name: Expose original native receipt capture for review
+          persist-credentials: false
+          ref: 7c3c781610fcca7cc3528cfc6f1eb391cdb3b7a4
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: gradle
+      - uses: android-actions/setup-android@be39fa834029ff78f1a44aa3bb0819b8fc2bd8fd # v4.0.4
+      - name: Install device emulator
+        run: |
+          sdkmanager "platforms;android-37.0" "build-tools;36.0.0" "emulator" "system-images;${{ matrix.platform }};google_apis;x86_64"
+          echo no | avdmanager create avd --name solsleep --package "system-images;${{ matrix.platform }};google_apis;x86_64" --device pixel_6
+          sudo chmod a+rw /dev/kvm
+      - name: Run real device tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          "$ANDROID_HOME/emulator/emulator" -avd solsleep -no-window -no-audio -no-boot-anim -no-snapshot -gpu swiftshader -memory 2048 > emulator.log 2>&1 &
+          emulator_pid=$!
+          collect_and_stop() {
+            timeout 10 adb logcat -d -v threadtime > device-logcat.txt 2>&1 || true
+            timeout 5 adb emu kill >/dev/null 2>&1 || true
+            kill "$emulator_pid" 2>/dev/null || true
+          }
+          trap collect_and_stop EXIT
+          deadline=$((SECONDS + 300))
+          until [ "$(timeout 5 adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r' || true)" = "1" ]; do
+            if [ "$SECONDS" -gt "$deadline" ]; then tail -80 emulator.log; exit 1; fi
+            sleep 2
+          done
+          adb shell input keyevent 82
+          adb shell settings put system time_12_24 24
+          adb shell cmd uimode night yes
+          adb shell settings put global window_animation_scale 0
+          adb shell settings put global transition_animation_scale 0
+          adb shell settings put global animator_duration_scale 0
+          ./gradlew :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=dev.bananajeans.solsleep.MotionCaptureTest --no-daemon
+      - name: Summarize native test reports
+        if: always()
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import xml.etree.ElementTree as ET
+          root = Path("app/build/outputs/androidTest-results")
+          reports = sorted(root.rglob("TEST-*.xml"))
+          print("JUnit reports:", len(reports))
+          if not reports:
+              raise SystemExit("No JUnit reports found; inspect retained logcat")
+          total_problems = 0
+          for report in reports:
+              if report.stat().st_size > 16 * 1024 * 1024:
+                  raise SystemExit("Oversize JUnit report")
+              suite = ET.parse(report).getroot()
+              cases = list(suite.iter("testcase"))
+              if not cases:
+                  raise SystemExit("Report contains no test cases")
+              problems = [(c, p) for c in cases for p in c if p.tag in ("failure", "error", "skipped")]
+              total_problems += len(problems)
+              print("|", report, "cases", len(cases), "problems", len(problems))
+              for case, problem in problems:
+                  print("| CASE", case.get("classname"), case.get("name"), problem.tag)
+                  detail = problem.get("message", "") + "\n" + (problem.text or "")
+                  for line in detail[:24000].splitlines():
+                      print("|", line)
+          if total_problems:
+              raise SystemExit("JUnit contains failures, errors or skipped tests")
+          PY
+
+      - name: Review original selected-test capture
+        if: always()
         shell: bash
         run: |
           python3 - <<'PY'
           from pathlib import Path
           import base64, hashlib, json
-          root = Path("prior-reports")
+          root = Path("app/build/outputs/connected_android_test_additional_output")
           paths = list(root.rglob("recording-export-history-large-text.png"))
           if len(paths) != 1:
               print("CAPTURE_PATHS=" + json.dumps([str(p) for p in root.rglob("*.png")][:40]))
@@ -54,3 +124,15 @@ jobs:
               gitBlobSha=hashlib.sha1(b"blob " + str(len(data)).encode() + b"\0" + data).hexdigest())))
           print("CAPTURE_BYTES=" + base64.b64encode(data).decode())
           PY
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: api-${{ matrix.api }}-device-results
+          path: |
+            app/build/reports/androidTests/
+            app/build/outputs/androidTest-results/
+            app/build/outputs/connected_android_test_additional_output/
+            emulator.log
+            device-logcat.txt
+          if-no-files-found: error
