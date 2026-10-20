@@ -14,13 +14,14 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.text.style.TextOverflow
 import dev.bananajeans.solsleep.R
 import dev.bananajeans.solsleep.core.*
 
 @Composable fun RecordingDeletionPreviewScreen(preview: RecordingDeletionPreview,result: RecordingDeletionMerge?,
     busy: Boolean,error: Boolean,onImport: ()->Unit,onClose: ()->Unit) {
     BackHandler {if(!busy) onClose()}
-    Scaffold(topBar={TopAppBar(title={Text(stringResource(R.string.recording_deletions_title))},navigationIcon={
+    Scaffold(topBar={TopAppBar(title={Text(stringResource(R.string.recording_deletions_title),maxLines=1,overflow=TextOverflow.Ellipsis)},navigationIcon={
         IconButton(onClick=onClose,enabled=!busy,modifier=Modifier.semantics {testTag="recording_deletions_close"}) {
             AppIcon(R.drawable.ic_close,stringResource(R.string.close))
         }
