@@ -8,39 +8,40 @@
 
 ## Current execution priority — 20 October 2026
 
-Resolve APK delivery and qualify the two existing implementation branches before
-adding another feature. The user's reported 404 is unresolved as a permanent
-download: a preview artifact can be recovered through the connected GitHub
-endpoint, but no public release exists. Do not substitute an expiring download
-for the planned durable release. Current evidence and artifact identities are in
-[DEVELOPMENT_DOWNLOADS](docs/DEVELOPMENT_DOWNLOADS.md).
+Finish the existing delivery and recording-history slices before adding another
+feature. Local commands remain unavailable, so exact-source hosted builds and
+read-only artifact inspection are being used. Preserve all existing worktrees and
+original data; no environment reset or database reset is authorized by recovery.
 
-1. Local execution remains unavailable, but read-only hosted CI can inspect
-   immutable artifacts and compile/test authored changes. Retain existing
-   worktrees and all original data. Do not reset either to recover the environment.
-2. **Completed investigation:** CI54's read-only job checked actual CI52/53 JUnit
-   reports and artifact digests. All reported failures were MotionCaptureTest
-   cleanup waiting through a wall-clock loop while Main work was controlled by
-   Compose's test clock. Both branches now use Compose waitUntil at the same
-   bounded predicate. Temporary inspection code is removed from feature CI;
-   permanent report gates reject absent/empty/failing/errored/skipped reports.
-3. Correct the demonstrated cause and run the complete core, Python, lint,
-   debug/test/release and API 29/37 suites. Inspect XML and large-text captures.
-   Keep PR #11 and PR #12 in draft until their required evidence passes.
-4. Merge qualified PR #11, let its main run pass every release dependency, then
-   verify the published APK anonymously, including signature, hashes, exact
-   source/run identity and retry behavior. Provide the actual public asset URL.
-   Never publish an unqualified APK as a successful release to work around 404.
-5. Retarget and qualify PR #12 against the merged base, merge it, verify its own
-   main publication and update receipt/backup evidence before the next M2 slice.
+- [x] Inspect actual saved XML, artifact digests and logcat. CI52/53's recording
+  tests failed in setup as well as cleanup: the initial load could not begin once
+  setup stopped the lifecycle. Correct both branches to finish the initial load
+  while STARTED, stop polling, then drain launched work without stale-root idle.
+- [x] Require nonempty actual core/native reports and no failures/errors/skips.
+  Keep all prior cases, data/UI assertions and API29/37 support.
+- [x] Confirm CI62's 203 core/26 Python/build checks and all 116 API29 cases.
+  Confirm CI61's 213 core/26 Python/build checks, all 126 API37 cases and passing
+  recording tests on API29. Its one earlier alarm UI timing failure is not a
+  qualification pass for the whole branch.
+- [x] Review and retain CI61's exact original receipt PNGs on both APIs at 200%
+  text, with hashes and source context. Close temporary inspection PR #13
+  without merge; no experimental startup assertion was promoted.
+- [ ] Finish CI62's scoped API37 SDK-installation retry. Finish CI66 on receipt
+  source `841328e12cd5ff92c5c741ee9e3fbc3d27e347f0`, which waits for the
+  complete actual visible/enabled alarm control click across root replacement.
+  Inspect every complete report; do not suppress tests or blindly rerun failures.
+- [ ] Merge qualified PR #11, then let its own main run pass all dependencies.
+  Publish the exact same-run APK, verify the real public asset/signature/hashes/
+  source metadata and retry behavior, and supply its actual public download URL.
+  The user-reported 404 remains unresolved as permanent delivery until this works.
+- [ ] Retarget and qualify PR #12 against the merged base, merge it, verify its
+  own main publication and update receipt/backup evidence before the next M2 slice.
 
-The correction is committed in both feature branches. CI57/58 pass their core,
-Python, lint and build jobs; native qualification remains pending. CI58 API 37
-failed the upstream emulator ZIP installation before app tests and needs a scoped
-retry when its other jobs finish. PR #13 is read-only capture inspection and must
-close without merge. This main checkpoint changes documentation only.
-Neither earlier failed run establishes new qualification; the last fully qualified app milestone remains PR #10. Physical
-overnight, microphone/NFC, accuracy, sonar and watch gates remain open.
+[Download status and retained identities](docs/DEVELOPMENT_DOWNLOADS.md).
+This main checkpoint changes only documentation and exact screenshot copies;
+neither feature is merged yet. The last fully qualified merged app milestone
+remains PR #10. Physical overnight, microphone/NFC, accuracy, sonar and watch
+gates remain open, alongside the independent software backlog below.
 
 ## 1. Product contract
 
