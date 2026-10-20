@@ -85,7 +85,8 @@ jobs:
           issues = list(ET.parse(lint[0]).getroot().iter("issue"))
           errors = [i for i in issues if i.get("severity") in ("Fatal", "Error")]
           print("LINT_RESULT=" + json.dumps(dict(issues=len(issues), errors=len(errors),
-              sha256=hashlib.sha256(lint[0].read_bytes()).hexdigest())))
+              sha256=hashlib.sha256(lint[0].read_bytes()).hexdigest(),
+              details=[dict(i.attrib, locations=[dict(x.attrib) for x in i.findall("location")]) for i in issues])))
           assert not errors, "Lint errors in retained report"
           reports = sorted((root / "core/build/test-results").rglob("TEST-*.xml"))
           assert reports, "No retained core XML"
