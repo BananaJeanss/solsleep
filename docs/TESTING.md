@@ -423,3 +423,31 @@ workaround or test/lint suppression was used. A separate disposable 3072-bit
 private key also signed the real debug APK successfully; its actual certificate
 matched SHA-256 of independently exported keytool DER bytes, then both private
 keystore files were deleted. That local signing-test APK is not distributed.
+
+## Native cleanup clock investigation — 20 October 2026
+
+A read-only temporary CI job downloaded the retained CI52 and CI53 artifacts and
+parsed all four actual JUnit reports. Diagnostic run:
+https://github.com/BananaJeanss/solsleep/actions/runs/39459390877
+(job 118754565820). CI52 reports 116 cases and nine failures per API; CI53 reports
+126 cases and eleven failures per API. Every reported failure is in
+MotionCaptureTest.cleanup → quiesceScreen → await at the busy-state wait.
+No error or skipped elements were reported. Neither run is a qualification pass.
+
+The stopped-Activity cleanup used SystemClock sleep while ViewModel work awaited
+the Compose-controlled Main dispatcher. It is now changed to Compose waitUntil,
+which advances the test clock and yields for actual IO without requiring a
+registered Compose root. The state predicate, real lifecycle stop/destroy,
+timeouts, all test bodies and data assertions remain. This is a test harness
+change, not a runtime application or storage change. A complete rerun is required.
+
+Primary implementation checked:
+https://github.com/androidx/androidx/blob/androidx-main/compose/ui/ui-test/src/androidMain/kotlin/androidx/compose/ui/test/ComposeUiTest.android.kt
+(waitUntil runs pending dispatcher tasks/advances Main and yields for Android).
+Current upstream source explains the mechanism; the actual pinned dependency is
+qualified only by the app's full API runs.
+
+Future failing native jobs print actual JUnit failure details before retaining
+the same full artifacts. The temporary cross-run diagnostic job was removed
+after inspecting the saved evidence. Local command execution is still unavailable;
+no new local build or passing rerun is claimed in this checkpoint.
