@@ -67,7 +67,10 @@ class MotionCaptureTest {
         compose.activityRule.scenario.moveToState(Lifecycle.State.CREATED)
         val model=java.util.concurrent.atomic.AtomicReference<CaptureViewModel>()
         compose.activityRule.scenario.onActivity {model.set(ViewModelProvider(it)[CaptureViewModel::class.java])}
-        await {!model.get().state.value.busy}
+        // ViewModel continuations use the Compose-controlled Main dispatcher.
+        // A wall-clock-only sleep leaves queued completion stuck after onStop.
+        // waitUntil advances Main and yields for real IO without requiring a root.
+        compose.waitUntil(25000) {!model.get().state.value.busy}
     }
     private fun clearRecords() {
         // Disposable test installation only. Tests never target a personal installation.
