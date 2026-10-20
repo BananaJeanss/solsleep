@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="recording_deletions_title">Recording deletion history</string>
+    <string name="recording_deletions_hint">Save deletion identities separately from recording backups. On a new installation, import this file before older recordings to keep deleted recordings from returning. This unencrypted file contains identities only, not recordings or export receipts.</string>
+    <string name="recording_deletions_export">Export deletion history</string>
+    <string name="recording_deletions_open">Choose deletion history to import</string>
+    <string name="recording_deletions_preview">Review deletion history</string>
+    <string name="recording_deletions_preview_hint">Import adds restore-blocking identities only. Recordings already on this device are kept, including matching recordings. Existing deletion identities win. Preview counts can change before confirmation; import checks them again.</string>
+    <string name="recording_deletions_count">%1$d deletion identities in this file</string>
+    <string name="recording_deletions_result">New identities: %1$d. Already known: %2$d. Present recordings kept: %3$d. Conflicting identity pairs skipped: %4$d.</string>
+    <string name="recording_deletions_digest">File fingerprint (SHA-256)</string>
+    <string name="recording_deletions_trust">Choose only a file you trust. Its checksum detects changed bytes but does not identify its author. Deletion times before this feature are unknown. Importing never deletes existing recordings or external files.</string>
+    <string name="recording_deletions_confirm">Import deletion identities</string>
+    <string name="recording_deletions_exported">Deletion history was written, closed and read back successfully. This verifies this copy now; it does not guarantee future availability. No export receipt is stored for this file.</string>
+    <string name="recording_deletions_unverified">Deletion history was written but could not be verified. Local identities and recordings are retained.</string>
+    <string name="recording_deletions_export_failed">Deletion history could not be exported. Local identities and recordings are retained.</string>
+    <string name="recording_deletions_import_failed">Deletion history could not be inspected. No identities were imported. Finish any active recording and choose a supported, intact file.</string>
+    <string name="recording_deletions_imported">Deletion identities imported. Existing recordings and deletion identities were kept.</string>
+    <string name="recording_deletions_limit">Deletion history is larger than the supported 10,000 identities. Nothing was exported or removed. Large-history partitioned export is not yet available.</string>
+    <string name="recording_deletions_commit_failed">Import did not finish. Existing recordings are kept. You can retry or close this preview.</string>
+</resources>
