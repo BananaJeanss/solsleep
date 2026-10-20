@@ -20,6 +20,59 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  inspect-prior-reports:
+    # Temporary investigation of immutable reports; never execute downloaded content.
+    if: >-
+      github.repository == 'BananaJeanss/solsleep' &&
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.head.repo.full_name == 'BananaJeanss/solsleep' &&
+      github.head_ref == 'feature/apk-delivery'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          repository: BananaJeanss/solsleep
+          run-id: 39173044993
+          pattern: api-*-device-results
+          path: prior-reports/ci52
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          repository: BananaJeanss/solsleep
+          run-id: 39173248195
+          pattern: api-*-device-results
+          path: prior-reports/ci53
+          github-token: ${{ github.token }}
+      - name: Inspect actual saved JUnit failures
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import xml.etree.ElementTree as ET
+          root = Path("prior-reports")
+          reports = sorted(root.rglob("TEST-*.xml"))
+          print("Saved native reports:", len(reports))
+          if not reports:
+              raise SystemExit("No JUnit reports found; inspect retained logcat")
+          for report in reports:
+              if report.stat().st_size > 16 * 1024 * 1024:
+                  raise SystemExit("Oversize JUnit report")
+              suite = ET.parse(report).getroot()
+              cases = list(suite.iter("testcase"))
+              problems = [(c, p) for c in cases for p in c if p.tag in ("failure", "error", "skipped")]
+              print("|", report, "cases", len(cases), "problems", len(problems))
+              for case, problem in problems:
+                  print("| CASE", case.get("classname"), case.get("name"), problem.tag)
+                  detail = problem.get("message", "") + "\n" + (problem.text or "")
+                  for line in detail[:24000].splitlines():
+                      print("|", line)
+          PY
+
+
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 25
@@ -163,6 +216,32 @@ jobs:
           adb shell settings put global transition_animation_scale 0
           adb shell settings put global animator_duration_scale 0
           ./gradlew :app:connectedDebugAndroidTest --no-daemon
+      - name: Print native failure reports
+        if: failure()
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import xml.etree.ElementTree as ET
+          root = Path("app/build/outputs/androidTest-results")
+          reports = sorted(root.rglob("TEST-*.xml"))
+          print("Saved native reports:", len(reports))
+          if not reports:
+              raise SystemExit("No JUnit reports found; inspect retained logcat")
+          for report in reports:
+              if report.stat().st_size > 16 * 1024 * 1024:
+                  raise SystemExit("Oversize JUnit report")
+              suite = ET.parse(report).getroot()
+              cases = list(suite.iter("testcase"))
+              problems = [(c, p) for c in cases for p in c if p.tag in ("failure", "error", "skipped")]
+              print("|", report, "cases", len(cases), "problems", len(problems))
+              for case, problem in problems:
+                  print("| CASE", case.get("classname"), case.get("name"), problem.tag)
+                  detail = problem.get("message", "") + "\n" + (problem.text or "")
+                  for line in detail[:24000].splitlines():
+                      print("|", line)
+          PY
+
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()
         with:
