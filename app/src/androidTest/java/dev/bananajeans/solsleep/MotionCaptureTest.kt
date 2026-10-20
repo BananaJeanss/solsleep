@@ -54,17 +54,23 @@ class MotionCaptureTest {
     }
     @After fun cleanup() {
         quiesceScreen()
+        compose.activityRule.scenario.moveToState(Lifecycle.State.DESTROYED)
         shell("input keyevent KEYCODE_WAKEUP");shell("settings put system font_scale 1.0")
+        await {kotlin.math.abs(context.resources.configuration.fontScale-1f)<.01f}
         shell("appops set ${context.packageName} POST_NOTIFICATION allow")
         context.stopService(Intent(context,MotionCaptureService::class.java));await {CaptureRuntime.liveOwner==null}
         clearRecords();AlarmGraph.engine(context).delete(alarmId)
     }
     private fun quiesceScreen() {
-        compose.waitForIdle()
-        compose.activityRule.scenario.moveToState(Lifecycle.State.CREATED)
         val model=java.util.concurrent.atomic.AtomicReference<CaptureViewModel>()
         compose.activityRule.scenario.onActivity {model.set(ViewModelProvider(it)[CaptureViewModel::class.java])}
-        await {!model.get().state.value.busy}
+        // A fresh screen starts busy before repeatOnLifecycle launches its load.
+        // Let that real load finish while the Activity is still STARTED.
+        compose.waitUntil(25000) {!model.get().state.value.busy}
+        // Stop periodic reloads, then drain work already launched on Main/IO.
+        // Neither wait requires an attached or idle Compose root.
+        compose.activityRule.scenario.moveToState(Lifecycle.State.CREATED)
+        compose.waitUntil(25000) {!model.get().state.value.busy}
     }
     private fun clearRecords() {
         // Disposable test installation only. Tests never target a personal installation.

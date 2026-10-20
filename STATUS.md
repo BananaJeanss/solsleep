@@ -67,6 +67,33 @@ branches. Neither feature PR is merged. Physical qualification remains open.
 | Wake-up challenges | Eight native puzzle types, NFC, relative voice level, experimental offline voiceover and custom JSON packs implemented; software qualified, physical gates below |
 | Wear / Health Connect | Acquisition adapters and physiological validation remain unimplemented |
 
+## Development APK distribution under qualification
+
+[PR #11](https://github.com/BananaJeanss/solsleep/pull/11) adds standalone signed
+debug APK bundles, actual package/certificate verification, checksums and exact
+source/run metadata. Qualified main runs will publish the exact same artifact as
+a versioned GitHub development prerelease after both full API suites pass.
+Optional private CI debug signing is supported; production signing is separate.
+See [DEVELOPMENT_RELEASES](docs/DEVELOPMENT_RELEASES.md) and
+[the tonight test guide](docs/TONIGHT_TEST.md) before installing/changing signers.
+
+[CI50](https://github.com/BananaJeanss/solsleep/actions/runs/39170270014) is **not a
+qualification pass**: 203 JVM, 24 Python, zero lint and both build variants pass,
+and actual API 37 XML contains all 116 passing cases. API 29 reached the job time
+limit during the large-text coverage case and produced no final JUnit XML.
+The downloaded artifact remains a preview. Its signature/checksums/build identity
+were independently checked; a public release is not yet established.
+
+Retained logcat shows the coverage screenshot being opened, then font reset and
+Activity recreation before progress stopped. The harness is being corrected to
+stop its real lifecycle before cleanup, avoid an unbounded Compose idle wait on
+a replaced root, and destroy its Activity before restoring font scale. Test
+bodies/assertions and both platforms remain enabled; a complete rerun is required.
+Publisher review also corrected authenticated draft lookup and explicit tag
+creation, with 26 Python cases and actionlint passing locally. A disposable private
+CI keystore was prepared, used to sign an actual APK, verified against independent
+keytool certificate bytes and removed. No private key was committed or distributed.
+
 ## Qualified recording provenance and coverage software milestone
 
 New acquisition stores the original ZoneId, requested interval and installed

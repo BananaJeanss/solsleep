@@ -1,4 +1,21 @@
 plugins { alias(libs.plugins.android.application); alias(libs.plugins.kotlin.compose) }
+
+// Local builds keep their ordinary version. One workflow owns the CI counter;
+// all build/test jobs use its same number and exact checkout SHA.
+val ciNumber = providers.environmentVariable("SOLSLEEP_BUILD_NUMBER").orNull
+val ciSha = providers.environmentVariable("SOLSLEEP_BUILD_SHA").orNull
+val ciAttempt = providers.environmentVariable("SOLSLEEP_BUILD_ATTEMPT").orNull
+require(listOf(ciNumber, ciSha, ciAttempt).all { it == null } ||
+    listOf(ciNumber, ciSha, ciAttempt).all { it != null }) { "CI version requires number, attempt and SHA" }
+val ciVersionCode = ciNumber?.let {
+    require(it.matches(Regex("[1-9][0-9]{0,9}"))) { "Invalid CI build number" }
+    val number = it.toLong()
+    require(number <= 20_999_899L) { "CI version counter exhausted" }
+    require(ciAttempt!!.matches(Regex("[1-9][0-9]?"))) { "Invalid CI build attempt" }
+    require(ciSha!!.matches(Regex("[0-9a-f]{40}"))) { "Invalid CI source SHA" }
+    (10_000L + number * 100 + ciAttempt.toInt()).toInt()
+}
+val privateDebugStore = providers.environmentVariable("SOLSLEEP_DEBUG_KEYSTORE").orNull
 android {
     namespace = "dev.bananajeans.solsleep"
     compileSdk = 37
@@ -6,9 +23,17 @@ android {
         applicationId = "dev.bananajeans.solsleep"
         minSdk = 29
         targetSdk = 37
-        versionCode = 1
-        versionName = "0.1.0-dev"
+        versionCode = ciVersionCode ?: 1
+        versionName = if (ciNumber == null) "0.1.0-dev" else "0.1.0-dev.$ciNumber.$ciAttempt.${ciSha!!.take(12)}"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    }
+    signingConfigs.getByName("debug") {
+        if (privateDebugStore != null) {
+            storeFile = file(privateDebugStore)
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
+        }
     }
     buildTypes {
         debug { applicationIdSuffix = ".debug"; versionNameSuffix = "-debug" }
