@@ -1,7 +1,9 @@
 # Development APKs and GitHub prereleases
 
-Implementation under qualification, 19 October 2026. Final executed runs belong
-in STATUS.md. These workflows distribute **debug builds**, not production releases.
+Merged and exercised on 20 October 2026. CI68 published the first main prerelease,
+CI70 anonymously downloaded and verified all four assets, and a publisher-only
+retry preserved its original build attempt/tag/release and asset IDs/bytes.
+Current release and final executed evidence are in STATUS.md and TESTING.md. These workflows distribute **debug builds**, not production releases.
 
 ## Download and verify
 
@@ -102,6 +104,18 @@ and rejected, never overwritten. An identical public release is a read-only
 success. Successful build outputs preserve the original artifact ID/attempt for
 publication retries. If build output is unavailable/expired, rerun all jobs for
 a new qualified bundle; never substitute an unverified APK.
+
+## Executed public download verification
+
+The user-reported Actions 404 was replaced by actual public release assets.
+CI70 required HTTP200/HTTPS without Authorization/cookies and validated the exact
+APK, certificate report, checksums and build-info against trusted main build
+metadata. A live publisher retry reused original build attempt 1 despite workflow
+attempt 2 and retained the same release and asset identities. The current
+[debug-71.1-b7afd0c9db9b](https://github.com/BananaJeanss/solsleep/releases/tag/debug-71.1-b7afd0c9db9b) has its own [CI72 public readback](https://github.com/BananaJeanss/solsleep/actions/runs/39474809678).
+Temporary verification PR #13 was closed without merge; it adds no production
+workflow privilege. Source/build/private-signing and physical gates remain
+separate; read the certificate/update notes before replacing an installation.
 
 ## Primary documentation reviewed
 

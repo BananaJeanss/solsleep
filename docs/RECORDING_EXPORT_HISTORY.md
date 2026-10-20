@@ -1,7 +1,10 @@
 # Local recording-export receipts
 
-Implementation under qualification, 19 October 2026. Exact final source, runs,
-reports and captures belong in STATUS.md before merge. This extends separate
+Merged and software-qualified, 20 October 2026. PR #12 source
+`841328e12cd5ff92c5c741ee9e3fbc3d27e347f0` passed CI66, then merged as
+`b7afd0c9db9b6c5150c2e879de0946469c87a8cf`. Main [CI71](https://github.com/BananaJeanss/solsleep/actions/runs/39471810590) passes 213 core, 26 Python and all 126
+native cases per API29/37, with no failures/errors/skips. Both original 200%
+native captures were reviewed; STATUS/TESTING/SCREENSHOTS retain exact evidence. This extends separate
 finished-recording SOLR v1/v2 exports; it does not combine or encrypt backups.
 
 ## Human workflow
@@ -83,7 +86,7 @@ future/corrupt bytes and scoped deletion. Actual ContentResolver outcomes cover
 write denial, unavailable/truncated/replaced readback and original observations
 retained; a damaged receipt store still permits verified recovery. Native UI
 checks known/unavailable histories and 200% recreation using a labeled synthetic
-fixture. Both complete API suites and actual capture review remain required.
+fixture. Both complete API suites and original capture review are complete for this software slice; physical/commercial-provider gates remain open.
 
 All-record manifests, portable recording deletion propagation, combined/encrypted
 archives, receipts portability/retention controls, true destination availability

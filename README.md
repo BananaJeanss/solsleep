@@ -6,7 +6,7 @@
 
 SolSleep is an independent, free and open-source Android™ sleep app in early development. The goal is the functional breadth of Sleep as Android, with an original Material 3 Expressive interface, durable records, and transparent measurements.
 
-The current implementation provides **local alarms, wake-up challenges, a manual sleep journal and experimental raw phone motion recording**. It is not a finished sleep tracker. See [STATUS.md](STATUS.md) for implemented behavior and evidence, and [PLAN.md](PLAN.md) for the full roadmap.
+The current implementation provides **local alarms, wake-up challenges, a manual sleep journal and experimental raw phone motion recording with verified recovery files and export history**. It is not a finished sleep tracker. See [STATUS.md](STATUS.md) for implemented behavior and evidence, and [PLAN.md](PLAN.md) for the full roadmap.
 
 ## First alarm workflow
 
@@ -83,6 +83,12 @@ metadata. Legacy cadence/zone stays unknown; nothing is filled from today's
 settings. This is data continuity, not measured sleep. See
 [the coverage contract](docs/RECORDING_COVERAGE.md) and STATUS.md for qualification.
 
+Finished recordings also provide **Recording export history**: the last attempt
+and prior verified copy remain separate, and unavailable history never masquerades
+as no exports. Receipt-storage damage cannot block a verified external recovery
+copy. Verification records past readback, not current cloud retention. See
+[the receipt contract](docs/RECORDING_EXPORT_HISTORY.md).
+
 ## App screens
 
 <p>
@@ -96,9 +102,9 @@ settings. This is data continuity, not measured sleep. See
 </p>
 
 [All captured screens, including large text](docs/SCREENSHOTS.md). The tested
-milestone passes 203 JVM tests, nine independent Python tests and all 116 device
-tests on each of API 29 and API 37, with zero lint issues.
-[Checks and development APK artifact](https://github.com/BananaJeanss/solsleep/actions/runs/39119133196).
+milestone passes 213 JVM tests, 26 Python checks and all 126 native cases
+on each API29/37, with zero failures/errors/skips and zero lint errors; two warnings.
+[Checks](https://github.com/BananaJeanss/solsleep/actions/runs/39471810590) · [public development APKs](https://github.com/BananaJeanss/solsleep/releases).
 
 ## Build
 
@@ -134,7 +140,7 @@ A force-stopped application or powered-off phone cannot be made dependable by th
 
 ## Alarm archives
 
-In **Alarm setup**, use **Export alarms** to save a plaintext JSON file. **Inspect or restore a file** validates it and previews conflicts before any change. **Add missing alarms** keeps existing definitions and adds restored ones switched off. Re-enable them after reviewing dates and settings. Sleep records/audio are not part of this initial archive. See [the format and restore contract](docs/ARCHIVE_FORMAT.md).
+In **Alarm setup**, use **Export alarms** to save a plaintext JSON file. **Inspect or restore a file** validates it and previews conflicts before any change. **Add missing alarms** keeps existing definitions and adds restored ones switched off. Re-enable them after reviewing dates and settings. Journal and raw recordings use separate archives. Alarm archives include the frozen challenge packs and reference clips. See [the format and restore contract](docs/ARCHIVE_FORMAT.md).
 
 ## Design and privacy
 
@@ -147,7 +153,7 @@ python3 tools/generate_tone.py
 
 There are **no image-generated assets**. The local chime is synthesized from sine waves without external recordings or a generation service.
 
-Alarm schedules, labels, and necessary output settings use a small device-protected database so they work before first unlock. No health history, recordings, credentials, or location is stored there. See [docs/DECISIONS.md](docs/DECISIONS.md).
+Alarm schedules/settings and explicitly configured challenge packs/reference clips use device-protected storage for before-unlock alarms. Journal, raw motion and recording-export history use separate credential-protected storage. Microphone attempts stay in memory. No location or network permission is requested. See [docs/DECISIONS.md](docs/DECISIONS.md) and the challenge/backup contracts before exporting private data.
 
 ## License
 

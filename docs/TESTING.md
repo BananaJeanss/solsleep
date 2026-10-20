@@ -380,7 +380,7 @@ All identities describe synthetic interchange inputs, not human sleep validation
 Physical power loss/full disk, overnight usefulness/energy, accessibility and
 clinical/physiological accuracy remain unqualified. No phone/watch was attached.
 
-## Development APK distribution qualification in progress
+## Historical APK delivery attempt — CI50, superseded
 
 `test_debug_delivery.py` exercises source/run/counter and file/schema binding,
 checksum/APK/certificate changes, unsafe/extra files, draft upload interruption,
@@ -400,7 +400,8 @@ Its retained logcat last enters the 200% recording-coverage/recreation test,
 opens its screenshot, restores font scale and recreates the Activity. The following
 cleanup could await Compose idle on a stale root indefinitely. The corrective
 harness stops lifecycle polling first and destroys the real Activity before font
-restoration, keeping every body assertion. Full final reruns remain required.
+restoration, keeping every body assertion. At that point, full final reruns were
+still required; the completed investigation and qualification are recorded below.
 
 | CI50 artifact | ID | Verified ZIP SHA-256 |
 | --- | --- | --- |
@@ -424,42 +425,130 @@ private key also signed the real debug APK successfully; its actual certificate
 matched SHA-256 of independently exported keytool DER bytes, then both private
 keystore files were deleted. That local signing-test APK is not distributed.
 
-## Native cleanup clock investigation — 20 October 2026
+## Recording harness investigation — completed 20 October 2026
 
-A read-only temporary CI job downloaded the retained CI52 and CI53 artifacts and
-parsed all four actual JUnit reports. Diagnostic run:
-https://github.com/BananaJeanss/solsleep/actions/runs/39459390877
-(job 118754565820). CI52 reports 116 cases and nine failures per API; CI53 reports
-126 cases and eleven failures per API. Every reported failure is in
-MotionCaptureTest.cleanup → quiesceScreen → await at the busy-state wait.
-No error or skipped elements were reported. Neither run is a qualification pass.
+Read-only CI54 parsed all four retained CI52/53 JUnit reports and matched the
+downloaded ZIP digests: CI52 has 116 cases/nine failures per API; CI53 has
+126 cases/eleven failures per API. XML retained the later cleanup busy-state
+timeout. CI60 logcat also revealed setup failures before the recording bodies.
+All eleven receipt-screen setup calls failed, explaining the absent PNGs.
 
-The stopped-Activity cleanup used SystemClock sleep while ViewModel work awaited
-the Compose-controlled Main dispatcher. It is now changed to Compose waitUntil,
-which advances the test clock and yields for actual IO without requiring a
-registered Compose root. The state predicate, real lifecycle stop/destroy,
-timeouts, all test bodies and data assertions remain. This is a test harness
-change, not a runtime application or storage change. A complete rerun is required.
+The initial clock-only hypothesis was incomplete. CaptureUiState starts
+busy=true before CaptureHome's STARTED repeatOnLifecycle effect launches its
+first load. Stopping a fresh Activity before that effect runs prevents
+initialization. The final helper allows the real initial load while STARTED,
+then stops polling and drains launched work using bounded Compose waitUntil
+without requiring a registered/idle stale root. It does not assume that every
+ViewModel coroutine uses the composition dispatcher. Cleanup destroys its
+Activity before restoring font scale. No test body/assertion was removed.
 
-Primary implementation checked:
-https://github.com/androidx/androidx/blob/androidx-main/compose/ui/ui-test/src/androidMain/kotlin/androidx/compose/ui/test/ComposeUiTest.android.kt
-(waitUntil runs pending dispatcher tasks/advances Main and yields for Android).
-Current upstream source explains the mechanism; the actual pinned dependency is
-qualified only by the app's full API runs.
+CI62 then passed all 116 API29 cases and, after a scoped SDK-install retry, all
+116 API37 cases. CI61 passed every recording test on both APIs and all 126 API37
+cases; its one API29 failure was an earlier ChallengeUiTest control disappearing
+between finding Dismiss and scrolling. The corrected helper requires an actual
+visible/enabled scroll-and-click within the existing bounded wait. It starts no
+task via an engine shortcut; proof/progress/miss/recreation assertions remain.
 
-Core and native jobs now print actual case counts and failure details on both
-success and failure before retaining the same full artifacts. Missing/empty
-reports, failures, errors or skipped tests fail this additional report gate. The temporary cross-run diagnostic job was removed
-after inspecting the saved evidence. Local command execution is still unavailable;
-no new local build or passing rerun is claimed in this checkpoint.
+CI66 completed all 213 core/26 Python and 126 native cases per API29/37, with
+zero failures/errors/skips. CI57/58 and temporary targeted startup experiments
+are not counted as qualification. No experimental startup assertion was promoted.
+Original CI61 receipt PNGs were visually reviewed on both APIs at 200% and retained
+byte-for-byte; the only later source difference was the earlier alarm test helper.
+Temporary PR #13 performed read-only evidence inspection and closed without merge.
 
-CI60 logcat inspection (run 39462663075, API29 job 118765848046) found
-MotionCaptureTest.setup failures as well as cleanup failures: all eleven receipt
-screen cases failed before their bodies, explaining absent capture PNGs. The XML
-only retained the later cleanup failure. CaptureUiState starts busy=true and the
-first load is launched by CaptureHome's STARTED repeatOnLifecycle effect. Stopping
-a fresh Activity before that effect runs prevents initialization; clock advancement
-after stopping is insufficient. quiesceScreen now waits for that actual initial
-load while STARTED, then moves to CREATED and drains any work already launched.
-No test body or data/UI assertion was removed. CI57/58 are superseded, not passes;
-the SDK download failure in CI58 does not require retry at superseded source.
+Core/native jobs now parse and print actual reports on success and failure,
+rejecting missing/empty reports and any failure/error/skipped cases. Complete
+logs/reports remain retained. Local command execution was unavailable during this
+follow-up; hosted builds and read-only artifact inspection provided the evidence.
+
+Primary implementation/documentation checked:
+- https://github.com/androidx/androidx/blob/androidx-main/compose/ui/ui-test/src/androidMain/kotlin/androidx/compose/ui/test/ComposeUiTest.android.kt
+- https://developer.android.com/studio/test/command-line
+- https://github.com/cli/cli/blob/trunk/pkg/cmd/release/shared/fetch.go
+
+## Qualified public APK delivery and recording receipts — 20 October 2026
+
+| Source / purpose | Executed result |
+| --- | --- |
+| PR11 source 7f284b48e3e9eddd39620ec979130ed1baaa86e2 / CI62 | 203 core, 26 Python, 116 native per API29/37; all pass |
+| PR11 main merge 3be27815bb5cb03ca6ab1c256b6c7415db732059 / CI68 | Full checks repeated; first public prerelease published |
+| Anonymous CI70, run 39470990960 / job 118794681228 | All four public assets HTTP200/HTTPS, no authentication; exact bundle/source/hash verification |
+| Publisher retry CI68 / job 118796208229 | Workflow attempt 2 reused build attempt 1; tag/release/asset IDs/sizes/hashes unchanged |
+| PR12 source 841328e12cd5ff92c5c741ee9e3fbc3d27e347f0 / CI66 | 213 core, 26 Python, 126 native per API29/37; all pass |
+| PR12 main merge b7afd0c9db9b6c5150c2e879de0946469c87a8cf / CI71 | Full checks repeated; signed debug release published |
+| Final public readback | [CI72 public readback](https://github.com/BananaJeanss/solsleep/actions/runs/39474809678) |
+
+Qualified receipt checkout/tree:
+`18a8f0b50d7079f7a97f7e567ab70cdb1d14368e` /
+`f7c73e72f98d48a8657b74ac1d321e811abf08f8`.
+Final main commit/tree:
+`b7afd0c9db9b6c5150c2e879de0946469c87a8cf` / `d3c74e911ca0f05b6b0998ff02764844e34d6eba`.
+Direct recursive Git-tree comparison verifies all 159 non-documentation files
+match between qualification and merge. Only Markdown and exact PNG copies differ.
+A diverged GitHub comparison can include inherited changes from its merge-base;
+actual blob identities, rather than that three-dot view, establish this equality.
+
+The receipt additions include ten independent core audit-boundary cases, eight
+actual SQLite/provider cases and two native UI cases per API. Coverage includes
+phase ordering/output-close/readback, interruption/cancellation/audit failure,
+independent schema fixture/reopen, concurrent cold opens and competing terminal
+updates, transaction rollback, clock rollback, future/corrupt byte retention,
+denied/truncated/replaced provider results, verified recovery despite damaged
+receipts, scoped deletion and actual 200% known/unavailable history/recreation.
+Raw source bytes and metadata stay unchanged before explicit deletion.
+
+| Final main check | Actual result |
+| --- | --- |
+| Core XML | 213 cases, zero failure/error/skip |
+| Python tools/fixtures | 26 passed |
+| API29 XML | 126 cases, zero failure/error/skip |
+| API37 XML | 126 cases, zero failure/error/skip |
+| Lint XML | zero lint errors; two warnings; SHA-256 `e085d840b4852e50ecf4a0a044932082f6103d59c5bb794fe97241b2188b148d` |
+| Debug/test APKs / shrunk unsigned release | Pass |
+| Original vector/chime/voice assets | Checks pass; no generated imagery |
+| Public APK/signer/checksums/build metadata | Exact matching anonymous HTTP200 downloads |
+| Physical phone/watch/overnight/accuracy | Not qualified; no attached reference hardware/data |
+
+Final public release: [debug-71.1-b7afd0c9db9b](https://github.com/BananaJeanss/solsleep/releases/tag/debug-71.1-b7afd0c9db9b).
+Version `0.1.0-dev.71.1.b7afd0c9db9b-debug`, code 17101, API29 minimum/API37 target,
+debuggable application `dev.bananajeans.solsleep.debug`.
+APK SHA-256: `2e94f41f39258efeb491c487b1873344d7017032d658471fd0316ffc0d99bbb7`.
+Certificate SHA-256: `cccd603ec9d9a76750bb6bc0a5b56148f0c5babde6e4f678802b5548fdfafc5b`.
+Default runner development signing is ephemeral; this is not a production signer.
+
+| Retained artifact | ID | ZIP SHA-256 |
+| --- | --- | --- |
+| CI62 API29 | 12284172817 | `5df08d27342e6eb73c860e99713f060a1e592784f0f24793a6a38bd19534dcfa` |
+| CI62 API37 retry | 12285932017 | `c7117f4c51a8802e80e32e62eaecf36138be34e1987dd211e37b5a119b08bc89` |
+| CI66 debug bundle | 12284723058 | `e331babeb54e305e94650b557baedc223f2d96ed47c93aa049e35dbb8efa0899` |
+| CI66 build/core | 12284703080 | `dc66433732c61eb746126335066516525572ce3016e8a33d891361176e1eaa65` |
+| CI66 API29 | 12285054827 | `fe55ca5e9b5d5a87eb2bb7b1593f3e352b88e663d7c38a2d677bfdb6477ebf25` |
+| CI66 API37 | 12286381536 | `97c1aeb0d60c6fee407c897e4816cf8414c99093e67dc2836bc12e88d189b0d9` |
+| CI68 debug bundle | 12286895387 | `4bca3cbf56200075b46d79dfece920f1f069f1bb71ce61f070f5f43044f593a5` |
+| CI68 build/core | 12286850421 | `093a7264bb82c6f91d62082b9b20de604ef222f4e94def9c1ccca62fc70cb48b` |
+| CI68 API29 | 12287056799 | `c4fbb1e1a236a74b12d59b1980505761c6ccd5234e45759d69728e44fda56f6f` |
+| CI68 API37 | 12287475984 | `af1110f8516409dbc05a442e8e342c7ed836dc34aeea7f70bb9255f406af55cd` |
+| CI71 debug bundle | 12287757977 | `dcc88f1f0a124bf413d62dbefaa1916dcd88c78a7456ae181f6941459deafb22` |
+| CI71 build/core | 12287940967 | `081444d78ce34df53370138784c0c25aca056a560b727e5dbb93bba5eb9b3168` |
+| CI71 API29 | 12289460243 | `2680a0c960cd12964967bdcf2e719e78bac912bf09e0915b39d01eafecdb9d97` |
+| CI71 API37 | 12287344425 | `e25a00f0207fd764ddd161aa4e204f216810657ba2798c7a827f0bed789763c0` |
+
+The final public verifier reads exact main build/core/lint artifacts separately
+from its unauthenticated release downloads. It validates original report XML
+and records digests; it executes no artifact code. The release publisher downloads
+its exact successful build artifact, verifies byte-identical remote assets before
+publication and supports retry without replacing tags/assets. All report gates,
+both API suites and prior assertions remain enabled.
+
+Hardware acoustic/haptic gain, lock-screen/emergency navigation, ordinary-call
+focus, real NFC/microphone/voiceover false accepts, OEM background recovery,
+12-hour energy/temperature, physical storage faults, TalkBack/RTL/wide layouts,
+physiological accuracy, sonar and watch acquisition remain separate gates.
+
+Retained lint XML inspection in [CI73](https://github.com/BananaJeanss/solsleep/actions/runs/39474931506)
+identified both warnings as available dependency upgrades: Gradle 9.8.1 → 9.8.2
+(`AndroidGradlePluginVersion`, wrapper line 4) and kotlinx-serialization-json
+1.11.0 → 1.12.0 (`NewerVersionAvailable`, version catalog line 21). Both are
+Warning severity; zero lint errors is not a claim of zero lint issues. Dependency
+upgrades require their own compatibility review and complete format/migration and
+native checks. The qualified published build retains its pinned versions.

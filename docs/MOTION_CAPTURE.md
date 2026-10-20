@@ -121,8 +121,10 @@ staged explicit restore, qualified in PR #8. They are not in Journal JSON; conse
 and the recording-backup controls state this. See [MOTION_ARCHIVE.md](MOTION_ARCHIVE.md)
 for bounds, exact original source/event/chunk preservation, schema 1→2 local
 markers and recoverable file-first publication. Uninstall still removes private
-data without an external copy. Combined encrypted archives, portable capture
-markers, raw-export receipts and orphan/retention management remain M2 work. Recording
+data without an external copy. Local raw-export receipts and destination identity
+are now implemented in [RECORDING_EXPORT_HISTORY](RECORDING_EXPORT_HISTORY.md).
+Combined/encrypted archives, portable capture markers, receipt portability and
+orphan/retention management remain M2 work. Recording
 history uses bounded pages, newest first, independently of changing wall clocks;
 the open session stays accessible while browsing older history.
 

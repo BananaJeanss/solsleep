@@ -1,90 +1,77 @@
-# Development APK download status
+# Development APK downloads
 
-Checked 20 October 2026. SolSleep remains a development preview. Keep an
-independently trusted wake-up alarm. Do not uninstall or change signing
-certificates without verified external journal and separate recording backups.
+20 October 2026. [Download the current debug APK](https://github.com/BananaJeanss/solsleep/releases/download/debug-71.1-b7afd0c9db9b/solsleep-debug.apk) or read
+[its release notes and checksums](https://github.com/BananaJeanss/solsleep/releases/tag/debug-71.1-b7afd0c9db9b).
+Version `0.1.0-dev.71.1.b7afd0c9db9b-debug` (code 17101), Android 10/API29+.
 
-## Permanent download remains pending
+This public release URL replaces the Actions artifact route that returned 404.
+All four release assets were fetched over HTTPS with HTTP200, without GitHub
+authentication, and verified against the trusted successful main build in
+[CI72 public readback](https://github.com/BananaJeanss/solsleep/actions/runs/39474809678). The original Actions 404 cause is unconfirmed;
+it is not necessary to sign in to download these public release assets.
 
-The user reported 404 from the previously supplied Actions artifact URL. The
-repository is public, and the connected artifact endpoint returned preview ZIP
-bytes, but the original 404 cause is unconfirmed. Actions access can depend on
-GitHub sign-in and artifact retention. A temporary recovered URL is not a durable
-replacement.
-
-There are **no public releases** at this checkpoint. The
-[releases page](https://github.com/BananaJeanss/solsleep/releases) is the planned
-destination, not a claim an APK is already there. PR #11 must first qualify, merge
-and pass its own main-run build and both full native suites. Its publisher then
-verifies the exact same-run artifact remotely before making the prerelease public.
-Only after checking the actual published assets should the APK URL be supplied.
-
-For Actions troubleshooting, sign into an account that can view the repository,
-open [CI52](https://github.com/BananaJeanss/solsleep/actions/runs/39173044993)
-and select `solsleep-debug-52-1`. If accessible, extract the ZIP and install
-`solsleep-debug.apk`, not the ZIP itself. This is an access troubleshooting route,
-not a verified permanent replacement or a newly qualified build.
-
-## Original recovered preview identity
-
-The previously independently inspected CI52 bundle is retained here to identify
-a preview someone may already have installed. Both native jobs failed; successful
-packaging alone does not qualify it.
+## Verify the download
 
 | Field | Value |
 | --- | --- |
-| Artifact ID | `12153431857` |
-| ZIP SHA-256 | `7d14c3cbb13485eb90ca910a3e912971fe69e8b8efb7d9c23c41ee3820ec6b1c` |
-| APK SHA-256 | `b9731de5a5d3fb1ad77885af48c918ef376b12cab1d807ee66b98dfe9d67e61f` |
-| Certificate SHA-256 | `89565e7cfdf3052964e8440f7fa6dbd014f7ae955bf0b272f031c4c8f04e8949` |
-| Version / code | `0.1.0-dev.52.1.6cfbbfdc07b4-debug` / `15201` |
-| Checkout | `6cfbbfdc07b449d0391f23a2e48b980298c9d1d0` |
-| Tree | `97e500aff34c2c9f240b5bf3322858a050c4ddd1` |
+| Source | `b7afd0c9db9b6c5150c2e879de0946469c87a8cf` |
+| Source tree | `d3c74e911ca0f05b6b0998ff02764844e34d6eba` |
+| Main checks | [CI71](https://github.com/BananaJeanss/solsleep/actions/runs/39471810590) |
+| APK SHA-256 | `2e94f41f39258efeb491c487b1873344d7017032d658471fd0316ffc0d99bbb7` |
+| Certificate SHA-256 | `cccd603ec9d9a76750bb6bc0a5b56148f0c5babde6e4f678802b5548fdfafc5b` |
+| Package | `dev.bananajeans.solsleep.debug` |
+| Build version / code | `0.1.0-dev.71.1.b7afd0c9db9b-debug` / `17101` |
 
-Default runner development signing is ephemeral. Android can reject an update
-from a different certificate. Uninstalling deletes private app data; do not use
-it to resolve a mismatch before securing verified recovery copies.
+The APK is accompanied by `SHA256SUMS`, `build-info.json` and `APK_SIGNER.txt`.
+Download all four into one directory and run `sha256sum -c SHA256SUMS`.
+APK signature/package/API/version data is checked using Android build tools;
+the public byte verifier independently matches the APK to that trusted result.
+Checksums detect changed bytes; use this repository's release page as the trusted
+source. No private signing key is included.
 
-## Current software verification
+## Installing and updating a development build
 
-[CI62, APK delivery](https://github.com/BananaJeanss/solsleep/actions/runs/39463089168)
-passes 203 core/26 Python checks, lint/builds and all 116 API29 cases with no
-failure/error/skip. Its first API37 attempt failed SDK unpacking before tests;
-that job alone has been retried and is running.
+This is a debuggable preview, not a production release or validated sleep tracker.
+Keep a separately trusted wake-up alarm. Phone motion saves raw observations;
+sonar, sleep inference/stages and live watch acquisition remain unimplemented.
 
-[CI61, receipts](https://github.com/BananaJeanss/solsleep/actions/runs/39463085604)
-passes 213 core/26 Python checks, lint/builds and all 126 API37 cases. API29 has
-126 cases and one earlier ChallengeUiTest control-readiness failure; every
-recording/receipt case passed. The test helper now waits for the actual visible,
-enabled scroll-and-click, with all existing state assertions retained. Full
-[CI66](https://github.com/BananaJeanss/solsleep/actions/runs/39466387300) is pending.
-Neither feature PR is merged or fully qualified yet.
+Default runner development signing is ephemeral. An existing installation with a
+different certificate cannot update in place. **Uninstalling deletes private
+app data.** Export and verify alarm definitions, journal revisions and each
+finished recording before replacing a build/signer. Local export receipts are
+not currently portable; they are also removed by uninstall. Use a stable private
+development signing identity before relying on an installation for personal
+records; setup and production-signing separation are described in
+[DEVELOPMENT_RELEASES](DEVELOPMENT_RELEASES.md).
 
-Earlier CI52/53 XML retained cleanup failures. Read-only CI54/60 inspection checked
-the actual XML, matching artifact digests and logcat; logcat also exposed setup
-failures before recording bodies. The ViewModel's initial busy state preceded its
-first STARTED lifecycle load. The corrected helper waits for the real initial
-load before stopping the Activity and drains launched work without stale-root
-idle. CI62 and CI61's recording passes now demonstrate that correction. Earlier
-clock-only/superseded attempts are not counted as qualification.
+Journal JSON does not include raw recordings. Separate `.solmotion` exports
+preserve raw recording bytes/provenance and provide staged validated restore.
+Past verification receipts do not prove current cloud retention or availability.
+Combined/encrypted backups and portable receipt/deletion propagation remain
+planned work. See [the tonight checklist](TONIGHT_TEST.md).
 
-| Retained native archive | Artifact ID | ZIP SHA-256 |
-| --- | --- | --- |
-| CI52 / API29 | 12153178379 | `2c822e4f2371a95f3e6262e8fb541901cd50003381429a45d7d98265847ffe65` |
-| CI52 / API37 | 12153014272 | `74cd03bae6b57fb4ebdfdb786f5d6a58beb1922d7662ae6fc8aa70eb9ce758d3` |
-| CI53 / API29 | 12154450592 | `1bb2bd99bab1f9c04db706fffd36cb978c2b5140b7059327e439a30e22261cb4` |
-| CI53 / API37 | 12153543067 | `d3798115861de82dcbfd7f7664baf95ffbe7924f88b331a0be8991f585afa8dc` |
-| CI61 / API29 | 12284332627 | `817268e7f7099779dcb11fea4a7683e7bb72be0403c3d2d0523d4e05e714b66d` |
-| CI61 / API37 | 12285600790 | `fb36c99eca4610aab72e0358c640f9736d89cdd8730fde3c2ec3dca510449a64` |
+## What passed
 
-Local command execution is unavailable; hosted CI is the working route for
-compilation and read-only artifact inspection. Both original CI61 receipt PNGs
-were visually reviewed and retained in [SCREENSHOTS](SCREENSHOTS.md). Temporary
-inspection PR #13 was closed without merge. No release gate was bypassed.
+Current main CI71 passed all 213 core tests, 26 Python checks, lint, debug/test
+APKs, shrunk unsigned release and all 126 native tests on each API29/37, with
+zero failures/errors/skips. The original 200% receipt UI PNGs were visually
+reviewed; source and full artifact evidence are in [TESTING](TESTING.md) and
+[SCREENSHOTS](SCREENSHOTS.md). Physical overnight/accuracy/OEM and accessibility
+qualification remains open.
 
-## Public download acceptance
+PR #11's first public release, `debug-68.1-3be27815bb5c`, passed the same delivery
+protocol and CI70 anonymous downloads. A live publisher-only retry retained its
+original build attempt, tag/release ID and all asset IDs/hashes. PR #12's own
+main checks and the current public readback qualify the latest software slice.
+Temporary diagnostic PR #13 was closed without merge; no test experiment entered
+the app and no release gate was bypassed.
 
-After qualification and merge, verify the actual main-run prerelease and its
-public asset URLs, source/run identity, APK/certificate hashes and unchanged
-retry behavior. Tags or uploaded asset bytes must never be replaced. PR #12
-requires its own qualification and main publication after retargeting.
+## Actions artifacts
+
+[Android checks](https://github.com/BananaJeanss/solsleep/actions/workflows/android.yml) also
+retains separate `solsleep-debug-<run>-<attempt>` artifacts for 30 days. Actions
+downloads require GitHub authentication and may be unavailable after retention.
+A PR artifact is a preview, not proof its device suites passed. Prefer the actual
+public prereleases for a normal download; their asset URLs are independent of
+Actions artifact retention. A ZIP artifact must be extracted before installing
+its `solsleep-debug.apk`.

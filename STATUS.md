@@ -1,98 +1,92 @@
 # Implementation status
 
-18 October 2026 — recording provenance and observed coverage are merged in
-[PR #10](https://github.com/BananaJeanss/solsleep/pull/10), following the native
-wake-up challenges, custom packs and offline voiceover in PR #9.
-The exact source passed the complete API 29/37 software qualification below.
+20 October 2026 — APK delivery and local recording-export history are merged
+and software-qualified in PR #11/#12.
 
-This is a **development build**. M0, M1, M2 and M3 remain partial. Full reference
-parity, physiological accuracy and production readiness are not claimed.
+[Download the current debug APK](https://github.com/BananaJeanss/solsleep/releases/download/debug-71.1-b7afd0c9db9b/solsleep-debug.apk) · [release notes](https://github.com/BananaJeanss/solsleep/releases/tag/debug-71.1-b7afd0c9db9b) ·
+[main checks](https://github.com/BananaJeanss/solsleep/actions/runs/39471810590).
+Version `0.1.0-dev.71.1.b7afd0c9db9b-debug` (code 17101).
+The public APK, signer report, checksums and metadata were downloaded without
+authentication and matched to the trusted main build in [CI72 public readback](https://github.com/BananaJeanss/solsleep/actions/runs/39474809678).
 
-## Download and qualification update — 20 October 2026
-
-The reported Actions APK link returned 404. The repository is public and the
-connected artifact endpoint can recover preview bytes, but **no public release
-exists yet**. A temporary recovered URL is not permanent delivery. See
-[download status](docs/DEVELOPMENT_DOWNLOADS.md).
-
-[PR #11](https://github.com/BananaJeanss/solsleep/pull/11) implements verified
-standalone debug bundles and gated main-run prereleases. Current source
-`7f284b48e3e9eddd39620ec979130ed1baaa86e2` passes 203 core and 26 Python
-checks, lint and debug/shrunk release builds. Actual
-[CI62](https://github.com/BananaJeanss/solsleep/actions/runs/39463089168)
-API29 XML contains all 116 cases with no failure/error/skip. API37 first failed
-unpacking an SDK package before tests; only that job was retried, and is running.
-No qualification pass or release publication is claimed yet.
-
-[PR #12](https://github.com/BananaJeanss/solsleep/pull/12) implements local
-recording-export receipts, independent of raw recordings and alarms.
-[CI61](https://github.com/BananaJeanss/solsleep/actions/runs/39463085604)
-passes 213 core/26 Python, lint/builds and all 126 API37 cases.
-API29 has 126 cases and one failure in the earlier ChallengeUiTest: its helper
-found Dismiss, then lost that control before scrolling. All recording/storage/
-receipt cases passed, including the two new native history cases. Source
-`841328e12cd5ff92c5c741ee9e3fbc3d27e347f0` now requires a visible, enabled,
-actual scroll-and-click within the existing bounded wait. It does not start the
-task through an engine shortcut. Full
-[CI66](https://github.com/BananaJeanss/solsleep/actions/runs/39466387300)
-qualification is pending; every prior assertion and both APIs remain enabled.
-
-The earlier CI52/53 XML retained cleanup failures, while later logcat inspection
-also exposed setup failures before recording test bodies. A fresh ViewModel
-starts busy before the STARTED lifecycle effect launches its load. The corrected
-harness waits for the actual initial load before stopping the Activity, then
-drains launched work with a bounded Compose-aware wait. Cleanup destroys the
-Activity before restoring font scale and requires no stale Compose-root idle.
-CI62's native pass and CI61's passing recording cases now demonstrate this
-correction; failed/superseded earlier runs are not qualification evidence.
-
-Core and native CI report gates reject missing/empty reports and any failed,
-errored or skipped cases, and print real counts/details before retaining full
-artifacts. Local command execution remains unavailable; hosted builds and
-read-only artifact inspection provide the working verification route. Both
-original CI61 receipt captures were visually reviewed at 200% text and retained
-with hashes in [SCREENSHOTS](docs/SCREENSHOTS.md). They show a synthetic fixture,
-not a measured night or full-app qualification. Temporary PR #13 was closed
-without merge; its additional startup experiment was not promoted into feature
-branches. Neither feature PR is merged. Physical qualification remains open.
+This is a **development preview**. Full reference parity, physiological accuracy
+and production readiness remain open. Keep a separately trusted wake-up alarm.
+Default CI signing certificates can change; read the release's update/recovery
+notes before replacing an installation that contains records.
 
 ## Current tracking and wake-task status
 
 | Feature | Implemented status |
 | --- | --- |
 | Phone motion | Actual raw accelerometer observations, controls, interruption recovery, saved checks and separate recording backups |
+| Recording exports | Verified separate SOLR recovery copies and persistent per-recording attempt/verified history; damaged history cannot block recovery |
 | Manual journal | Reported rest intervals, corrections, notes/ratings/tags and verified Journal JSON portability |
 | Sleep analysis | Validated per-segment observation counts, nearby-reading durations, gaps and provenance; morning/sleep/awake/onset/stage analysis remains unimplemented |
 | Sonar | Research only; no overnight/sonar microphone acquisition or calibrated acoustic/DSP workflow |
 | Wake-up challenges | Eight native puzzle types, NFC, relative voice level, experimental offline voiceover and custom JSON packs implemented; software qualified, physical gates below |
 | Wear / Health Connect | Acquisition adapters and physiological validation remain unimplemented |
 
-## Development APK distribution under qualification
+## Qualified APK delivery and recording-export history
 
-[PR #11](https://github.com/BananaJeanss/solsleep/pull/11) adds standalone signed
-debug APK bundles, actual package/certificate verification, checksums and exact
-source/run metadata. Qualified main runs will publish the exact same artifact as
-a versioned GitHub development prerelease after both full API suites pass.
-Optional private CI debug signing is supported; production signing is separate.
-See [DEVELOPMENT_RELEASES](docs/DEVELOPMENT_RELEASES.md) and
-[the tonight test guide](docs/TONIGHT_TEST.md) before installing/changing signers.
+[PR #11](https://github.com/BananaJeanss/solsleep/pull/11) is merged as
+`3be27815bb5cb03ca6ab1c256b6c7415db732059`.
+CI62 qualified 203 core, 26 Python and all 116 native cases per API29/37;
+the scoped API37 retry followed an SDK unpack failure before tests.
+Its own main CI68 repeated all checks, published the original signed artifact
+as `debug-68.1-3be27815bb5c`, and passed anonymous HTTP200 downloads of all four
+assets in CI70. A publisher-only retry reused build attempt 1, retained the same
+release/asset IDs and hashes, and performed no replacement.
 
-[CI50](https://github.com/BananaJeanss/solsleep/actions/runs/39170270014) is **not a
-qualification pass**: 203 JVM, 24 Python, zero lint and both build variants pass,
-and actual API 37 XML contains all 116 passing cases. API 29 reached the job time
-limit during the large-text coverage case and produced no final JUnit XML.
-The downloaded artifact remains a preview. Its signature/checksums/build identity
-were independently checked; a public release is not yet established.
+[PR #12](https://github.com/BananaJeanss/solsleep/pull/12) is merged as
+`b7afd0c9db9b6c5150c2e879de0946469c87a8cf`, tree `d3c74e911ca0f05b6b0998ff02764844e34d6eba`.
+CI66 qualified source `841328e12cd5ff92c5c741ee9e3fbc3d27e347f0`,
+checkout `18a8f0b50d7079f7a97f7e567ab70cdb1d14368e`, tree
+`f7c73e72f98d48a8657b74ac1d321e811abf08f8`.
+Direct Git-tree comparison confirms all 159 non-documentation files are identical
+in the final merge; only Markdown and original native PNG copies differ.
 
-Retained logcat shows the coverage screenshot being opened, then font reset and
-Activity recreation before progress stopped. The harness is being corrected to
-stop its real lifecycle before cleanup, avoid an unbounded Compose idle wait on
-a replaced root, and destroy its Activity before restoring font scale. Test
-bodies/assertions and both platforms remain enabled; a complete rerun is required.
-Publisher review also corrected authenticated draft lookup and explicit tag
-creation, with 26 Python cases and actionlint passing locally. A disposable private
-CI keystore was prepared, used to sign an actual APK, verified against independent
-keytool certificate bytes and removed. No private key was committed or distributed.
+| Check | Final main result |
+| --- | --- |
+| Core protocol/format/storage-policy cases | All 213 passed |
+| Independent Python archive/fixtures/delivery checks | All 26 passed |
+| API29 / API37 complete native suites | All 126 passed on each |
+| Final XML failures / errors / skipped cases | Zero |
+| Lint | Zero errors; two available-version warnings (Gradle/serialization); details in TESTING |
+| Debug/test APKs and shrunk unsigned release | Pass |
+| Signed debug bundle and exact public download | Verified; [CI71](https://github.com/BananaJeanss/solsleep/actions/runs/39471810590), [CI72 public readback](https://github.com/BananaJeanss/solsleep/actions/runs/39474809678) |
+| Native receipt UI at 200% text | Both original CI61 light/dark captures reviewed and retained |
+
+Recording exports now keep independently durable STARTED/WRITTEN/VERIFIED and
+failed/unverified receipts in a separate CE FULL/WAL database. The last verified
+receipt survives a later failed attempt. Corrupt/future receipt storage remains
+retained and cannot prevent a verified external recovery copy. Stored destination
+identity is a URI digest/provider/optional name, with no retained URI capability.
+A receipt describes past readback, not current cloud availability.
+
+The native history screen distinguishes empty, unknown and unavailable states;
+Close remains fixed, and identities/fingerprints are selectable and scrollable.
+Confirmed recording deletion first commits its durable intent, then removes
+only scoped local receipts; receipt damage cannot veto raw deletion. External
+documents and other recordings are not deleted. SOLR bytes, raw observations,
+journal and DP alarm storage remain independent. See
+[the receipt contract](docs/RECORDING_EXPORT_HISTORY.md).
+
+Earlier CI52/53 XML retained cleanup failures, while CI60 logcat also revealed
+setup failures before the recording bodies: busy=true preceded the initial
+STARTED lifecycle load. The final harness lets that real load finish before
+stopping polling, then drains launched work with bounded waits without stale-root
+idle. CI61 passed every recording case on both APIs; one earlier alarm test
+lost Dismiss between finding text and scrolling. Its helper now requires the
+actual visible/enabled scroll-and-click within the bounded wait. All prior
+test bodies, data/state assertions and both APIs remain enabled.
+
+Core/native report gates reject missing/empty reports and failures/errors/skips.
+Hosted runs and read-only artifact inspection were used while local execution
+was unavailable. Temporary PR #13 was closed without merge; none of its startup
+experiments entered the feature branches. Actual reports, hashes, anonymous
+download and retry evidence are retained in [TESTING](docs/TESTING.md) and
+[SCREENSHOTS](docs/SCREENSHOTS.md). This is software qualification of a development
+build, not physical overnight, physiological, sonar/watch or production qualification.
 
 ## Qualified recording provenance and coverage software milestone
 
@@ -420,12 +414,13 @@ resource probe is not proof every upstream incremental case is fixed.
   onset, locked boot/update, OEM/Doze/process loss, 12-hour power/temperature,
   real sensor placement/quality, storage faults and assistive interaction.
   [The lab protocol](docs/device-lab/README.md) and blank NOT RUN sheet are ready.
-- **M2 software:** combined all-record/audio archives, encryption and portable
-  key recovery, portable capture deletion propagation, raw-export receipts,
-  recovery/orphan retention, provider/destination identity, large-history streaming
-  and broader pagination. Single finished-recording plaintext portability is now
-  qualified; this is not a complete combined backup. Encryption is researched, not
-  implemented. Minimum-phone KDF cost also needs physical hardware.
+- **M2 software:** local recording-export receipts and destination identity are
+  qualified above. Next are all-record manifests, portable capture deletion,
+  combined all-record/audio archives, encryption/key recovery, receipt portability/
+  retention, true provider availability and larger-history workflows. Separate
+  finished-recording plaintext recovery is not a complete combined backup.
+  Encryption remains researched, not implemented; minimum-phone KDF tuning
+  requires physical hardware.
 - **M3/M4:** provenance and conservative observed coverage are software-qualified
   above. Next are transparent morning analytics, source-quality policies and
   validated sleep/awake inference. Signal usefulness and accuracy require real

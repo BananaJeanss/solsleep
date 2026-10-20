@@ -8,40 +8,35 @@
 
 ## Current execution priority — 20 October 2026
 
-Finish the existing delivery and recording-history slices before adding another
-feature. Local commands remain unavailable, so exact-source hosted builds and
-read-only artifact inspection are being used. Preserve all existing worktrees and
-original data; no environment reset or database reset is authorized by recovery.
+- [x] Diagnose actual XML/logcat failures and correct initial-load/stop/drain
+  ordering in the recording UI harness without removing assertions or APIs.
+- [x] Require actual nonempty core/native reports and no failures/errors/skips.
+- [x] Qualify and merge PR #11; repeat full checks on main, publish the exact
+  same-run signed artifact, verify anonymous public downloads and a read-only
+  publisher retry preserving release/asset IDs and hashes.
+- [x] Qualify/retarget/merge PR #12; compare actual Git file hashes with the
+  qualified tree, run both full API suites again on main and verify its own
+  public APK and metadata. Review/retain original native 200% receipt PNGs.
+- [x] Close temporary diagnostic PR #13 without merge and publish source/run/
+  artifact/download evidence. No experimental startup assertion was promoted.
+- [ ] Review the available Gradle 9.8.2 and kotlinx-serialization-json 1.12.0
+  upgrades reported by the retained lint XML. Qualify version/format compatibility
+  separately; do not change the already qualified public artifact.
+- [ ] Implement the next M2 slice: a versioned all-record manifest and portable
+  recording deletion markers, followed by staged combined backup/recovery.
+- [ ] Complete encrypted-backup/key-recovery implementation after the existing
+  threat model and bounded format/KDF design; then qualify minimum-device costs.
+- [ ] Run physical overnight, call/focus, NFC/microphone, accessibility and
+  storage-durability protocols. No attached reference phone/watch or consented
+  labeled sleep observations are available in this environment.
 
-- [x] Inspect actual saved XML, artifact digests and logcat. CI52/53's recording
-  tests failed in setup as well as cleanup: the initial load could not begin once
-  setup stopped the lifecycle. Correct both branches to finish the initial load
-  while STARTED, stop polling, then drain launched work without stale-root idle.
-- [x] Require nonempty actual core/native reports and no failures/errors/skips.
-  Keep all prior cases, data/UI assertions and API29/37 support.
-- [x] Confirm CI62's 203 core/26 Python/build checks and all 116 API29 cases.
-  Confirm CI61's 213 core/26 Python/build checks, all 126 API37 cases and passing
-  recording tests on API29. Its one earlier alarm UI timing failure is not a
-  qualification pass for the whole branch.
-- [x] Review and retain CI61's exact original receipt PNGs on both APIs at 200%
-  text, with hashes and source context. Close temporary inspection PR #13
-  without merge; no experimental startup assertion was promoted.
-- [ ] Finish CI62's scoped API37 SDK-installation retry. Finish CI66 on receipt
-  source `841328e12cd5ff92c5c741ee9e3fbc3d27e347f0`, which waits for the
-  complete actual visible/enabled alarm control click across root replacement.
-  Inspect every complete report; do not suppress tests or blindly rerun failures.
-- [ ] Merge qualified PR #11, then let its own main run pass all dependencies.
-  Publish the exact same-run APK, verify the real public asset/signature/hashes/
-  source metadata and retry behavior, and supply its actual public download URL.
-  The user-reported 404 remains unresolved as permanent delivery until this works.
-- [ ] Retarget and qualify PR #12 against the merged base, merge it, verify its
-  own main publication and update receipt/backup evidence before the next M2 slice.
-
-[Download status and retained identities](docs/DEVELOPMENT_DOWNLOADS.md).
-This main checkpoint changes only documentation and exact screenshot copies;
-neither feature is merged yet. The last fully qualified merged app milestone
-remains PR #10. Physical overnight, microphone/NFC, accuracy, sonar and watch
-gates remain open, alongside the independent software backlog below.
+Current main source `b7afd0c9db9b6c5150c2e879de0946469c87a8cf`, tree `d3c74e911ca0f05b6b0998ff02764844e34d6eba`;
+[CI71](https://github.com/BananaJeanss/solsleep/actions/runs/39471810590) passes 213 core, 26 Python and all 126 native cases on each API29/37,
+with no failure/error/skip. [Current APK/release](https://github.com/BananaJeanss/solsleep/releases/tag/debug-71.1-b7afd0c9db9b) and
+[CI72 public readback](https://github.com/BananaJeanss/solsleep/actions/runs/39474809678) retain exact public-byte verification.
+Local command execution was unavailable; hosted checks and read-only artifact
+inspection provided verification without touching the pre-existing worktrees.
+Physical accuracy, full reference parity and production readiness remain open.
 
 ## 1. Product contract
 
@@ -1956,7 +1951,7 @@ these accuracy gates passed. Execute each as a separate qualified vertical slice
 Full production readiness, reference parity, physical durability and physiological
 accuracy remain open. All unchecked scope-ledger work still applies.
 
-### Development APK distribution — execution in progress, 19 October 2026
+### Development APK distribution — executed software slice, 20 October 2026
 
 1. Keep production signing separate. Give CI debug builds bounded monotonically
    ordered run/attempt codes and exact source versions. Optionally load a private
@@ -1979,7 +1974,7 @@ accuracy remain open. All unchecked scope-ledger work still applies.
 
 Contract, configuration and primary research: [DEVELOPMENT_RELEASES](docs/DEVELOPMENT_RELEASES.md).
 
-### Recording export receipts — execution in progress, 19 October 2026
+### Recording export receipts — executed software slice, 20 October 2026
 
 1. Add independently bounded local attempt/destination/verified models and a
    guarded audit wrapper. Record STARTED before snapshot, WRITTEN only after
@@ -2003,3 +1998,68 @@ Contract, configuration and primary research: [DEVELOPMENT_RELEASES](docs/DEVELO
    and merge. This slice is separate from tonight's APK distribution candidate.
 
 Detailed contract/research: [RECORDING_EXPORT_HISTORY](docs/RECORDING_EXPORT_HISTORY.md).
+
+### Verified delivery and recording-receipt checkpoint — 20 October 2026
+
+PR #11 source `7f284b48e3e9eddd39620ec979130ed1baaa86e2` passed CI62's
+203 core/26 Python/116 native cases per API, then merged as
+`3be27815bb5cb03ca6ab1c256b6c7415db732059`. Main CI68 repeated all checks
+and published its exact signed debug bundle. CI70 downloaded every public asset
+without authentication, required HTTP200/HTTPS and validated its source/run/
+attempt, APK/certificate hashes and checksums. A publisher-only retry retained
+the original build attempt, tag, release ID and all asset IDs/bytes.
+
+PR #12 source `841328e12cd5ff92c5c741ee9e3fbc3d27e347f0`, qualified
+checkout `18a8f0b50d7079f7a97f7e567ab70cdb1d14368e` / tree
+`f7c73e72f98d48a8657b74ac1d321e811abf08f8`, passed CI66's 213 core,
+26 Python and all 126 native cases per API29/37. It merged as `b7afd0c9db9b6c5150c2e879de0946469c87a8cf`
+with tree `d3c74e911ca0f05b6b0998ff02764844e34d6eba`. All 159 non-documentation file identities match
+the qualified tree; differences are only Markdown and exact original PNG copies.
+Main [CI71](https://github.com/BananaJeanss/solsleep/actions/runs/39471810590) repeated the full checks and published
+[debug-71.1-b7afd0c9db9b](https://github.com/BananaJeanss/solsleep/releases/tag/debug-71.1-b7afd0c9db9b); [CI72 public readback](https://github.com/BananaJeanss/solsleep/actions/runs/39474809678) verified the actual
+public APK/checksums/metadata without authentication.
+
+Local export history is independently durable and cannot block raw recovery.
+Historical verification is not current destination availability. Last-attempt
+and last-verified states, corruption/unknown retention, provider failure and
+scoped deletion are exercised in real SQLite/ContentResolver and actual UI.
+Both original 200% native screenshots are retained, not regenerated. All older
+tests/assertions and both APIs remain enabled. Earlier failed/superseded
+attempts remain documented; physical gates are not closed by emulator results.
+
+### Next M2 vertical slice: all-record manifest and recoverable publication
+
+1. Inventory alarm definitions, journal revisions/tombstones, completed recording
+   metadata/raw chunks and any included references as independent sources. Define
+   eligibility and explicit active-recording/unsupported-store outcomes. A backup
+   that omitted a source must not be labeled a complete all-record backup.
+2. Design a versioned bounded manifest with stable IDs, original source/clock/
+   zone/provenance, deletion markers, byte counts and content hashes. Preserve
+   existing SOLR and journal codecs and unknown values; do not infer metadata for
+   legacy records. Decide receipt portability separately from current URI grants.
+3. Freeze coherent snapshots with revision/high-water checks, keeping critical DP
+   alarm scheduling independent of CE work. Recheck before declaring the snapshot
+   complete; concurrent edits/fired occurrences must have explicit retry/conflict
+   behavior, without copying live ringing tokens into restored enabled alarms.
+4. Stream a bounded container in canonical order. Limit source/entry counts,
+   lengths and total allocation before copying untrusted input; validate every
+   referenced raw file and manifest hash. Retain originals on checksum, space,
+   provider close/readback or unsupported-version failure.
+5. Restore through validated staging plus durable per-store publication intent.
+   Define idempotent batch/retry semantics across separate databases and raw files,
+   with existing IDs/deletions winning by default and explicit conflict preview.
+   A partial publication must remain observable/recoverable after process loss.
+6. Add independent producer/inspector fixtures, malformed/truncated/hash/bounds
+   cases and real SQLite/provider faults at each publication boundary. Exercise
+   concurrent edits, clock rollback, source-ID conflicts, future/corrupt stores,
+   failed file/SQL commits and complete clean-store recovery before UI promotion.
+7. Build a native preview/recovery flow with honest source counts, explicit
+   plaintext/encryption scope, accessible progress/cancellation and retained
+   interrupted state. Run full core/tool/lint/debug/release and API29/37 checks,
+   inspect original large-text captures and public downloads before merging.
+
+Encryption/key recovery follows the existing M2 threat model with authenticated
+manifests, bounded KDF parameters and consented minimum-phone measurements.
+Sonar, sleep inference and watch acquisition keep their separate implementation,
+permission/source and physical/reference-data gates. The remaining scope ledger
+still applies; these software slices do not complete the entire reference app.

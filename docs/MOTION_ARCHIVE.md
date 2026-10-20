@@ -161,11 +161,15 @@ synced raw publication, local conflicts/deletions, real ContentResolver readback
 and a native preview/restore flow at 200% text. See STATUS.md for executed results;
 implementation alone is not qualification.
 
-Persistent raw-export attempt/verified receipts and provider identity/availability,
-encryption/key recovery, combined all-record backups, portable capture tombstones,
-recovery/orphan storage management and real power-loss/full-disk qualification
-remain open. Journal receipts still refer only to journal JSON. Android task/process
-loss tests and injected exceptions do not prove hardware power-loss behavior.
+Persistent per-recording attempt/verified receipts and bounded destination
+identity are implemented in a separate credential-protected store; see
+[RECORDING_EXPORT_HISTORY](RECORDING_EXPORT_HISTORY.md) and STATUS.md for evidence.
+They do not establish current provider availability and do not alter SOLR bytes.
+Journal receipts still refer only to journal JSON. Encryption/key recovery,
+combined all-record backups, portable capture tombstones, receipt portability/
+retention, recovery/orphan management and physical power-loss/full-disk
+qualification remain open. Software interruption tests do not prove hardware
+power-loss behavior.
 
 ## Primary documentation reviewed
 
