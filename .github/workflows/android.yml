@@ -1,118 +1,48 @@
-name: Android checks
+name: Recording evidence inspection
 on:
-  push:
-    branches: [main]
-    paths-ignore: ["**/*.md", "docs/**", "LICENSE", "NOTICE"]
   pull_request:
-    paths-ignore: ["**/*.md", "docs/**", "LICENSE", "NOTICE"]
-  workflow_dispatch:
-
+    paths: [".github/workflows/android.yml"]
 permissions:
   contents: read
-
-concurrency:
-  group: android-${{ github.ref }}
-  cancel-in-progress: true
-
+  actions: read
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    timeout-minutes: 25
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
-        with:
-          distribution: temurin
-          java-version: "17"
-          cache: gradle
-      - uses: android-actions/setup-android@be39fa834029ff78f1a44aa3bb0819b8fc2bd8fd # v4.0.4
-      - name: Install compile SDK
-        run: sdkmanager "platforms;android-37.0" "build-tools;36.0.0"
-      - name: Verify generated assets
-        run: |
-          python3 tools/generate_brand.py
-          python3 tools/generate_tone.py
-          python3 tools/generate_voice_clips.py --check
-          python3 -m unittest discover -s tools -p test_motion_archive.py
-          python3 tools/generate_motion_fixture.py --check
-          python3 tools/inspect_motion_archive.py core/src/test/resources/motion-archive-v1.solmotion
-          python3 tools/inspect_motion_archive.py core/src/test/resources/motion-archive-v2.solmotion
-          git diff --exit-code -- app/src/main/res
-      - name: Test, lint, and build both variants
-        run: |
-          ./gradlew :core:test :app:lintDebug :app:assembleDebug --no-daemon
-          ./gradlew :app:assembleRelease --no-daemon
-      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        if: always()
-        with:
-          name: build-and-core-results
-          path: |
-            core/build/reports/tests/
-            core/build/test-results/
-            app/build/reports/
-            app/build/outputs/apk/debug/
-          if-no-files-found: error
-
-  device:
+  inspect:
+    if: >-
+      github.repository == 'BananaJeanss/solsleep' &&
+      github.event.pull_request.head.repo.full_name == 'BananaJeanss/solsleep' &&
+      github.head_ref == 'inspection/recording-reports'
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - api: 29
-            platform: android-29
-          - api: 37
-            platform: android-37.0
+        api: [29, 37]
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 5
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
-          persist-credentials: false
-      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
-        with:
-          distribution: temurin
-          java-version: "17"
-          cache: gradle
-      - uses: android-actions/setup-android@be39fa834029ff78f1a44aa3bb0819b8fc2bd8fd # v4.0.4
-      - name: Install device emulator
-        run: |
-          sdkmanager "platforms;android-37.0" "build-tools;36.0.0" "emulator" "system-images;${{ matrix.platform }};google_apis;x86_64"
-          echo no | avdmanager create avd --name solsleep --package "system-images;${{ matrix.platform }};google_apis;x86_64" --device pixel_6
-          sudo chmod a+rw /dev/kvm
-      - name: Run real device tests
+          repository: BananaJeanss/solsleep
+          run-id: 39173248195
+          name: api-${{ matrix.api }}-device-results
+          path: prior-reports
+          github-token: ${{ github.token }}
+      - name: Expose original native receipt capture for review
         shell: bash
         run: |
-          set -euo pipefail
-          "$ANDROID_HOME/emulator/emulator" -avd solsleep -no-window -no-audio -no-boot-anim -no-snapshot -gpu swiftshader -memory 2048 > emulator.log 2>&1 &
-          emulator_pid=$!
-          collect_and_stop() {
-            timeout 10 adb logcat -d -v threadtime > device-logcat.txt 2>&1 || true
-            timeout 5 adb emu kill >/dev/null 2>&1 || true
-            kill "$emulator_pid" 2>/dev/null || true
-          }
-          trap collect_and_stop EXIT
-          deadline=$((SECONDS + 300))
-          until [ "$(timeout 5 adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r' || true)" = "1" ]; do
-            if [ "$SECONDS" -gt "$deadline" ]; then tail -80 emulator.log; exit 1; fi
-            sleep 2
-          done
-          adb shell input keyevent 82
-          adb shell settings put system time_12_24 24
-          adb shell cmd uimode night yes
-          adb shell settings put global window_animation_scale 0
-          adb shell settings put global transition_animation_scale 0
-          adb shell settings put global animator_duration_scale 0
-          ./gradlew :app:connectedDebugAndroidTest --no-daemon
-      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        if: always()
-        with:
-          name: api-${{ matrix.api }}-device-results
-          path: |
-            app/build/reports/androidTests/
-            app/build/outputs/androidTest-results/
-            app/build/outputs/connected_android_test_additional_output/
-            emulator.log
-            device-logcat.txt
-          if-no-files-found: error
+          python3 - <<'PY'
+          from pathlib import Path
+          import base64, hashlib, json
+          root = Path("prior-reports")
+          paths = list(root.rglob("recording-export-history-large-text.png"))
+          if len(paths) != 1:
+              raise SystemExit("Expected exactly one original receipt screenshot")
+          path = paths[0]
+          if path.is_symlink() or path.stat().st_size > 1024 * 1024:
+              raise SystemExit("Unexpected capture file")
+          data = path.read_bytes()
+          if not data.startswith(b"\x89PNG\r\n\x1a\n"):
+              raise SystemExit("Not an original PNG")
+          print("CAPTURE_META=" + json.dumps(dict(path=str(path), bytes=len(data),
+              sha256=hashlib.sha256(data).hexdigest(),
+              gitBlobSha=hashlib.sha1(b"blob " + str(len(data)).encode() + b"\0" + data).hexdigest())))
+          print("CAPTURE_BYTES=" + base64.b64encode(data).decode())
+          PY
